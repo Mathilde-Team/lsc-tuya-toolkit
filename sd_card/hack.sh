@@ -48,6 +48,12 @@ ensure_shadow() {
 apply_overrides() {
   mount --bind "${SCRIPTS_DIR}/recover_cfg.sh" /usr/sbin/recover_cfg.sh || true
   mount --bind "${SCRIPTS_DIR}/anyka_ipc.sh" /usr/sbin/anyka_ipc.sh || true
+  # LED: script qui garde la LED éteinte
+  [ -f "${SCRIPTS_DIR}/state_led.sh" ] && mount --bind "${SCRIPTS_DIR}/state_led.sh" /usr/sbin/state_led.sh && /bin/sh /usr/sbin/state_led.sh off
+  # Vidéo: ISP à 20 fps (le capteur est limité à 14 fps par le fichier d'origine)
+  [ -f "${CONFIG_DIR}/isp_sc2336_fps20.conf" ] && mount --bind "${CONFIG_DIR}/isp_sc2336_fps20.conf" /etc/config/isp_sc2336_mipi_2lane_h3b.conf || true
+  # Vidéo: anyka_ipc patché (frame_rate du canal VI : 15 -> 20)
+  [ -f "${CUSTOM_DIR}/bin/anyka_ipc_fps20b" ] && mount --bind "${CUSTOM_DIR}/bin/anyka_ipc_fps20b" /usr/bin/anyka_ipc || true
   if [ "${OVERRIDE_HW_SETTINGS}" = "1" ]; then
     mount --bind "${CONFIG_DIR}/_ht_hw_settings.ini" /usr/local/_ht_hw_settings.ini || true
   fi
