@@ -1,5 +1,21 @@
 # LSC Camera  Root Toolkit
 
+> ## Notes sur ce fork
+>
+> Fork de [`tasarren/lsc-tuya-toolkit`](https://github.com/tasarren/lsc-tuya-toolkit) adapté à une **autre caméra** que celle du dépôt
+> d'origine : `IPC-XC-C323`, firmware **3.10.78.1269** (l'amont cible `6.2863.123`). Voir [`docs/CAMERA.md`](docs/CAMERA.md).
+>
+> Changements : config vidéo corrigée pour cette caméra (fin de la boucle de redémarrage), vidéo **1920×1080 à 20 fps** fluide,
+> LED d'état éteinte. Les correctifs du firmware sont fournis sous forme de **scripts** (`tools/`) qui patchent votre propre copie ;
+> aucun fichier du fabricant n'est publié.
+>
+> - [`docs/CHANGES.md`](docs/CHANGES.md) : toutes les modifications, le déploiement, le retour arrière et le journal des actions
+> - [`docs/CAMERA.md`](docs/CAMERA.md) : quelle caméra, et ce qui la distingue de l'amont
+> - [`docs/WIFI_ET_IP.md`](docs/WIFI_ET_IP.md) : le Wi-Fi est configuré à deux endroits (pourquoi l'IP peut changer)
+> - [`docs/HARDWARE.md`](docs/HARDWARE.md) et [`docs/SECURITY.md`](docs/SECURITY.md) : audits matériel et sécurité
+>
+> Ne publiez jamais votre `wifi.conf`, votre `_ak39_factory.ini` renseigné ni le dossier `logs/` (SSID et mot de passe en clair).
+
 This file documents the current firmware findings and a practical SD-card flow to boot custom scripts and keep local
 services.
 
