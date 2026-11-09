@@ -9,3 +9,12 @@ ptzlib/dist/
 *.tar
 *.tar.gz
 *.bin
+
+# Fichiers dérivés du firmware du fabricant (générés par tools/, non redistribuables)
+sd_card/custom/bin/anyka_ipc*
+sd_card/custom/configs/isp_*.conf
+
+# Dumps de flash et extractions locales
+mtd*.bin
+dump/
+__pycache__/
