@@ -149,6 +149,16 @@ int ptz_issue_motor(const ptz_config_t *cfg,
         ptz_sleep_us(10000);
     }
 
+    /* On firmware 3.10.78 the ak_motor driver runs the move asynchronously and
+       ak_motor_release() stops the motor, so closing the fd right away cuts the
+       move short. Keep the fd open for the expected duration of the move. */
+    if (rc == 0 && cfg && cmd == cfg->ioctl_move) {
+        const char *env = getenv("PTZ_HOLD_US_PER_STEP");
+        long per_step = env ? atol(env) : 4000;
+        long hold = (long)(step < 0 ? -step : step) * rep * per_step;
+        if (hold > 0) ptz_sleep_us(hold);
+    }
+
     if (do_log) {
         ptz_log_line(cfg,
                      "motor axis=%s via=%s dir=%s step=%d rep=%d cmd=0x%lx fd_addr=0x%lx rc=%d errno=%d",

@@ -163,6 +163,8 @@ Légende : **L** = lecture seule · **E** = écriture sur la caméra ou la SD.
 | 14 | Lecture des journaux de la SD : avec `ip` vide, la caméra ne se connecte pas (voir [`WIFI_ET_IP.md`](WIFI_ET_IP.md) §3). | L |
 | 15 | Option retenue : `_ak39_factory.ini` rétabli à l'identique de l'original (comparé octet pour octet) et `DHCP=0` dans `wifi.conf` (sauvegarde `.bak`). | E (SD) |
 | 16 | Redémarrage de la caméra par l'utilisateur, puis vérification en lecture seule : connectée à l'IP fixe, pas de `udhcpc`, patchs vidéo et LED toujours actifs (`cur_int[50]`, binaire `27ee718f…`). | L |
+| 17 | PTZ : lecture du pilote `ak_motor.ko` (local), essais de `ptzctl` en RAM puis mesure du déplacement sur l'image (corrélation de phase). | L puis E (moteurs, non persistant) |
+| 18 | PTZ : `ptzctl` recompilé (ARM statique) et déployé sur la SD avec `ptz.conf` ; sauvegardes `ptzctl.orig` et `ptz.conf.orig` sur la SD. | E (SD) |
 
 ## 10. Erreurs et leçons
 
@@ -177,9 +179,38 @@ Légende : **L** = lecture seule · **E** = écriture sur la caméra ou la SD.
 - Mes comptes sur les journaux étaient faux : au démarrage l'horloge repart de l'an 2000 et plusieurs démarrages **s'ajoutent au même fichier**
   (voir `WIFI_ET_IP.md` §5). J'ai d'abord pris un ancien fichier pour le démarrage en cours ; refait en lisant la fin du bon fichier.
 
+## 12. PTZ (pan validé, tilt non validé)
+
+**Constat.** `ptzctl` d'origine (échelle 4096/2230 pas, vitesse 640–800, 8 répétitions) est accepté par le pilote (`rc=0`) mais la caméra ne bouge pas.
+
+**Causes trouvées.**
+1. **Vitesse** : `anyka_ipc` envoie `set motor speed:60` (journal `ht_ptz.c`). Les valeurs 160–640 que nous envoyions n'ont produit aucun mouvement (le pilote déclare `speed-step:200`, `total-steps:2000`, `boundary-steps:50`).
+2. **Fermeture trop rapide** : `ak_motor_release()` arrête le moteur et `ptzctl` ferme le descripteur juste après l'ordre MOVE, ce qui coupe le déplacement après quelques pas (hypothèse cohérente avec le code du pilote et avec les mesures).
+
+**Changements.**
+- `ptzlib/src/ptz_motor.c` : après un ordre MOVE réussi, `ptz_issue_motor()` attend `|pas| × rép × 4 ms` avant de fermer (variable d'environnement `PTZ_HOLD_US_PER_STEP`, 4000 par défaut).
+- `ptz.conf` : `PAN_TOTAL_STEPS=2000`, `PAN_STEP_REPEAT=1`, `PAN_SPEED_STEP=75` (valeur réellement envoyée : 60).
+- `sd_card/custom/bin/ptzctl` : recompilé avec `arm-linux-gnueabi-gcc -O2 -static`, puis `strip` (md5 `83af89f6…`).
+
+**Mesure (décalage de l'image, sur 960 px de large).**
+
+| Ordre | Décalage |
+|---|---|
+| 2 × 400 pas à droite (essai en RAM) | −195 px |
+| 2 × 400 pas à gauche | +194 px |
+| 1 ordre pan droite / gauche (config de la SD) | −82 px / +82 px |
+
+**Tilt : non validé.** Les ordres de tilt sont très inégaux : un « haut » bouge, un « bas » parfois pas du tout. Hypothèse (non prouvée) : le pilote suit la position et la borne ; après plusieurs « bas » consécutifs puis un repositionnement manuel de la tête, il croit être en butée basse. Une recalibration (redémarrage) est à faire avant de fixer les valeurs `TILT_*`, qui n'ont **pas** été modifiées dans le dépôt.
+
+**Incident.** En envoyant plusieurs « bas » de suite, l'objectif s'est retrouvé tourné vers la base de la caméra (image grise) ; la tête a été remise à la main. Le tilt doit être testé par **petits pas** (100) avec mesure après chaque ordre.
+
+**Retour arrière.** `ptzctl.orig` et `ptz.conf.orig` sont sur la SD (`custom/bin`, `custom/configs`) ; les versions d'origine du dépôt sont dans l'historique git.
+
+**ONVIF.** Le firmware 3.10.78 n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server` ; rien ne répond en ONVIF (ports 80/8000/8080/8090). Le PTZ n'est utilisable que par `ptzctl` pour l'instant.
+
 ## 11. Non fait, non testé
 
-- **PTZ** : non testé après les patchs (le code des moteurs n'est pas modifié).
+- **PTZ** : pan validé (§12), tilt non validé, ONVIF absent du firmware.
 - **Débit** : toujours `main_target_kbps = 800` / `main_max_kbps = 1600` ; augmentation envisagée, non réalisée.
 - `sensor_type_def` reste à 17 (usine : 20) ; H.265 conservé (usine : H.264) ; fps autres que 20.
 - Aucune vérification que la caméra ne contacte plus le cloud (filtrage Internet à faire sur le routeur).
