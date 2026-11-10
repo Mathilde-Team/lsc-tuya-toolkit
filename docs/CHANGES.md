@@ -166,6 +166,7 @@ Légende : **L** = lecture seule · **E** = écriture sur la caméra ou la SD.
 | 17 | PTZ : lecture du pilote `ak_motor.ko` (local), essais de `ptzctl` en RAM puis mesure du déplacement sur l'image (corrélation de phase). | L puis E (moteurs, non persistant) |
 | 18 | PTZ : `ptzctl` recompilé (ARM statique) et déployé sur la SD avec `ptz.conf` ; sauvegardes `ptzctl.orig` et `ptz.conf.orig` sur la SD. | E (SD) |
 | 19 | PTZ : tilt validé (seuil 489 pas par ordre), valeurs `TILT_*` ajoutées dans `ptz.conf` (sauvegarde `ptz.conf.pan_only` sur la SD). | E (SD) |
+| 20 | ONVIF : `onvif_simple_server` et `mini_cgi_httpd` compilés (ARM statique), déployés sur la SD avec sauvegardes `.orig` de `onvif_simple_server.conf` et `onvif.sh` ; redémarrage pour vérifier. | E (SD) |
 
 ## 10. Erreurs et leçons
 
@@ -211,9 +212,23 @@ Légende : **L** = lecture seule · **E** = écriture sur la caméra ou la SD.
 
 **Incident.** En envoyant plusieurs « bas » de suite avec de petits pas, l'objectif s'est retrouvé tourné vers la base (image grise) ; la tête a été remise à la main. Toujours mesurer après chaque ordre.
 
+
+**Limites de course (mesure interrompue, marges abandonnées).** Butée droite atteinte vers 27 ordres de ~400 pas depuis le zéro (reboot). Les mesures gauche, haut et bas du protocole automatique ont donné 0 : elles ne sont pas fiables (capture ou départ déjà en butée) et ne sont pas retenues. Les marges seront gérées plus tard via ONVIF.
+
+**À faire (demande de l'utilisateur, non appliqué).** Pan : ordres de ~335 pas (≈ 5°), 36 ordres à droite et 36 à gauche (≈ 180° de chaque côté), moteurs plus rapides (vitesse « 8 », à définir et à tester : seule la valeur 60 avait un effet sur le pilote).
+
+## 13. ONVIF (pile légère)
+
+Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. Solution : `onvif_simple_server` (compilé en ARM statique) lancé par un mini serveur HTTP/CGI écrit pour ce dépôt (`mini_cgi_httpd`, port 8080), démarré par `onvif.sh`. Détails, limites et retour arrière : [ONVIF.md](ONVIF.md).
+
+- Authentification ONVIF obligatoire (identifiants à définir par l'utilisateur, non publiés) ; sans identifiants ou avec un mauvais mot de passe, la caméra refuse.
+- Un `ContinuousMove` = un déplacement de taille fixe ; pas de position absolue fiable.
+- Vérifié après redémarrage : service relancé seul, flux 1080p H.265 20 fps inchangé.
+- Limites de course et marges : abandonnées pour l'instant (butée droite vers 27 ordres ; mesures gauche/haut/bas non fiables), à gérer via ONVIF.
+
 ## 11. Non fait, non testé
 
-- **PTZ** : pan et tilt validés (§12), ONVIF absent du firmware.
+- **PTZ** : pan et tilt validés (§12). ONVIF : voir §13.
 - **Débit** : toujours `main_target_kbps = 800` / `main_max_kbps = 1600` ; augmentation envisagée, non réalisée.
 - `sensor_type_def` reste à 17 (usine : 20) ; H.265 conservé (usine : H.264) ; fps autres que 20.
 - Aucune vérification que la caméra ne contacte plus le cloud (filtrage Internet à faire sur le routeur).

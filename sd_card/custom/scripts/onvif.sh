@@ -47,15 +47,29 @@ mount_onvif_ptz_helpers() {
 ensure_onvif() {
     mount_onvif_ptz_helpers
 
-    if ps | grep -v grep | grep -q "lighttpd -f /usr/local/etc/lighttpd.conf"; then
+    MINI_HTTPD="${CUSTOM_DIR}/bin/mini_cgi_httpd"
+    ONVIF_WWW="${CUSTOM_DIR}/onvif/www/onvif"
+
+    if ps | grep -v grep | grep -q "mini_cgi_httpd"; then
         return 0
     fi
 
+    # Pile ONVIF legere (voir docs/ONVIF.md) : mini serveur CGI + onvif_simple_server
+    if [ -x "${MINI_HTTPD}" ] && [ -x "${ONVIF_WWW}/onvif_simple_server" ]; then
+        "${MINI_HTTPD}" 8080 "${ONVIF_WWW}" >/dev/null 2>&1 &
+        log "ONVIF started (mini_cgi_httpd on :8080)"
+        return 0
+    fi
+
+    # Pile d'origine (lighttpd), absente de certains firmwares
+    if ps | grep -v grep | grep -q "lighttpd -f /usr/local/etc/lighttpd.conf"; then
+        return 0
+    fi
     if [ -x /usr/local/bin/mini_onvif_service.sh ]; then
         /usr/local/bin/mini_onvif_service.sh start || true
         log "ONVIF started (mini_onvif_service.sh)"
     else
-        log "ONVIF requested but missing: /usr/local/bin/mini_onvif_service.sh"
+        log "ONVIF requested but nothing to start (no mini_cgi_httpd, no mini_onvif_service.sh)"
     fi
 }
 
@@ -72,7 +86,7 @@ log_onvif_status() {
         echo "[${SD_DIR}] ONVIF status $(date +%Y-%m-%dT%H:%M:%S)"
         echo ""
         echo "## ps"
-        ps w | grep -v grep | grep -E "lighttpd|wsd_simple_server|onvif_notify_server|events_service" || true
+        ps w | grep -v grep | grep -E "mini_cgi_httpd|lighttpd|wsd_simple_server|onvif_notify_server|events_service" || true
         echo ""
         echo "## netstat"
         netstat -lntp 2>/dev/null | grep -E ":80\b|:8080\b|:3702\b|:8899\b" || true
