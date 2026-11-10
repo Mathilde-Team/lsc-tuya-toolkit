@@ -6,4 +6,15 @@ if [ ! -x "${PTZCTL}" ]; then
     exit 1
 fi
 
+# Les clients ONVIF (Home Assistant) envoient une vitesse tres faible (0.1) :
+# le driver moteur ne reagit pas en dessous d'un seuil. On force 0.8 pour
+# les mouvements directionnels.
+if [ "$1" = "-m" ]; then
+    case "$2" in
+        up|down|left|right)
+            exec "${PTZCTL}" -m "$2" -s 0.8
+            ;;
+    esac
+fi
+
 exec "${PTZCTL}" "$@"

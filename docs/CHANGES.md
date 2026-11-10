@@ -167,6 +167,7 @@ Légende : **L** = lecture seule · **E** = écriture sur la caméra ou la SD.
 | 18 | PTZ : `ptzctl` recompilé (ARM statique) et déployé sur la SD avec `ptz.conf` ; sauvegardes `ptzctl.orig` et `ptz.conf.orig` sur la SD. | E (SD) |
 | 19 | PTZ : tilt validé (seuil 489 pas par ordre), valeurs `TILT_*` ajoutées dans `ptz.conf` (sauvegarde `ptz.conf.pan_only` sur la SD). | E (SD) |
 | 20 | ONVIF : `onvif_simple_server` et `mini_cgi_httpd` compilés (ARM statique), déployés sur la SD avec sauvegardes `.orig` de `onvif_simple_server.conf` et `onvif.sh` ; redémarrage pour vérifier. | E (SD) |
+| 21 | ONVIF/Home Assistant : correctifs `mini_cgi_httpd` (ligne de statut HTTP du CGI, `SIGCHLD` remis par défaut) et `ptz_move` (vitesse forcée à 0.8 pour les mouvements directionnels). Voir `docs/ONVIF.md`. |
 
 ## 10. Erreurs et leçons
 

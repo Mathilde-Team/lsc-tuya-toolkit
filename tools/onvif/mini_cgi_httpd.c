@@ -65,6 +65,8 @@ static void handle(int c, const char *dir, const char *peer)
     int len = 0, hend = -1;
 
     alarm(30);
+    /* SIG_IGN est herite par le CGI et fait echouer system() (retour -1) */
+    signal(SIGCHLD, SIG_DFL);
     while (hend < 0 && len < MAX_HDR) {
         ssize_t r = read(c, buf + len, MAX_HDR - len);
         if (r <= 0) return;
@@ -167,7 +169,14 @@ static void handle(int c, const char *dir, const char *peer)
         long ll = nl ? nl - line : o + hl - line;
         long l2 = ll;
         if (l2 && line[l2 - 1] == '\r') l2--;
-        if (l2 > 7 && !strncasecmp(line, "Status:", 7)) {
+        if (l2 > 9 && !strncasecmp(line, "HTTP/", 5)) {
+            /* le CGI donne parfois sa propre ligne de statut (erreurs SOAP) */
+            const char *s = memchr(line, ' ', l2);
+            if (s) {
+                while (*s == ' ') s++;
+                snprintf(status, sizeof status, "%.*s", (int)(line + l2 - s), s);
+            }
+        } else if (l2 > 7 && !strncasecmp(line, "Status:", 7)) {
             const char *s = line + 7;
             while (*s == ' ') s++;
             snprintf(status, sizeof status, "%.*s", (int)(line + l2 - s), s);

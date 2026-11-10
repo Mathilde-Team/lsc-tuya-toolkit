@@ -32,6 +32,14 @@ Les commandes appellent `ptz_move`, qui appelle `ptzctl` (voir `docs/CHANGES.md`
 - Le moteur n'a pas de capteur de position : les positions absolues ne sont pas fiables. Utiliser les ordres relatifs.
 - Jeu mécanique d'environ 1 ordre à chaque changement de sens.
 
+## Home Assistant : bugs rencontrés et corrigés
+
+- **`Invalid header token: HTTP/1.1 500`** : `onvif_simple_server` écrit sa propre ligne `HTTP/1.1 500 ...` pour les erreurs SOAP ; `mini_cgi_httpd` la recopiait comme en-tête. Elle est maintenant lue comme statut.
+- **`command failed with status -1`** : `mini_cgi_httpd` laissait `SIGCHLD` ignoré, hérité par le CGI, ce qui faisait échouer `system()`. Corrigé par `signal(SIGCHLD, SIG_DFL)`.
+- **Déplacement trop faible** : HA envoie une vitesse de 0.1 ; `ptz_move` force 0.8 pour up/down/left/right (sans cela le saut est imperceptible).
+- Le snapshot `http://<ip>:80/cgi-bin/snapshot.sh` échoue (port 80 fermé) ; HA bascule sur FFmpeg.
+- L'heure de la caméra est fausse (pas de NTP/fuseau) ; l'authentification fonctionne malgré tout.
+
 ## Vérifications faites
 
 - Sans identifiants, ou avec un mauvais mot de passe : `Sender not Authorized`.
