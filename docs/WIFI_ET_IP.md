@@ -79,8 +79,20 @@ Dans le dépôt, `wifi.conf` et `_ak39_factory.ini` sont **identiques à ceux de
 ils sont à renseigner localement sur la carte SD, à la main.
 
 Sur la carte de l'auteur : `_ak39_factory.ini` est revenu à l'IP fixe d'origine (octet pour octet) et `wifi.conf` est passé de
-`DHCP=1` à `DHCP=0`. **Cette configuration n'a pas encore été testée sur la caméra** au moment de la rédaction ; ce document sera
-complété par le résultat.
+`DHCP=1` à `DHCP=0`.
+
+**Résultat (testé) : ça fonctionne.** Après redémarrage, d'après les journaux et l'état de la caméra :
+- la caméra répond sur l'IP fixe du fichier usine (telnet et RTSP ouverts) ;
+- `wifi.*.log` se termine par `STA: DHCP disabled by config` et aucun `udhcpc` ne tourne : plus de course entre les deux mécanismes ;
+- `anyka.*.log` : `get network connect status: 1` et `network_disconnect_times:0`, de façon stable pendant plus de 4 minutes.
+
+Limite : une seule observation, d'environ 4 minutes. La stabilité à long terme n'est pas démontrée.
+
+**Piège sur les journaux.** Au démarrage, l'horloge de la caméra repart de `2000-01-01 00:00:16` avant d'être remise à l'heure. Les journaux
+sont nommés d'après cette horloge (`anyka.20000101_000016.log`, `wifi.20000101_000016.log`…) : **plusieurs démarrages écrivent dans le
+même fichier**, à la suite les uns des autres. Pour juger le démarrage en cours, lisez la **fin** du fichier, ou repérez le fichier ouvert par
+`anyka_ipc` (`ls -l /proc/$(pidof anyka_ipc)/fd | grep logs/`). Les comptes sur tout le fichier mélangent plusieurs démarrages, et `ls -t`
+peut désigner un ancien fichier quand l'horloge est revenue en arrière.
 
 Prudence : ne copiez jamais votre `wifi.conf` ou votre `_ak39_factory.ini` rempli dans un commit. Les journaux
 `sd_card/logs/` (déjà ignorés par `.gitignore`) contiennent aussi le SSID et le mot de passe en clair.

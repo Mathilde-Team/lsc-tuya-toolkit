@@ -161,7 +161,8 @@ Légende : **L** = lecture seule · **E** = écriture sur la caméra ou la SD.
 | 12 | Fork du dépôt, ajout de `tools/` et `docs/`. | — |
 | 13 | Le 2026-11-10 : `ip`/`netmask`/`gateway` vidés dans `_ak39_factory.ini` (sauvegarde `.bak`) pour passer en DHCP, puis `reboot`. | E |
 | 14 | Lecture des journaux de la SD : avec `ip` vide, la caméra ne se connecte pas (voir [`WIFI_ET_IP.md`](WIFI_ET_IP.md) §3). | L |
-| 15 | Option retenue : `_ak39_factory.ini` rétabli à l'identique de l'original (comparé octet pour octet) et `DHCP=0` dans `wifi.conf` (sauvegarde `.bak`). Non encore testé sur la caméra. | E (SD) |
+| 15 | Option retenue : `_ak39_factory.ini` rétabli à l'identique de l'original (comparé octet pour octet) et `DHCP=0` dans `wifi.conf` (sauvegarde `.bak`). | E (SD) |
+| 16 | Redémarrage de la caméra par l'utilisateur, puis vérification en lecture seule : connectée à l'IP fixe, pas de `udhcpc`, patchs vidéo et LED toujours actifs (`cur_int[50]`, binaire `27ee718f…`). | L |
 
 ## 10. Erreurs et leçons
 
@@ -173,6 +174,8 @@ Légende : **L** = lecture seule · **E** = écriture sur la caméra ou la SD.
 - L'adresse IP de la caméra a changé entre deux démarrages : voir [`WIFI_ET_IP.md`](WIFI_ET_IP.md).
 - La première version de `WIFI_ET_IP.md` **conseillait** de vider `ip`/`netmask`/`gateway` (DHCP partout) en précisant que ce n'était pas retesté :
   l'essai a montré que la caméra ne se connectait pas ainsi. Le conseil a été remplacé par IP fixe + `DHCP=0`.
+- Mes comptes sur les journaux étaient faux : au démarrage l'horloge repart de l'an 2000 et plusieurs démarrages **s'ajoutent au même fichier**
+  (voir `WIFI_ET_IP.md` §5). J'ai d'abord pris un ancien fichier pour le démarrage en cours ; refait en lisant la fin du bon fichier.
 
 ## 11. Non fait, non testé
 
@@ -180,5 +183,5 @@ Légende : **L** = lecture seule · **E** = écriture sur la caméra ou la SD.
 - **Débit** : toujours `main_target_kbps = 800` / `main_max_kbps = 1600` ; augmentation envisagée, non réalisée.
 - `sensor_type_def` reste à 17 (usine : 20) ; H.265 conservé (usine : H.264) ; fps autres que 20.
 - Aucune vérification que la caméra ne contacte plus le cloud (filtrage Internet à faire sur le routeur).
-- Configuration Wi-Fi « IP fixe + `DHCP=0` » : appliquée sur la SD, **pas encore testée** sur la caméra.
+- Configuration Wi-Fi « IP fixe + `DHCP=0` » : testée sur un démarrage (~4 min stable), pas sur la durée.
 - Pas de recompilation de firmware complet : les sources du noyau ne sont pas disponibles.
