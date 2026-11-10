@@ -168,6 +168,7 @@ Légende : **L** = lecture seule · **E** = écriture sur la caméra ou la SD.
 | 19 | PTZ : tilt validé (seuil 489 pas par ordre), valeurs `TILT_*` ajoutées dans `ptz.conf` (sauvegarde `ptz.conf.pan_only` sur la SD). | E (SD) |
 | 20 | ONVIF : `onvif_simple_server` et `mini_cgi_httpd` compilés (ARM statique), déployés sur la SD avec sauvegardes `.orig` de `onvif_simple_server.conf` et `onvif.sh` ; redémarrage pour vérifier. | E (SD) |
 | 21 | ONVIF/Home Assistant : correctifs `mini_cgi_httpd` (ligne de statut HTTP du CGI, `SIGCHLD` remis par défaut) et `ptz_move` (vitesse forcée à 0.8 pour les mouvements directionnels). Voir `docs/ONVIF.md`. |
+| 22 | Heure Paris + NTP du LAN (`entrypoint.sh`, `hack.conf`) ; essais H.264 (abandonné), sharpness 65, débit 1400/2400 kbps + QP 38 ; recherche de détection de mouvement (aucune source locale). Voir §14. |
 
 ## 10. Erreurs et leçons
 
@@ -226,6 +227,14 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - Un `ContinuousMove` = un déplacement de taille fixe ; pas de position absolue fiable.
 - Vérifié après redémarrage : service relancé seul, flux 1080p H.265 20 fps inchangé.
 - Limites de course et marges : abandonnées pour l'instant (butée droite vers 27 ordres ; mesures gauche/haut/bas non fiables), à gérer via ONVIF.
+
+## 14. Flux, heure, netteté, détection (essais du 10/11)
+
+- **Heure** : `/tmp/TZ` valait `GMT-08:00` et l'horloge avait 8 h d'écart. `entrypoint.sh` écrit désormais `TZ_STRING` (Paris : `CET-1CEST,M3.5.0,M10.5.0/3`), fait un `ntpd -q` vers `NTP_SERVER` (serveur du LAN, à renseigner dans `hack.conf`, vide par défaut) et surveille `/tmp/TZ` toutes les 20 s car `anyka_ipc` le réécrit après le démarrage. Vérifié après redémarrage.
+- **H.264 (`main_enc_out_type = 0`, 1500/2500 kbps)** : essayé puis abandonné. 1080p H.264 = ~11 images/s mesurées (contre 20 en H.265) et saccades. Retour en H.265.
+- **Netteté** : `int_video_sharpness` 50 → 65 sans effet mesuré ; débit 800/1600 → 1400/2400 kbps et QP max 44 → 38 (débit réel ~1,5 Mbit/s, 20 images/s stables, RAM libre ~10 Mo), sans gain mesuré non plus (variance du laplacien 598 → 585 → 572, scène fixe, mesure approximative). Le flou n'est pas dû à la compression ; il vient plutôt de l'optique ou du filtrage de l'ISP (fichier binaire non éditable). Valeurs conservées (moins de blocs en mouvement).
+- **Détection de mouvement / MQTT** : `anyka_ipc` appelle `tuya_ipc_notify_motion_detect` (vers le cloud). Aucune trace locale (journal système, `/tmp`, SD) lors d'un mouvement réel, et la fonction est interne au binaire. Pas de source d'événement sur la caméra : la détection doit se faire sur le flux (par exemple Frigate ou un script OpenCV publiant en MQTT). Non réalisé.
+- **Une seule connexion RTSP** à la fois sur la caméra : pour plusieurs consommateurs, passer par un relais sans transcodage (go2rtc de HA).
 
 ## 11. Non fait, non testé
 

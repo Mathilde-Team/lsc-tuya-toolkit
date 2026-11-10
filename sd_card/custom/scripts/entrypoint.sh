@@ -89,6 +89,29 @@ log "entrypoint starting"
 load_cfg
 save_syslog_tail
 
+set_time() {
+  # Fuseau Paris + heure via un serveur NTP du LAN (aucun acces Internet)
+  [ -n "${TZ_STRING}" ] && echo "${TZ_STRING}" > /tmp/TZ
+  [ -n "${NTP_SERVER}" ] || return 0
+  i=0
+  while [ "$i" -lt 5 ]; do
+    ntpd -n -q -p "${NTP_SERVER}" >/dev/null 2>&1 && { log "NTP ok: $(date)"; return 0; }
+    sleep 5
+    i=$((i+1))
+  done
+  log "NTP failed (${NTP_SERVER})"
+}
+
+set_time
+# anyka_ipc remet son propre fuseau apres le demarrage : on le reapplique.
+keep_tz() {
+  [ -n "${TZ_STRING}" ] || return 0
+  while true; do
+    [ "$(cat /tmp/TZ 2>/dev/null)" = "${TZ_STRING}" ] || echo "${TZ_STRING}" > /tmp/TZ
+    sleep 20
+  done
+}
+keep_tz &
 log "DATE IS: $(date)"
 /bin/sh "${SCRIPTS_DIR}/telnet.sh" >/dev/null 2>&1 &
 /bin/sh "${SCRIPTS_DIR}/ftp.sh" >/dev/null 2>&1 &
