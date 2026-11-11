@@ -116,10 +116,18 @@ remote_syslog() {
 remote_syslog
 # anyka_ipc remet son propre fuseau apres le demarrage : on le reapplique.
 keep_tz() {
-  [ -n "${TZ_STRING}" ] || return 0
+  # anyka_ipc decale l'horloge de +8 h (fuseau Chine) ~20 s apres son demarrage :
+  # l'ecart (heure - uptime) est constant, tout saut est annule.
+  ref=$(( $(date +%s) - $(cut -d. -f1 /proc/uptime) ))
   while true; do
-    [ "$(cat /tmp/TZ 2>/dev/null)" = "${TZ_STRING}" ] || echo "${TZ_STRING}" > /tmp/TZ
-    sleep 20
+    [ -z "${TZ_STRING}" ] || [ "$(cat /tmp/TZ 2>/dev/null)" = "${TZ_STRING}" ] || echo "${TZ_STRING}" > /tmp/TZ
+    now=$(date +%s)
+    jump=$(( now - $(cut -d. -f1 /proc/uptime) - ref ))
+    if [ "${jump}" -gt 30 ] || [ "${jump}" -lt -30 ]; then
+      date -s "@$(( now - jump ))" >/dev/null 2>&1
+      log "saut d'horloge de ${jump}s corrige"
+    fi
+    sleep 5
   done
 }
 keep_tz &
@@ -132,5 +140,11 @@ log "DATE IS: $(date)"
 
 # Wait until any RTSP port is open
 wait_rtsp_listening 30
+
+if [ "${PTZ_HOME_ON_BOOT:-0}" = "1" ]; then
+  # recalage sur les butees : rend les positions absolues ONVIF fiables
+  /bin/sh "${SCRIPTS_DIR}/ptz_move" -h >/dev/null 2>&1 &
+  log "PTZ recale (home)"
+fi
 
 log "entrypoint done"

@@ -170,6 +170,7 @@ Légende : **L** = lecture seule · **E** = écriture sur la caméra ou la SD.
 | 21 | ONVIF/Home Assistant : correctifs `mini_cgi_httpd` (ligne de statut HTTP du CGI, `SIGCHLD` remis par défaut) et `ptz_move` (vitesse forcée à 0.8 pour les mouvements directionnels). Voir `docs/ONVIF.md`. |
 | 22 | Heure Paris + NTP du LAN (`entrypoint.sh`, `hack.conf`) ; essais H.264 (abandonné), sharpness 65, débit 1400/2400 kbps + QP 38 ; recherche de détection de mouvement (aucune source locale). Voir §14. |
 | 23 | Syslog distant (UDP) + nom d'hôte : `SYSLOG_SERVER` et `CAM_HOSTNAME` dans `hack.conf`, relance de `syslogd -R` par `entrypoint.sh`. Voir §15. |
+| 24 | Heure : `anyka_ipc` ajoute +8 h ~20 s apres son demarrage, corrige par `keep_tz` ; recalage PTZ au demarrage (`PTZ_HOME_ON_BOOT`) pour le deplacement absolu ONVIF. Voir §16. |
 
 ## 10. Erreurs et leçons
 
@@ -252,3 +253,10 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - `entrypoint.sh` (`remote_syslog`) : applique `CAM_HOSTNAME`, arrête le `syslogd` lancé par `main.sh` (en flash, non modifiable) et le relance avec `-L -R <hote:port>` (UDP, BusyBox).
 - `SYSLOG_SERVER` et `CAM_HOSTNAME` sont vides par défaut (fonction désactivée) ; à renseigner dans `hack.conf`.
 - Côté serveur : un rsyslog avec `imudp` sur le port choisi et un ruleset écrivant dans un fichier dédié à la caméra.
+
+## 16. Heure falsifiée par anyka_ipc, PTZ absolu
+
+- **Constat** : l'horloge système passait à +28800 s (exactement 8 h, fuseau Chine par défaut du SDK Tuya) environ 20 s après chaque démarrage d'`anyka_ipc` (reproduit en relançant `anyka_ipc.sh restart` avec un guetteur en RAM). Le binaire contient `osal_settimeofday`, `setSystemTime` et `ntpclient -s`. Le NTP du démarrage ne suffisait donc pas.
+- **Correctif** : `keep_tz` (`entrypoint.sh`) mesure l'écart `heure - uptime` et annule tout saut de plus de 30 s (`date -s`), sans dépendre d'un serveur NTP. Vérifié : « saut d'horloge de 28801s corrigé » 14 s après le démarrage, heure juste ensuite.
+- **PTZ absolu** : `AbsoluteMove` (`ptz_move -j x,y,z`, x et y de -1 à 1 sur 0–360 / 0–180 pas) fonctionne, répétabilité mesurée < 0,5 % de l'image. Le moteur n'a pas de capteur de position : la position est suivie par calcul et dérive. `PTZ_HOME_ON_BOOT=1` (`hack.conf`) fait un recentrage matériel (`ptz_move -h`) à chaque démarrage pour repartir de 180,98.
+- **Home Assistant** : le service `onvif.ptz` accepte `move_mode: AbsoluteMove` avec `pan` et `tilt` entre -1 et 1 (selon la version de HA, non vérifié ici).
