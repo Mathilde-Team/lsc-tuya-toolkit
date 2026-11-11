@@ -33,9 +33,12 @@ onvif:
   ptz: true
 
 services:
-  telnet: true                       # port 24 SANS mot de passe : à passer à false une fois réglé
+  telnet: "open"                     # open = shell root SANS mot de passe (pour régler) ; login = root + security.root_password ; off = coupé
   ftp: false
   offline: true                      # coupe les connexions vers le cloud Tuya
+
+security:
+  root_password: "auto"            # mot de passe root (ports telnet 23 et du toolkit en mode login) ; "auto" = généré, affiché une fois
 
 video:
   main_codec: 2                      # 0 = H.264 (~11 i/s mesurées ici), 1 = MJPEG (non testé), 2 = H.265 (20 i/s)

@@ -18,6 +18,7 @@ load_cfg() {
     # Defaults
     TELNET=0
     TELNET_PORT=24
+    TELNET_LOGIN=0
 
     if [ -f "${CFG_FILE}" ]; then
         # shellcheck disable=SC1090
@@ -26,7 +27,12 @@ load_cfg() {
 }
 
 run_telnet() {
-  telnetd -p "${TELNET_PORT}" -l /bin/sh || true
+  if [ "${TELNET_LOGIN}" = "1" ]; then
+    # identifiant root + mot de passe du fichier shadow de la SD
+    telnetd -p "${TELNET_PORT}" -l /bin/login || true
+  else
+    telnetd -p "${TELNET_PORT}" -l /bin/sh || true
+  fi
   log "telnetd started on port ${TELNET_PORT}"
 }
 

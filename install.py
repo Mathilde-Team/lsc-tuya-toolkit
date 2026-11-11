@@ -14,6 +14,7 @@ Copie `sd_card/` sur la carte, puis la personnalise (Wi-Fi, IP fixe, heure, sysl
 import argparse
 import getpass
 import hashlib
+import hashlib
 import ipaddress
 import json
 import os
@@ -40,7 +41,8 @@ DEFAULTS = {
     "syslog": {"server": ""},
     "camera": {"hostname": "", "ptz_home_on_boot": True, "mute_factory_prompt": True},
     "onvif": {"enabled": True, "user": "admin", "password": "auto", "ptz": True},
-    "services": {"telnet": True, "ftp": False, "offline": True},
+    "services": {"telnet": "open", "ftp": False, "offline": True},
+    "security": {"root_password": "auto"},
     "video": {"main_codec": 2, "main_width": 1920, "main_height": 1080,
               "sub_codec": 2, "sub_width": 640, "sub_height": 360},
     "firmware": {"dump_dir": ""},
@@ -185,7 +187,9 @@ def wizard(cfg):
         o["password"] = "" if pw.lower() == "aucun" else pw
         o["ptz"] = ask_bool("Activer le pilotage PTZ via ONVIF", o["ptz"])
     print("\n== Services ==")
-    s["telnet"] = ask_bool("Telnet sans mot de passe (port 24) : utile pour régler, À COUPER ensuite", s["telnet"])
+    s["telnet"] = ask("Telnet : open (sans mot de passe, pour régler) / login (root + mot de passe) / off", telnet_mode(s["telnet"]))
+    rp = cfg["security"]
+    rp["root_password"] = ask("Mot de passe root ('auto' = généré, vide = inchangé, déconseillé)", rp["root_password"] or "auto", secret=True) or ""
     s["ftp"] = ask_bool("Serveur FTP", s["ftp"])
     c["ptz_home_on_boot"] = ask_bool("Recentrer la caméra à chaque démarrage (positions absolues fiables)", c["ptz_home_on_boot"])
     v = cfg["video"]
@@ -206,6 +210,51 @@ def wizard(cfg):
     print("  Laissez vide au premier passage ; voir docs/INSTALL.md (étape 4).")
     cfg["firmware"]["dump_dir"] = ask("Dossier contenant anyka_ipc et l'ISP extraits de VOTRE caméra", cfg["firmware"]["dump_dir"])
     return cfg
+
+
+# ---------- mot de passe root (hash MD5-crypt "$1$", format du fichier shadow du firmware) ----------
+_B64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+
+def _to64(v, n):
+    out = ""
+    for _ in range(n):
+        out += _B64[v & 0x3F]
+        v >>= 6
+    return out
+
+
+def md5crypt(password, salt=None):
+    pw = password.encode()
+    salt = (salt or "".join(secrets.choice(_B64) for _ in range(8)))[:8]
+    s = salt.encode()
+    alt = hashlib.md5(pw + s + pw).digest()
+    ctx = pw + b"$1$" + s + (alt * (len(pw) // 16 + 1))[:len(pw)]
+    i = len(pw)
+    while i:
+        ctx += b"\0" if i & 1 else pw[:1]
+        i >>= 1
+    h = hashlib.md5(ctx).digest()
+    for i in range(1000):
+        c = pw if i & 1 else h
+        if i % 3:
+            c += s
+        if i % 7:
+            c += pw
+        c += h if i & 1 else pw
+        h = hashlib.md5(c).digest()
+    out = ""
+    for a, b, c in ((0, 6, 12), (1, 7, 13), (2, 8, 14), (3, 9, 15), (4, 10, 5)):
+        out += _to64((h[a] << 16) | (h[b] << 8) | h[c], 4)
+    return f"$1${salt}$" + out + _to64(h[11], 2)
+
+
+def telnet_mode(v):
+    if v is True:
+        return "open"
+    if v is False:
+        return "off"
+    return str(v).lower()
 
 
 # ---------- validation ----------
@@ -287,8 +336,19 @@ def validate(cfg):
             warn.append("flux principal au-dessus de 1920x1080 : une caméra a bouclé au redémarrage à 2304x1296")
         if v["sub_width"] * v["sub_height"] > v["main_width"] * v["main_height"]:
             err.append("video: le flux secondaire ne peut pas être plus grand que le principal")
-    if cfg["services"]["telnet"]:
-        warn.append("Telnet actif sans mot de passe : passez services.telnet à false une fois la caméra réglée")
+    tm = telnet_mode(cfg["services"]["telnet"])
+    cfg["services"]["telnet"] = tm
+    if tm not in ("open", "login", "off"):
+        err.append("services.telnet: open (sans mot de passe), login (root + mot de passe) ou off")
+    rp = str(cfg["security"]["root_password"])
+    if rp and rp != "auto" and (len(rp) < 8 or re.search(r"[\r\n\x00:]", rp)):
+        err.append("security.root_password: 8 caractères minimum, sans ':' ni retour à la ligne")
+    if tm == "login" and not rp:
+        err.append("services.telnet=login exige security.root_password (sinon le mot de passe est celui, public, du dépôt)")
+    if tm == "open":
+        warn.append("Telnet 'open' : shell root SANS mot de passe pour tout le LAN ; passez à 'login' puis 'off' une fois la caméra réglée")
+    if not rp:
+        warn.append("security.root_password vide : le mot de passe root du port 23 reste celui, public, du dépôt")
     return err, warn
 
 
@@ -370,6 +430,11 @@ def render(dst, cfg):
         return txt
     rw(os.path.join(dst, "_ak39_factory.ini"), factory)
 
+    rp = cfg["security"]["root_password"]
+    if rp:
+        with open(os.path.join(dst, "shadow"), "w", newline="\n") as f:
+            f.write(f"root:{md5crypt(rp)}:18943:0:99999:7:::\n")
+
     with open(os.path.join(conf, "wifi.conf"), "w", newline="\n") as f:
         f.write("# Genere par install.py. Lu par wifi_apply.sh (shell : valeurs entre apostrophes).\n"
                 f"MODE=sta\nSSID={sh_quote(n['ssid'])}\nPASS={sh_quote(n['password'])}\n"
@@ -377,9 +442,10 @@ def render(dst, cfg):
 
     def b(v):
         return "1" if v else "0"
+    tm = telnet_mode(s["telnet"])
 
     def hack(txt):
-        for k, v in (("TELNET", b(s["telnet"])), ("FTP", b(s["ftp"])), ("OFFLINE", b(s["offline"])),
+        for k, v in (("TELNET", "0" if tm == "off" else "1"), ("TELNET_LOGIN", "1" if tm == "login" else "0"), ("FTP", b(s["ftp"])), ("OFFLINE", b(s["offline"])),
                      ("ONVIF", b(o["enabled"])), ("ONVIF_PTZ", b(o["ptz"])),
                      ("MUTE_FACTORY_PROMPT", b(c["mute_factory_prompt"])),
                      ("PTZ_HOME_ON_BOOT", b(c["ptz_home_on_boot"])),
@@ -495,6 +561,11 @@ def main():
     if o["enabled"] and o["password"] == "auto":
         generated = o["password"] = secrets.token_urlsafe(12)
 
+    sec = cfg["security"]
+    root_generated = None
+    if sec["root_password"] == "auto":
+        root_generated = sec["root_password"] = secrets.token_urlsafe(12)
+
     target, mounted = ((cfg["target"], None) if (a.dry_run and not cfg["target"]) else pick_target(cfg["target"], a.yes))
     print(f"\nCarte cible : {target}")
     if interactive and not a.dry_run:
@@ -526,6 +597,8 @@ def main():
         print(f"Réglages enregistrés dans {save} (droits 600).")
     if generated:
         print(f"\nMot de passe ONVIF généré (à noter, affiché une seule fois) : {generated}")
+    if root_generated:
+        print(f"Mot de passe root généré (telnet 'login' et port 23) : {root_generated}")
     print("\nTerminé. Éteignez la caméra, insérez la carte, rallumez : voir docs/INSTALL.md (vérifications).")
 
 

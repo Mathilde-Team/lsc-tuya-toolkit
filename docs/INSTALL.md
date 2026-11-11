@@ -36,7 +36,8 @@ chmod 600 install.yaml
 | `syslog` | `server` au format `hote:port`, UDP (vide = désactivé) |
 | `camera` | `hostname`, `ptz_home_on_boot`, `mute_factory_prompt` |
 | `onvif` | `enabled`, `user`, `password` (`auto` = généré, vide = sans authentification), `ptz` |
-| `services` | `telnet`, `ftp`, `offline` (coupe le cloud Tuya) |
+| `security` | `root_password` (`auto` = généré ; écrit dans `shadow` sur la SD) |
+| `services` | `telnet` (`open` / `login` / `off`), `ftp`, `offline` (coupe le cloud Tuya) |
 | `video` | `main_codec` / `sub_codec` (0 = H.264, 1 = MJPEG, 2 = H.265), `main_width` / `main_height`, `sub_width` / `sub_height` |
 | `firmware` | `dump_dir` : dossier du dump de **votre** caméra (étape 4) |
 
@@ -67,7 +68,7 @@ L'installeur :
    ```
    ping <IP>
    ffplay rtsp://<IP>:554/main_ch          # vidéo H.265 1080p et son AAC
-   telnet <IP> 24                          # seulement si services.telnet: true
+   telnet <IP> 24                          # seulement si services.telnet est open ou login
    ```
 3. ONVIF : `http://<IP>:8080/onvif/device_service` (utilisateur et mot de passe choisis).
    Home Assistant : intégration **ONVIF**, port 8080.
@@ -92,7 +93,11 @@ caméra** (ces fichiers du fabricant ne sont pas redistribués ici, voir [`CHANG
 
 ## 5. Après les réglages : durcir
 
-- `services.telnet: false` : le port 24 donne un shell **root sans mot de passe** à tout le LAN.
+- **Mot de passe root** : `security.root_password` est écrit (hash MD5-crypt) dans le fichier `shadow` de la SD, que le
+  firmware recopie à chaque démarrage. Il protège le telnet du firmware (port 23). Un `passwd` fait sur la caméra
+  serait perdu au redémarrage : changez-le toujours ici. Sans cela, le mot de passe est celui, public, du dépôt.
+- **Telnet** : `services.telnet: open` donne un shell **root sans mot de passe** (port 24) à tout le LAN, pratique pour
+  régler. Passez ensuite à `login` (root + mot de passe) puis à `off`. Gardez `login` tant qu'un accès de secours est utile.
 - Gardez une authentification ONVIF. Le flux RTSP `/main_ch`, lui, n'a **pas** de mot de passe : isolez la caméra
   (VLAN, ou règle du routeur qui bloque son accès à Internet).
 - `services.offline: true` coupe les connexions vers le cloud Tuya ; bloquez-les aussi sur le routeur.
