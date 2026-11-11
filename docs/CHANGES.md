@@ -169,6 +169,7 @@ Légende : **L** = lecture seule · **E** = écriture sur la caméra ou la SD.
 | 20 | ONVIF : `onvif_simple_server` et `mini_cgi_httpd` compilés (ARM statique), déployés sur la SD avec sauvegardes `.orig` de `onvif_simple_server.conf` et `onvif.sh` ; redémarrage pour vérifier. | E (SD) |
 | 21 | ONVIF/Home Assistant : correctifs `mini_cgi_httpd` (ligne de statut HTTP du CGI, `SIGCHLD` remis par défaut) et `ptz_move` (vitesse forcée à 0.8 pour les mouvements directionnels). Voir `docs/ONVIF.md`. |
 | 22 | Heure Paris + NTP du LAN (`entrypoint.sh`, `hack.conf`) ; essais H.264 (abandonné), sharpness 65, débit 1400/2400 kbps + QP 38 ; recherche de détection de mouvement (aucune source locale). Voir §14. |
+| 23 | Syslog distant (UDP) + nom d'hôte : `SYSLOG_SERVER` et `CAM_HOSTNAME` dans `hack.conf`, relance de `syslogd -R` par `entrypoint.sh`. Voir §15. |
 
 ## 10. Erreurs et leçons
 
@@ -244,3 +245,10 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - Aucune vérification que la caméra ne contacte plus le cloud (filtrage Internet à faire sur le routeur).
 - Configuration Wi-Fi « IP fixe + `DHCP=0` » : testée sur un démarrage (~4 min stable), pas sur la durée.
 - Pas de recompilation de firmware complet : les sources du noyau ne sont pas disponibles.
+
+## 15. Syslog distant
+
+- `/var/log/messages` est déjà en RAM ; les journaux de démarrage (`/tmp/sd/logs`) restent sur la SD.
+- `entrypoint.sh` (`remote_syslog`) : applique `CAM_HOSTNAME`, arrête le `syslogd` lancé par `main.sh` (en flash, non modifiable) et le relance avec `-L -R <hote:port>` (UDP, BusyBox).
+- `SYSLOG_SERVER` et `CAM_HOSTNAME` sont vides par défaut (fonction désactivée) ; à renseigner dans `hack.conf`.
+- Côté serveur : un rsyslog avec `imudp` sur le port choisi et un ruleset écrivant dans un fichier dédié à la caméra.

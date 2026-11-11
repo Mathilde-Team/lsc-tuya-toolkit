@@ -103,6 +103,17 @@ set_time() {
 }
 
 set_time
+remote_syslog() {
+  [ -n "${CAM_HOSTNAME}" ] && hostname "${CAM_HOSTNAME}"
+  [ -n "${SYSLOG_SERVER}" ] || return 0
+  pid="$(ps | grep '[s]yslogd -D -n -O' | awk '{print $1}' | head -n 1)"
+  [ -n "${pid}" ] && kill "${pid}" 2>/dev/null
+  sleep 1
+  # -L : garde aussi le journal local en RAM ; -R : envoi UDP vers le serveur
+  syslogd -D -n -O /var/log/messages -s 200 -b 3 -L -R "${SYSLOG_SERVER}" &
+  log "syslog remote -> ${SYSLOG_SERVER} (host $(hostname))"
+}
+remote_syslog
 # anyka_ipc remet son propre fuseau apres le demarrage : on le reapplique.
 keep_tz() {
   [ -n "${TZ_STRING}" ] || return 0
