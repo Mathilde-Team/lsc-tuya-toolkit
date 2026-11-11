@@ -1,0 +1,49 @@
+# Exemple de configuration pour install.py.
+# Copiez ce fichier en install.yaml, adaptez-le, puis : python3 install.py --config install.yaml
+# install.yaml contient des mots de passe : il est ignoré par git, ne le publiez jamais.
+
+# Partition FAT32 de la carte (ex. /dev/sdb1) ou point de montage. Vide = choix dans une liste.
+target: ""
+
+network:
+  ssid: "MonReseauWifi"              # Wi-Fi 2,4 GHz uniquement
+  password: "CHANGE_ME_mot_de_passe_wifi"
+  security: 3                        # 1 = ouvert, 2 = WEP, 3 = WPA/WPA2
+  dhcp: false                        # false = IP fixe (recommandé, le DHCP est instable sur ce firmware)
+  ip: "192.0.2.50"                    # exemple (plage de documentation) : mettez une IP libre de votre LAN, hors plage DHCP
+  netmask: "255.255.255.0"
+  gateway: "192.0.2.1"
+
+time:
+  tz: "CET-1CEST,M3.5.0,M10.5.0/3"   # Europe/Paris, Bruxelles, Amsterdam. Londres : "GMT0BST,M3.5.0/1,M10.5.0"
+  ntp_server: ""                     # IP d'un serveur NTP du LAN ; vide = pas de synchronisation
+
+syslog:
+  server: ""                         # "hote:port" (UDP) ; vide = désactivé
+
+camera:
+  hostname: ""                       # nom d'hôte (utile dans le syslog) ; vide = inchangé
+  ptz_home_on_boot: true             # recentrage matériel au démarrage (positions absolues fiables)
+  mute_factory_prompt: true
+
+onvif:
+  enabled: true
+  user: "admin"
+  password: "auto"                   # "auto" = généré et affiché une fois ; "" = SANS authentification
+  ptz: true
+
+services:
+  telnet: true                       # port 24 SANS mot de passe : à passer à false une fois réglé
+  ftp: false
+  offline: true                      # coupe les connexions vers le cloud Tuya
+
+video:
+  main_codec: 2                      # 0 = H.264 (~11 i/s mesurées ici), 1 = MJPEG (non testé), 2 = H.265 (20 i/s)
+  main_width: 1920                   # plus de 1920x1080 : la caméra a bouclé au redémarrage à 2304x1296
+  main_height: 1080
+  sub_codec: 2
+  sub_width: 640                     # le sous-flux RTSP /sub_ch ne fonctionne pas sur ce firmware (testé)
+  sub_height: 360
+
+firmware:
+  dump_dir: ""                       # dossier du dump de VOTRE caméra (anyka_ipc + ISP) pour la vidéo 20 images/s

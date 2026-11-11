@@ -9,12 +9,12 @@
                     <tt:AbsolutePanTiltPositionSpace>
                         <tt:URI>http://www.onvif.org/ver10/tptz/PanTiltSpaces/PositionGenericSpace</tt:URI>
                         <tt:XRange>
-                            <tt:Min>%MIN_X%</tt:Min>
-                            <tt:Max>%MAX_X%</tt:Max>
+                            <tt:Min>-1</tt:Min>
+                            <tt:Max>1</tt:Max>
                         </tt:XRange>
                         <tt:YRange>
-                            <tt:Min>%MIN_Y%</tt:Min>
-                            <tt:Max>%MAX_Y%</tt:Max>
+                            <tt:Min>-1</tt:Min>
+                            <tt:Max>1</tt:Max>
                         </tt:YRange>
                     </tt:AbsolutePanTiltPositionSpace>
                     <tt:RelativePanTiltTranslationSpace>

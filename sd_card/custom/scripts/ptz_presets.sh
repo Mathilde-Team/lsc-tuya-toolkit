@@ -52,7 +52,8 @@ case "$ACTION" in
         echo "OK"
         ;;
     get_presets)
-        cat "${PRESETS_DB}"
+        # format attendu par onvif_simple_server : numero=nom,pan,tilt,zoom
+        awk -F, 'NF>=5 {print $1 "=" $2 "," $3 "," $4 "," $5}' "${PRESETS_DB}"
         ;;
     *)
         echo ""

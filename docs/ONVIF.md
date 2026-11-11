@@ -29,7 +29,8 @@ H.265, 1920×1080, AAC, flux `rtsp://<ip>:554/main_ch`. Les événements sont d�
 Les commandes appellent `ptz_move`, qui appelle `ptzctl` (voir `docs/CHANGES.md` §12).
 
 - Un `ContinuousMove` = **un déplacement de taille fixe** (~100 px de pan, ~130 px de tilt à pleine vitesse), pas un mouvement continu. Les clients qui envoient « move » puis « stop » voient un saut par clic.
-- Le moteur n'a pas de capteur de position : les positions absolues ne sont pas fiables. Utiliser les ordres relatifs.
+- Le moteur n'a pas de capteur de position : la position est suivie par calcul et dérive. `PTZ_HOME_ON_BOOT=1` recentre au démarrage.
+- **Positions absolues** : l'espace absolu est normalisé de **-1 à 1** (x = pan, y = tilt ; 0,0 = centre). `GetStatus` rend la position dans la même échelle, `GotoPreset` déplace réellement le moteur. Serveur patché : `tools/onvif/ptz_absolu_normalise.patch`.
 - Jeu mécanique d'environ 1 ordre à chaque changement de sens.
 
 ## Home Assistant : bugs rencontrés et corrigés

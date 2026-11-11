@@ -18,3 +18,7 @@ sd_card/custom/configs/isp_*.conf
 mtd*.bin
 dump/
 __pycache__/
+
+# Reglages locaux de l installeur (mots de passe)
+install.yaml
+*.local.yaml

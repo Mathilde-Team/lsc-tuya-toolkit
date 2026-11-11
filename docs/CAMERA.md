@@ -6,6 +6,8 @@ sur celle-ci provoquait une boucle de redémarrage de `anyka_ipc` (voir `docs/CH
 
 ## Identification de la caméra utilisée ici
 
+Référence commerciale : **3007325** (imprimée sous la caméra et sur le code-barres) ; modèle courant en France et aux Pays-Bas.
+
 | Élément | Valeur | Source |
 |---|---|---|
 | Nom de modèle interne | `IPC-XC-C323` (`dev_name`) | `factory_cfg.ini` |

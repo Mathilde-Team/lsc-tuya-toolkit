@@ -1,0 +1,243 @@
+diff --git a/ptz_service.c b/ptz_service.c
+index 5c93184..7fcac9d 100644
+--- a/ptz_service.c
++++ b/ptz_service.c
+@@ -806,12 +806,14 @@ int ptz_absolute_move()
+ 
+     } else {
+         if ((x != NULL) && (y != NULL)) {
++            /* Espace absolu normalise [-1,1] (PositionGenericSpace) : c'est ce
++             * qu'envoient Home Assistant et les clients ONVIF courants. */
+             dx = atof(x);
+-            if ((dx > service_ctx.ptz_node.max_step_x) || (dx < service_ctx.ptz_node.min_step_x)) {
++            if ((dx > 1.0) || (dx < -1.0)) {
+                 ret = -5;
+             }
+             dy = atof(y);
+-            if ((dy > service_ctx.ptz_node.max_step_y) || (dy < service_ctx.ptz_node.min_step_y)) {
++            if ((dy > 1.0) || (dy < -1.0)) {
+                 ret = -6;
+             }
+             if (z != NULL) {
+@@ -952,6 +954,11 @@ int ptz_get_status()
+     }
+ 
+     if (ret == 0) {
++        /* get_position renvoie des pas (0..max_step) : conversion en [-1,1] */
++        if (service_ctx.ptz_node.max_step_x > 0)
++            x = x / (service_ctx.ptz_node.max_step_x / 2.0) - 1.0;
++        if (service_ctx.ptz_node.max_step_y > 0)
++            y = y / (service_ctx.ptz_node.max_step_y / 2.0) - 1.0;
+         snprintf(sx, sizeof(sx), "%f", x);
+         snprintf(sy, sizeof(sy), "%f", y);
+         snprintf(sz, sizeof(sz), "%f", z);
+diff --git a/ptz_service_files/GetConfiguration.xml b/ptz_service_files/GetConfiguration.xml
+index bc3ebf2..157cd36 100644
+--- a/ptz_service_files/GetConfiguration.xml
++++ b/ptz_service_files/GetConfiguration.xml
+@@ -29,12 +29,12 @@
+                     <tt:Range>
+                         <tt:URI>http://www.onvif.org/ver10/tptz/PanTiltSpaces/PositionGenericSpace</tt:URI>
+                         <tt:XRange>
+-                            <tt:Min>%MIN_X%</tt:Min>
+-                            <tt:Max>%MAX_X%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:XRange>
+                         <tt:YRange>
+-                            <tt:Min>%MIN_Y%</tt:Min>
+-                            <tt:Max>%MAX_Y%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:YRange>
+                     </tt:Range>
+                 </tt:PanTiltLimits>
+diff --git a/ptz_service_files/GetConfigurationOptions.xml b/ptz_service_files/GetConfigurationOptions.xml
+index 495e340..b25f476 100644
+--- a/ptz_service_files/GetConfigurationOptions.xml
++++ b/ptz_service_files/GetConfigurationOptions.xml
+@@ -9,12 +9,12 @@
+                     <tt:AbsolutePanTiltPositionSpace>
+                         <tt:URI>http://www.onvif.org/ver10/tptz/PanTiltSpaces/PositionGenericSpace</tt:URI>
+                         <tt:XRange>
+-                            <tt:Min>%MIN_X%</tt:Min>
+-                            <tt:Max>%MAX_X%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:XRange>
+                         <tt:YRange>
+-                            <tt:Min>%MIN_Y%</tt:Min>
+-                            <tt:Max>%MAX_Y%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:YRange>
+                     </tt:AbsolutePanTiltPositionSpace>
+                     <tt:AbsoluteZoomPositionSpace>
+diff --git a/ptz_service_files/GetConfigurationOptions_nozoom.xml b/ptz_service_files/GetConfigurationOptions_nozoom.xml
+index 757a91d..62df59c 100644
+--- a/ptz_service_files/GetConfigurationOptions_nozoom.xml
++++ b/ptz_service_files/GetConfigurationOptions_nozoom.xml
+@@ -9,12 +9,12 @@
+                     <tt:AbsolutePanTiltPositionSpace>
+                         <tt:URI>http://www.onvif.org/ver10/tptz/PanTiltSpaces/PositionGenericSpace</tt:URI>
+                         <tt:XRange>
+-                            <tt:Min>%MIN_X%</tt:Min>
+-                            <tt:Max>%MAX_X%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:XRange>
+                         <tt:YRange>
+-                            <tt:Min>%MIN_Y%</tt:Min>
+-                            <tt:Max>%MAX_Y%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:YRange>
+                     </tt:AbsolutePanTiltPositionSpace>
+                     <tt:RelativePanTiltTranslationSpace>
+diff --git a/ptz_service_files/GetConfiguration_nozoom.xml b/ptz_service_files/GetConfiguration_nozoom.xml
+index 6a3bd3b..bcee436 100644
+--- a/ptz_service_files/GetConfiguration_nozoom.xml
++++ b/ptz_service_files/GetConfiguration_nozoom.xml
+@@ -24,12 +24,12 @@
+                     <tt:Range>
+                         <tt:URI>http://www.onvif.org/ver10/tptz/PanTiltSpaces/PositionGenericSpace</tt:URI>
+                         <tt:XRange>
+-                            <tt:Min>%MIN_X%</tt:Min>
+-                            <tt:Max>%MAX_X%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:XRange>
+                         <tt:YRange>
+-                            <tt:Min>%MIN_Y%</tt:Min>
+-                            <tt:Max>%MAX_Y%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:YRange>
+                     </tt:Range>
+                 </tt:PanTiltLimits>
+diff --git a/ptz_service_files/GetConfigurations.xml b/ptz_service_files/GetConfigurations.xml
+index 90618b5..003efec 100644
+--- a/ptz_service_files/GetConfigurations.xml
++++ b/ptz_service_files/GetConfigurations.xml
+@@ -29,12 +29,12 @@
+                     <tt:Range>
+                         <tt:URI>http://www.onvif.org/ver10/tptz/PanTiltSpaces/PositionGenericSpace</tt:URI>
+                         <tt:XRange>
+-                            <tt:Min>%MIN_X%</tt:Min>
+-                            <tt:Max>%MAX_X%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:XRange>
+                         <tt:YRange>
+-                            <tt:Min>%MIN_Y%</tt:Min>
+-                            <tt:Max>%MAX_Y%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:YRange>
+                     </tt:Range>
+                 </tt:PanTiltLimits>
+diff --git a/ptz_service_files/GetConfigurations_nozoom.xml b/ptz_service_files/GetConfigurations_nozoom.xml
+index 841cdcc..2166cd7 100644
+--- a/ptz_service_files/GetConfigurations_nozoom.xml
++++ b/ptz_service_files/GetConfigurations_nozoom.xml
+@@ -24,12 +24,12 @@
+                     <tt:Range>
+                         <tt:URI>http://www.onvif.org/ver10/tptz/PanTiltSpaces/PositionGenericSpace</tt:URI>
+                         <tt:XRange>
+-                            <tt:Min>%MIN_X%</tt:Min>
+-                            <tt:Max>%MAX_X%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:XRange>
+                         <tt:YRange>
+-                            <tt:Min>%MIN_Y%</tt:Min>
+-                            <tt:Max>%MAX_Y%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:YRange>
+                     </tt:Range>
+                 </tt:PanTiltLimits>
+diff --git a/ptz_service_files/GetNode.xml b/ptz_service_files/GetNode.xml
+index 72c4ad0..1bf81d6 100644
+--- a/ptz_service_files/GetNode.xml
++++ b/ptz_service_files/GetNode.xml
+@@ -11,12 +11,12 @@
+                     <tt:AbsolutePanTiltPositionSpace>
+                         <tt:URI>http://www.onvif.org/ver10/tptz/PanTiltSpaces/PositionGenericSpace</tt:URI>
+                         <tt:XRange>
+-                            <tt:Min>%MIN_X%</tt:Min>
+-                            <tt:Max>%MAX_X%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:XRange>
+                         <tt:YRange>
+-                            <tt:Min>%MIN_Y%</tt:Min>
+-                            <tt:Max>%MAX_Y%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:YRange>
+                     </tt:AbsolutePanTiltPositionSpace>
+                     <tt:AbsoluteZoomPositionSpace>
+diff --git a/ptz_service_files/GetNode_nozoom.xml b/ptz_service_files/GetNode_nozoom.xml
+index 483da65..bebda9e 100644
+--- a/ptz_service_files/GetNode_nozoom.xml
++++ b/ptz_service_files/GetNode_nozoom.xml
+@@ -11,12 +11,12 @@
+                     <tt:AbsolutePanTiltPositionSpace>
+                         <tt:URI>http://www.onvif.org/ver10/tptz/PanTiltSpaces/PositionGenericSpace</tt:URI>
+                         <tt:XRange>
+-                            <tt:Min>%MIN_X%</tt:Min>
+-                            <tt:Max>%MAX_X%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:XRange>
+                         <tt:YRange>
+-                            <tt:Min>%MIN_Y%</tt:Min>
+-                            <tt:Max>%MAX_Y%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:YRange>
+                     </tt:AbsolutePanTiltPositionSpace>
+                     <tt:RelativePanTiltTranslationSpace>
+diff --git a/ptz_service_files/GetNodes.xml b/ptz_service_files/GetNodes.xml
+index 16865eb..4b9abb9 100644
+--- a/ptz_service_files/GetNodes.xml
++++ b/ptz_service_files/GetNodes.xml
+@@ -11,12 +11,12 @@
+                     <tt:AbsolutePanTiltPositionSpace>
+                         <tt:URI>http://www.onvif.org/ver10/tptz/PanTiltSpaces/PositionGenericSpace</tt:URI>
+                         <tt:XRange>
+-                            <tt:Min>%MIN_X%</tt:Min>
+-                            <tt:Max>%MAX_X%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:XRange>
+                         <tt:YRange>
+-                            <tt:Min>%MIN_Y%</tt:Min>
+-                            <tt:Max>%MAX_Y%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:YRange>
+                     </tt:AbsolutePanTiltPositionSpace>
+                     <tt:AbsoluteZoomPositionSpace>
+diff --git a/ptz_service_files/GetNodes_nozoom.xml b/ptz_service_files/GetNodes_nozoom.xml
+index fcf871d..5011452 100644
+--- a/ptz_service_files/GetNodes_nozoom.xml
++++ b/ptz_service_files/GetNodes_nozoom.xml
+@@ -11,12 +11,12 @@
+                     <tt:AbsolutePanTiltPositionSpace>
+                         <tt:URI>http://www.onvif.org/ver10/tptz/PanTiltSpaces/PositionGenericSpace</tt:URI>
+                         <tt:XRange>
+-                            <tt:Min>%MIN_X%</tt:Min>
+-                            <tt:Max>%MAX_X%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:XRange>
+                         <tt:YRange>
+-                            <tt:Min>%MIN_Y%</tt:Min>
+-                            <tt:Max>%MAX_Y%</tt:Max>
++                            <tt:Min>-1</tt:Min>
++                            <tt:Max>1</tt:Max>
+                         </tt:YRange>
+                     </tt:AbsolutePanTiltPositionSpace>
+                     <tt:RelativePanTiltTranslationSpace>

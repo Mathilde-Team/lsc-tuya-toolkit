@@ -17,4 +17,13 @@ if [ "$1" = "-m" ]; then
     esac
 fi
 
+# Preset : ptzctl -p ne fait que memoriser la position, sans bouger le moteur.
+# On convertit la position enregistree (pas 0..360 / 0..196) en absolu normalise.
+if [ "$1" = "-p" ]; then
+    DB="/tmp/sd/custom/state/ptz_presets.db"
+    TRIPLE="$(LC_ALL=C awk -F, -v id="$2" '$1==id {printf "%.4f,%.4f,0", $3/180-1, $4/98-1; exit}' "${DB}" 2>/dev/null)"
+    [ -n "${TRIPLE}" ] || exit 1
+    exec "${PTZCTL}" -j "${TRIPLE}"
+fi
+
 exec "${PTZCTL}" "$@"

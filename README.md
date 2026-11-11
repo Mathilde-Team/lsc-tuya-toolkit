@@ -9,6 +9,7 @@
 > LED d'état éteinte. Les correctifs du firmware sont fournis sous forme de **scripts** (`tools/`) qui patchent votre propre copie ;
 > aucun fichier du fabricant n'est publié.
 >
+> - [`docs/INSTALL.md`](docs/INSTALL.md) : **installeur** `install.py` (copie et personnalise la carte SD : Wi-Fi, IP fixe, heure, syslog, ONVIF, flux vidéo)
 > - [`docs/CHANGES.md`](docs/CHANGES.md) : toutes les modifications, le déploiement, le retour arrière et le journal des actions
 > - [`docs/CAMERA.md`](docs/CAMERA.md) : quelle caméra, et ce qui la distingue de l'amont
 > - [`docs/WIFI_ET_IP.md`](docs/WIFI_ET_IP.md) : le Wi-Fi est configuré à deux endroits (pourquoi l'IP peut changer)

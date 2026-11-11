@@ -171,6 +171,7 @@ Légende : **L** = lecture seule · **E** = écriture sur la caméra ou la SD.
 | 22 | Heure Paris + NTP du LAN (`entrypoint.sh`, `hack.conf`) ; essais H.264 (abandonné), sharpness 65, débit 1400/2400 kbps + QP 38 ; recherche de détection de mouvement (aucune source locale). Voir §14. |
 | 23 | Syslog distant (UDP) + nom d'hôte : `SYSLOG_SERVER` et `CAM_HOSTNAME` dans `hack.conf`, relance de `syslogd -R` par `entrypoint.sh`. Voir §15. |
 | 24 | Heure : `anyka_ipc` ajoute +8 h ~20 s apres son demarrage, corrige par `keep_tz` ; recalage PTZ au demarrage (`PTZ_HOME_ON_BOOT`) pour le deplacement absolu ONVIF. Voir §16. |
+| 25 | PTZ absolu ONVIF normalisé -1..1 (serveur patché), presets fonctionnels, `get_position` recalé ; installeur `install.py` + `docs/INSTALL.md` (flux vidéo choisissables). Voir §17. |
 
 ## 10. Erreurs et leçons
 
@@ -259,4 +260,12 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - **Constat** : l'horloge système passait à +28800 s (exactement 8 h, fuseau Chine par défaut du SDK Tuya) environ 20 s après chaque démarrage d'`anyka_ipc` (reproduit en relançant `anyka_ipc.sh restart` avec un guetteur en RAM). Le binaire contient `osal_settimeofday`, `setSystemTime` et `ntpclient -s`. Le NTP du démarrage ne suffisait donc pas.
 - **Correctif** : `keep_tz` (`entrypoint.sh`) mesure l'écart `heure - uptime` et annule tout saut de plus de 30 s (`date -s`), sans dépendre d'un serveur NTP. Vérifié : « saut d'horloge de 28801s corrigé » 14 s après le démarrage, heure juste ensuite.
 - **PTZ absolu** : `AbsoluteMove` (`ptz_move -j x,y,z`, x et y de -1 à 1 sur 0–360 / 0–180 pas) fonctionne, répétabilité mesurée < 0,5 % de l'image. Le moteur n'a pas de capteur de position : la position est suivie par calcul et dérive. `PTZ_HOME_ON_BOOT=1` (`hack.conf`) fait un recentrage matériel (`ptz_move -h`) à chaque démarrage pour repartir de 180,98.
-- **Home Assistant** : le service `onvif.ptz` accepte `move_mode: AbsoluteMove` avec `pan` et `tilt` entre -1 et 1 (selon la version de HA, non vérifié ici).
+- **Home Assistant** : `onvif.ptz` ne prend pas de coordonnées : `pan`/`tilt` sont des **directions** (`LEFT`/`RIGHT`, `UP`/`DOWN`) et `distance` (0 à 1) multiplie les deux axes (x = ±distance, y = ±distance ; `distance: 0` = centre). Corrigé au §17.
+
+## 17. PTZ absolu normalisé, presets, installeur
+
+- **Serveur ONVIF** (`tools/onvif/ptz_absolu_normalise.patch`, appliqué par `build.sh`) : `AbsoluteMove` accepte x, y dans -1..1 (avant : 0..360 / 0..180 passés tels quels à `ptz_move -j`, qui attend du normalisé) ; `GetStatus` convertit les pas en -1..1 ; les gabarits `ptz_service_files/*.xml` annoncent -1/1. Vérifié par de vrais appels SOAP : (-0,4 ; 0,3) → statut (-0,400 ; 0,289).
+- **Presets** : `set_preset` passait un seul argument (HTTP 500) → `add_preset -n %d -m %s` ; `get_presets` renvoie `n=nom,pan,tilt,zoom` (avant : le contenu brut de la base, liste vide) ; `ptz_move -p N` déplace réellement le moteur. Testé : SetPreset, GetPresets, GotoPreset, RemovePreset.
+- **`get_position`** remet le tilt à l'échelle 0..180 attendue côté ONVIF.
+- **Installeur** `install.py` (`docs/INSTALL.md`, modèle `install.example.yaml`) : copie la carte et écrit Wi-Fi, IP fixe, heure/NTP, syslog, ONVIF (mot de passe), services, codec et taille des flux ; patch 20 images/s à partir du dump de la caméra.
+- **Son** : le micro fonctionne (AAC 8 kHz dans le RTSP) ; le haut-parleur est bloqué (`anyka_ipc` garde `/dev/akpcm_dac0` ouvert).

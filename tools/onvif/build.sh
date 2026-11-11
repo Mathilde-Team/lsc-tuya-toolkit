@@ -12,7 +12,9 @@ export CFLAGS="-Os -march=armv5te -marm"
 
 mkdir -p "$WORK" && cd "$WORK"
 [ -d onvif_simple_server ] || git clone -q https://github.com/roleoroleo/onvif_simple_server.git
-git -C onvif_simple_server checkout -q 7b3941a   # version testee
+git -C onvif_simple_server checkout -q -f 7b3941a   # version testee
+# Positions absolues PTZ normalisees -1..1 (voir docs/ONVIF.md) : x/y d'AbsoluteMove et de GetStatus
+git -C onvif_simple_server apply "$HERE/ptz_absolu_normalise.patch"
 S="$WORK/onvif_simple_server/extras"
 
 curl -sSLo zlib.tgz https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz

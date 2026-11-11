@@ -7,4 +7,5 @@ if [ ! -x "${PTZCTL}" ]; then
     exit 0
 fi
 
-exec "${PTZCTL}" --get-position
+# ptzctl compte le tilt sur 0..196 ; le serveur ONVIF suppose 0..180
+"${PTZCTL}" --get-position | awk -F, '{printf "%d,%d,%d\n", $1, $2*180/196, $3}'
