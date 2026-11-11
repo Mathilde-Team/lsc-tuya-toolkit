@@ -13,7 +13,7 @@ Copie `sd_card/` sur la carte, puis la personnalise (Wi-Fi, IP fixe, heure, sysl
 """
 import argparse
 import getpass
-import hashlib
+import glob
 import hashlib
 import ipaddress
 import json
@@ -531,15 +531,38 @@ def patch_firmware(dst, dump):
     return ok
 
 
+def patch_from_card(arg):
+    """Second passage : après un premier démarrage, la caméra a copié son firmware dans <carte>/dump/."""
+    target, mounted = pick_target(arg or "", False)
+    try:
+        dumps = sorted(glob.glob(os.path.join(target, "dump", "*")), key=os.path.getmtime, reverse=True)
+        if not dumps:
+            sys.exit("Aucun dossier dump/ sur la carte : démarrez d'abord la caméra avec cette carte (une fois), puis rééteignez-la.")
+        print(f"Dump utilisé : {dumps[0]}")
+        if not patch_firmware(target, dumps[0]):
+            sys.exit("Patch incomplet : voir les messages ci-dessus (firmware différent de la version testée ?).")
+        os.sync()
+        print("Terminé. Remettez la carte dans la caméra et redémarrez-la : 20 images/s.")
+    finally:
+        if mounted:
+            run("umount", mounted, check=False)
+            os.rmdir(mounted)
+
+
 # ---------- programme ----------
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", help="fichier YAML de configuration")
     ap.add_argument("--target", help="/dev/sdX1 ou point de montage de la carte SD")
+    ap.add_argument("--patch-firmware", action="store_true",
+                    help="applique le patch 20 images/s depuis le dump que la caméra a écrit sur la carte (dump/), puis quitte")
     ap.add_argument("--yes", action="store_true", help="non interactif : aucune question, aucune confirmation")
     ap.add_argument("--dry-run", action="store_true", help="n'écrit rien")
     ap.add_argument("--save-config", help="enregistre la configuration finale (défaut : proposé en fin d'assistant)")
     a = ap.parse_args()
+
+    if a.patch_firmware:
+        return patch_from_card(a.target)
 
     cfg = DEFAULTS
     if a.config:
