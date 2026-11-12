@@ -282,3 +282,8 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - **Constat** : les journaux de démarrage s'accumulent sur la SD (usure, bruit — ~1800 fichiers, 50 Mo constatés).
 - **Correctif** : `purge_logs` dans `entrypoint.sh`, exécuté à chaque démarrage : garde les `LOGS_KEEP` derniers démarrages de chaque famille (`run.*.log`, `entrypoint.*.log`, `anyka_debug.*.log`), purge le reste. `LOGS_KEEP=20` par défaut dans `hack.conf` ; absent, vide ou `0` = rotation désactivée (tout est gardé). L'installeur expose `camera.logs_keep` (assistant, YAML, contrôle de validité) et l'écrit dans `hack.conf`.
 - **Vérifié hors caméra** : purge simulée sur 60 fichiers factices (30 démarrages × 3 familles) → il en reste exactement 30 ; `LOGS_KEEP=0` ne supprime rien ; valeurs invalides (non numériques) ne font rien. Non encore observé sur la caméra réelle.
+
+## 20. Sirène générée par script (issue #14)
+
+- `tools/talk/make_sirene.py` : génère `sirene.wav` (PCM 16 bits 8 kHz) et `sirene.ulaw` (G.711 µ-law brut, format attendu par `send_audio.py`) — balayage exponentiel 700–2500 Hz, 4 s, déterministe, sans ffmpeg. Encodeur µ-law ITU-T G.711 en pur Python (round-trip ≤ 512, pas du segment haut ; vecteurs 0xFF→0, 0x7F→0, 0xFE→+8, 0x7E→−8 vérifiés). `--check` confirme la reproductibilité octet pour octet.
+- `sirene.wav`/`sirene.ulaw` remplacés par la sortie du script : provenance démontrable, plus de fichier d'origine inconnue. Mêmes nom, format et durée — la config HA (`docs/HOME_ASSISTANT_SIRENE.md`) est inchangée.

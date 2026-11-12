@@ -26,6 +26,18 @@ Avec l'installeur : section `speaker:` de `install.yaml` (`hack.conf` : `TALK`, 
    `LD_PRELOAD=/tmp/sd/custom/bin/talk_inject.so TALK_ALLOW=<ip du PC> anyka_ipc ...`
 3. Redémarrer la caméra (`reboot`), attendre environ 1 minute.
 
+## Générer la sirène
+
+`sirene.wav` et `sirene.ulaw` sont produits par `make_sirene.py` (balayage
+700–2500 Hz, 4 s, déterministe — aucune dépendance, pas de ffmpeg) : le son est
+synthétisé, donc libre de droits et de provenance vérifiable
+(`python3 make_sirene.py --check` reproductibilité octet pour octet).
+
+```
+python3 make_sirene.py                 # régénère sirene.wav + sirene.ulaw
+python3 make_sirene.py --duree 6 --fmax 2800   # variante
+```
+
 ## Envoyer un son
 
 ```
