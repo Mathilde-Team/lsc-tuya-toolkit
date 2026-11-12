@@ -33,3 +33,5 @@ Avec l'installeur : section `speaker:` de `install.yaml` (`hack.conf` : `TALK`, 
 ```
 
 Commencer avec un volume faible.
+
+Home Assistant : voir [`docs/HOME_ASSISTANT_SIRENE.md`](../../docs/HOME_ASSISTANT_SIRENE.md).
