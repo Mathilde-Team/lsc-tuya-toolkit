@@ -83,11 +83,13 @@ caméra** (ces fichiers du fabricant ne sont pas redistribués ici, voir [`CHANG
 1. Au tout premier démarrage (pas de `custom/state/dump.done` sur la carte), le toolkit copie le système de la caméra
    dans `dump/` **avant** d'appliquer ses montages : les fichiers sont donc ceux d'origine. Pour le refaire, supprimez
    `custom/state/dump.done` et ne le faites que sur une carte sans patch actif (sinon vous copieriez le binaire déjà patché).
-2. Copiez ce dossier sur le PC, puis renseignez `firmware.dump_dir` et relancez l'installeur :
+2. Éteignez la caméra, remettez la carte dans le PC et lancez le second passage, qui utilise le dump de la carte
+   (sans toucher à la configuration ni aux mots de passe) :
    ```
-   sudo python3 install.py --config install.yaml
+   sudo python3 install.py --patch-firmware --target /dev/sdX1
    ```
-   Il contrôle les octets attendus et le MD5 avant d'écrire `anyka_ipc_fps20b` et `isp_sc2336_fps20.conf`.
+   Autre possibilité : copier le dump sur le PC, renseigner `firmware.dump_dir` et relancer l'installeur complet.
+   Dans les deux cas, il contrôle les octets attendus et le MD5 avant d'écrire `anyka_ipc_fps20b` et `isp_sc2336_fps20.conf`.
    Si le firmware diffère de celui testé, il refuse de patcher.
 3. Redémarrez la caméra (`reboot`, ne tuez pas `anyka_ipc`).
 
