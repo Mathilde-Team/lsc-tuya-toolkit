@@ -269,3 +269,16 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - **`get_position`** remet le tilt à l'échelle 0..180 attendue côté ONVIF.
 - **Installeur** `install.py` (`docs/INSTALL.md`, modèle `install.example.yaml`) : copie la carte et écrit Wi-Fi, IP fixe, heure/NTP, syslog, ONVIF (mot de passe), services, codec et taille des flux ; patch 20 images/s à partir du dump de la caméra.
 - **Son** : le micro fonctionne (AAC 8 kHz dans le RTSP) ; le haut-parleur est bloqué (`anyka_ipc` garde `/dev/akpcm_dac0` ouvert).
+
+## 18. Haut-parleur par le LAN, patch 20 i/s sur la caméra
+
+- **Haut-parleur** (`tools/talk/`) : `talk_inject.so`, chargée par `LD_PRELOAD` dans `anyka_ipc`, ouvre un port UDP (G.711 µ-law 8 kHz) et appelle `ht_audio_codec_talk_open` / `play_talk_data` / `talk_close`, le chemin que le cloud Tuya utilisait pour l'interphone. Volume `TALK_GAIN`, filtre `TALK_ALLOW`. Testé et entendu sur deux caméras. Le micro et la vidéo ne changent pas.
+- **Patch automatique** : `custom/scripts/patch_fw.sh` fabrique `anyka_ipc_fps20b` et l'ISP 20 i/s sur la caméra si les MD5 sont ceux du firmware 3.10.78 ; résultat identique octet pour octet aux outils Python (MD5 vérifiés sur la caméra).
+- `hack.sh` ne définissait pas `CFG_FILE` : `hack.conf` n'y était jamais lu. Corrigé.
+- **Installeur** : section `speaker:` (IP autorisée obligatoire), `AUTO_PATCH_FW`.
+
+## 19. Rotation des journaux de démarrage (issue #7)
+
+- **Constat** : les journaux de démarrage s'accumulent sur la SD (usure, bruit — ~1800 fichiers, 50 Mo constatés).
+- **Correctif** : `purge_logs` dans `entrypoint.sh`, exécuté à chaque démarrage : garde les `LOGS_KEEP` derniers démarrages de chaque famille (`run.*.log`, `entrypoint.*.log`, `anyka_debug.*.log`), purge le reste. `LOGS_KEEP=20` par défaut dans `hack.conf` ; absent, vide ou `0` = rotation désactivée (tout est gardé). L'installeur expose `camera.logs_keep` (assistant, YAML, contrôle de validité) et l'écrit dans `hack.conf`.
+- **Vérifié hors caméra** : purge simulée sur 60 fichiers factices (30 démarrages × 3 familles) → il en reste exactement 30 ; `LOGS_KEEP=0` ne supprime rien ; valeurs invalides (non numériques) ne font rien. Non encore observé sur la caméra réelle.

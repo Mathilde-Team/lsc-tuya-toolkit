@@ -8,6 +8,12 @@ LOG_FILE="${SD_DIR}/logs/anyka.${DATETIME}.log"
 ENTRYPOINT="${SCRIPTS_DIR}/entrypoint.sh"
 
 MODE="$1"
+CFG_FILE="${CUSTOM_DIR}/configs/hack.conf"
+TALK=0
+TALK_PORT=5004
+TALK_ALLOW=""
+TALK_GAIN=50
+[ -f "${CFG_FILE}" ] && . "${CFG_FILE}"
 PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin"
 
 log() {
@@ -40,7 +46,13 @@ start() {
   fi
 
   echo "start ipc service..."
-  anyka_ipc >>"$LOG_FILE" 2>&1 &
+  # Haut-parleur par le LAN (tools/talk) : seulement si TALK=1 et TALK_ALLOW renseigné
+  if [ "$TALK" = "1" ] && [ -n "$TALK_ALLOW" ] && [ -f "${CUSTOM_DIR}/bin/talk_inject.so" ]; then
+    LD_PRELOAD="${CUSTOM_DIR}/bin/talk_inject.so" TALK_PORT="$TALK_PORT" TALK_ALLOW="$TALK_ALLOW" TALK_GAIN="$TALK_GAIN" \
+      anyka_ipc >>"$LOG_FILE" 2>&1 &
+  else
+    anyka_ipc >>"$LOG_FILE" 2>&1 &
+  fi
   echo "log: $LOG_FILE"
   entrypoint
 }

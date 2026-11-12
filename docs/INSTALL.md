@@ -34,9 +34,10 @@ chmod 600 install.yaml
 | `network` | `ssid`, `password`, `security` (3 = WPA/WPA2), `dhcp`, `ip`, `netmask`, `gateway` |
 | `time` | `tz` (chaîne POSIX), `ntp_server` (vide = pas de NTP) |
 | `syslog` | `server` au format `hote:port`, UDP (vide = désactivé) |
-| `camera` | `hostname`, `ptz_home_on_boot`, `mute_factory_prompt` |
+| `camera` | `hostname`, `ptz_home_on_boot`, `mute_factory_prompt`, `logs_keep` (rotation des journaux de démarrage, 0 = tout garder) |
 | `onvif` | `enabled`, `user`, `password` (`auto` = généré, vide = sans authentification), `ptz` |
-| `services` | `telnet`, `ftp`, `offline` (coupe le cloud Tuya) |
+| `security` | `root_password` (`auto` = généré ; écrit dans `shadow` sur la SD) |
+| `services` | `telnet` (`open` / `login` / `off`), `ftp`, `offline` (coupe le cloud Tuya) |
 | `video` | `main_codec` / `sub_codec` (0 = H.264, 1 = MJPEG, 2 = H.265), `main_width` / `main_height`, `sub_width` / `sub_height` |
 | `firmware` | `dump_dir` : dossier du dump de **votre** caméra (étape 4) |
 
@@ -67,32 +68,47 @@ L'installeur :
    ```
    ping <IP>
    ffplay rtsp://<IP>:554/main_ch          # vidéo H.265 1080p et son AAC
-   telnet <IP> 24                          # seulement si services.telnet: true
+   telnet <IP> 24                          # seulement si services.telnet est open ou login
    ```
 3. ONVIF : `http://<IP>:8080/onvif/device_service` (utilisateur et mot de passe choisis).
    Home Assistant : intégration **ONVIF**, port 8080.
 4. Si la caméra reste muette : retirez la carte, lisez `logs/` (attention : `wifi.*.log` contient le SSID et le mot de
    passe en clair). Voir aussi [`WIFI_ET_IP.md`](WIFI_ET_IP.md).
 
-## 4. Vidéo 20 images par seconde (facultatif)
+## 4. Vidéo 20 images par seconde
 
 Le firmware d'origine plafonne à 15 images/s. Le gain demande de patcher `anyka_ipc` et le fichier ISP **de votre propre
 caméra** (ces fichiers du fabricant ne sont pas redistribués ici, voir [`CHANGES.md`](CHANGES.md) §6 et §7).
 
+**Firmware 3.10.78 (celui testé) : rien à faire.** Au démarrage, `custom/scripts/patch_fw.sh` contrôle le MD5 des fichiers
+de la caméra, fabrique `anyka_ipc_fps20b` et `isp_sc2336_fps20.conf` sur la carte et les monte aussitôt (désactivable avec
+`AUTO_PATCH_FW=0` dans `hack.conf`). Si un MD5 diffère, rien n'est patché et la caméra reste d'origine ; voir `custom/state`
+et les journaux `logs/run.*.log` (lignes `[patch_fw]`).
+
+Autre firmware ou contrôle depuis le PC (le patch n'est alors appliqué que si les octets attendus sont présents) :
+
 1. Au tout premier démarrage (pas de `custom/state/dump.done` sur la carte), le toolkit copie le système de la caméra
-   dans `dump/` **avant** d'appliquer ses montages : les fichiers sont donc ceux d'origine. Pour le refaire, supprimez
-   `custom/state/dump.done` et ne le faites que sur une carte sans patch actif (sinon vous copieriez le binaire déjà patché).
-2. Copiez ce dossier sur le PC, puis renseignez `firmware.dump_dir` et relancez l'installeur :
+   dans `dump/` **avant** d'appliquer ses montages : les fichiers sont donc ceux d'origine.
+2. Éteignez la caméra, remettez la carte dans le PC :
    ```
-   sudo python3 install.py --config install.yaml
+   sudo python3 install.py --patch-firmware --target /dev/sdX1
    ```
-   Il contrôle les octets attendus et le MD5 avant d'écrire `anyka_ipc_fps20b` et `isp_sc2336_fps20.conf`.
-   Si le firmware diffère de celui testé, il refuse de patcher.
+   Autre possibilité : copier le dump sur le PC, renseigner `firmware.dump_dir` et relancer l'installeur complet.
 3. Redémarrez la caméra (`reboot`, ne tuez pas `anyka_ipc`).
+
+## 4 bis. Haut-parleur par le LAN (facultatif)
+
+Section `speaker:` du YAML (`enabled`, `allow`, `gain`, `port`). La caméra ouvre alors un port UDP qui reçoit du G.711 µ-law
+8 kHz ; **seules les IP de `allow` (liste séparée par des virgules) sont acceptées** (le port n'a pas d'authentification : indiquez votre Home Assistant et fermez le
+port ailleurs). Envoi d'un son : `tools/talk/send_audio.py <ip> sirene.wav --max 10`. Détails : `tools/talk/README.md`.
 
 ## 5. Après les réglages : durcir
 
-- `services.telnet: false` : le port 24 donne un shell **root sans mot de passe** à tout le LAN.
+- **Mot de passe root** : `security.root_password` est écrit (hash MD5-crypt) dans le fichier `shadow` de la SD, que le
+  firmware recopie à chaque démarrage. Il protège le telnet du firmware (port 23). Un `passwd` fait sur la caméra
+  serait perdu au redémarrage : changez-le toujours ici. Sans cela, le mot de passe est celui, public, du dépôt.
+- **Telnet** : `services.telnet: open` donne un shell **root sans mot de passe** (port 24) à tout le LAN, pratique pour
+  régler. Passez ensuite à `login` (root + mot de passe) puis à `off`. Gardez `login` tant qu'un accès de secours est utile.
 - Gardez une authentification ONVIF. Le flux RTSP `/main_ch`, lui, n'a **pas** de mot de passe : isolez la caméra
   (VLAN, ou règle du routeur qui bloque son accès à Internet).
 - `services.offline: true` coupe les connexions vers le cloud Tuya ; bloquez-les aussi sur le routeur.

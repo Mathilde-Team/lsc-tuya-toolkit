@@ -13,6 +13,7 @@ Copie `sd_card/` sur la carte, puis la personnalise (Wi-Fi, IP fixe, heure, sysl
 """
 import argparse
 import getpass
+import glob
 import hashlib
 import ipaddress
 import json
@@ -38,11 +39,13 @@ DEFAULTS = {
                 "ip": "", "netmask": "255.255.255.0", "gateway": ""},
     "time": {"tz": "CET-1CEST,M3.5.0,M10.5.0/3", "ntp_server": ""},
     "syslog": {"server": ""},
-    "camera": {"hostname": "", "ptz_home_on_boot": True, "mute_factory_prompt": True},
+    "camera": {"hostname": "", "ptz_home_on_boot": True, "mute_factory_prompt": True, "logs_keep": 20},
     "onvif": {"enabled": True, "user": "admin", "password": "auto", "ptz": True},
-    "services": {"telnet": True, "ftp": False, "offline": True},
+    "services": {"telnet": "open", "ftp": False, "offline": True},
+    "security": {"root_password": "auto"},
     "video": {"main_codec": 2, "main_width": 1920, "main_height": 1080,
               "sub_codec": 2, "sub_width": 640, "sub_height": 360},
+    "speaker": {"enabled": False, "allow": "", "gain": 50, "port": 5004},
     "firmware": {"dump_dir": ""},
 }
 CODECS = {0: "H264", 1: "MJPEG", 2: "H265"}
@@ -185,9 +188,12 @@ def wizard(cfg):
         o["password"] = "" if pw.lower() == "aucun" else pw
         o["ptz"] = ask_bool("Activer le pilotage PTZ via ONVIF", o["ptz"])
     print("\n== Services ==")
-    s["telnet"] = ask_bool("Telnet sans mot de passe (port 24) : utile pour régler, À COUPER ensuite", s["telnet"])
+    s["telnet"] = ask("Telnet : open (sans mot de passe, pour régler) / login (root + mot de passe) / off", telnet_mode(s["telnet"]))
+    rp = cfg["security"]
+    rp["root_password"] = ask("Mot de passe root ('auto' = généré, vide = inchangé, déconseillé)", rp["root_password"] or "auto", secret=True) or ""
     s["ftp"] = ask_bool("Serveur FTP", s["ftp"])
     c["ptz_home_on_boot"] = ask_bool("Recentrer la caméra à chaque démarrage (positions absolues fiables)", c["ptz_home_on_boot"])
+    c["logs_keep"] = int(ask("Journaux de démarrage conservés sur la SD (0 = tout garder)", c["logs_keep"]))
     v = cfg["video"]
     print("\n== Flux vidéo (codec : 0=H.264, 1=MJPEG, 2=H.265) ==")
     print("  Constaté ici : H.265 1920x1080 à 20 i/s est fluide ; H.264 ne donnait que ~11 i/s ; plus de 1920x1080 fait boucler la caméra.")
@@ -202,10 +208,62 @@ def wizard(cfg):
             w = ask("  Largeur (px)", v[pre + "_width"], required=True)
             h = ask("  Hauteur (px)", v[pre + "_height"], required=True)
         v[pre + "_width"], v[pre + "_height"] = w, h
+    sp = cfg["speaker"]
+    print("\n== Haut-parleur par le LAN (sirène, annonces) ==")
+    print("  Port UDP sans authentification : seule l'IP indiquée (ex. votre Home Assistant) pourra envoyer du son.")
+    sp["enabled"] = ask_bool("Activer le haut-parleur par le LAN", sp["enabled"])
+    if sp["enabled"]:
+        sp["allow"] = ask("IP autorisées à envoyer du son (séparées par des virgules)", sp["allow"], required=True)
+        sp["gain"] = ask("Volume (1 à 100)", sp["gain"])
     print("\n== Dump du firmware d'origine (pour la vidéo 20 images/s) ==")
-    print("  Laissez vide au premier passage ; voir docs/INSTALL.md (étape 4).")
+    print("  Inutile avec le firmware 3.10.78 : le 20 i/s est fabriqué par la caméra au démarrage. Voir docs/INSTALL.md (étape 4).")
     cfg["firmware"]["dump_dir"] = ask("Dossier contenant anyka_ipc et l'ISP extraits de VOTRE caméra", cfg["firmware"]["dump_dir"])
     return cfg
+
+
+# ---------- mot de passe root (hash MD5-crypt "$1$", format du fichier shadow du firmware) ----------
+_B64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+
+def _to64(v, n):
+    out = ""
+    for _ in range(n):
+        out += _B64[v & 0x3F]
+        v >>= 6
+    return out
+
+
+def md5crypt(password, salt=None):
+    pw = password.encode()
+    salt = (salt or "".join(secrets.choice(_B64) for _ in range(8)))[:8]
+    s = salt.encode()
+    alt = hashlib.md5(pw + s + pw).digest()
+    ctx = pw + b"$1$" + s + (alt * (len(pw) // 16 + 1))[:len(pw)]
+    i = len(pw)
+    while i:
+        ctx += b"\0" if i & 1 else pw[:1]
+        i >>= 1
+    h = hashlib.md5(ctx).digest()
+    for i in range(1000):
+        c = pw if i & 1 else h
+        if i % 3:
+            c += s
+        if i % 7:
+            c += pw
+        c += h if i & 1 else pw
+        h = hashlib.md5(c).digest()
+    out = ""
+    for a, b, c in ((0, 6, 12), (1, 7, 13), (2, 8, 14), (3, 9, 15), (4, 10, 5)):
+        out += _to64((h[a] << 16) | (h[b] << 8) | h[c], 4)
+    return f"$1${salt}$" + out + _to64(h[11], 2)
+
+
+def telnet_mode(v):
+    if v is True:
+        return "open"
+    if v is False:
+        return "off"
+    return str(v).lower()
 
 
 # ---------- validation ----------
@@ -248,6 +306,8 @@ def validate(cfg):
     srv = cfg["syslog"]["server"]
     if srv and not re.fullmatch(r"[A-Za-z0-9.\-]+:\d{1,5}", srv):
         err.append("syslog.server doit être de la forme hote:port")
+    if not isinstance(c["logs_keep"], int) or c["logs_keep"] < 0:
+        err.append("camera.logs_keep doit être un entier positif ou nul")
     if c["hostname"] and not re.fullmatch(r"[A-Za-z0-9\-]{1,32}", c["hostname"]):
         err.append("camera.hostname: lettres, chiffres et tirets (32 max)")
     if o["enabled"]:
@@ -287,8 +347,39 @@ def validate(cfg):
             warn.append("flux principal au-dessus de 1920x1080 : une caméra a bouclé au redémarrage à 2304x1296")
         if v["sub_width"] * v["sub_height"] > v["main_width"] * v["main_height"]:
             err.append("video: le flux secondaire ne peut pas être plus grand que le principal")
-    if cfg["services"]["telnet"]:
-        warn.append("Telnet actif sans mot de passe : passez services.telnet à false une fois la caméra réglée")
+    sp = cfg["speaker"]
+    if sp["enabled"]:
+        ips = [x for x in re.split(r"[,\s]+", str(sp["allow"])) if x]
+        try:
+            if not ips or len(ips) > 8:
+                raise ValueError
+            for x in ips:
+                ipaddress.IPv4Address(x)
+        except ValueError:
+            err.append("speaker.allow: 1 à 8 adresses IPv4 séparées par des virgules (seules ces machines pourront envoyer du son)")
+        sp["allow"] = ",".join(ips)
+        try:
+            sp["gain"], sp["port"] = int(sp["gain"]), int(sp["port"])
+        except (TypeError, ValueError):
+            err.append("speaker.gain et speaker.port doivent être des entiers")
+        else:
+            if not 1 <= sp["gain"] <= 100:
+                err.append("speaker.gain: 1 à 100")
+            if not 1024 <= sp["port"] <= 65535:
+                err.append("speaker.port: 1024 à 65535")
+    tm = telnet_mode(cfg["services"]["telnet"])
+    cfg["services"]["telnet"] = tm
+    if tm not in ("open", "login", "off"):
+        err.append("services.telnet: open (sans mot de passe), login (root + mot de passe) ou off")
+    rp = str(cfg["security"]["root_password"])
+    if rp and rp != "auto" and (len(rp) < 8 or re.search(r"[\r\n\x00:]", rp)):
+        err.append("security.root_password: 8 caractères minimum, sans ':' ni retour à la ligne")
+    if tm == "login" and not rp:
+        err.append("services.telnet=login exige security.root_password (sinon le mot de passe est celui, public, du dépôt)")
+    if tm == "open":
+        warn.append("Telnet 'open' : shell root SANS mot de passe pour tout le LAN ; passez à 'login' puis 'off' une fois la caméra réglée")
+    if not rp:
+        warn.append("security.root_password vide : le mot de passe root du port 23 reste celui, public, du dépôt")
     return err, warn
 
 
@@ -370,6 +461,11 @@ def render(dst, cfg):
         return txt
     rw(os.path.join(dst, "_ak39_factory.ini"), factory)
 
+    rp = cfg["security"]["root_password"]
+    if rp:
+        with open(os.path.join(dst, "shadow"), "w", newline="\n") as f:
+            f.write(f"root:{md5crypt(rp)}:18943:0:99999:7:::\n")
+
     with open(os.path.join(conf, "wifi.conf"), "w", newline="\n") as f:
         f.write("# Genere par install.py. Lu par wifi_apply.sh (shell : valeurs entre apostrophes).\n"
                 f"MODE=sta\nSSID={sh_quote(n['ssid'])}\nPASS={sh_quote(n['password'])}\n"
@@ -377,14 +473,18 @@ def render(dst, cfg):
 
     def b(v):
         return "1" if v else "0"
+    tm = telnet_mode(s["telnet"])
 
     def hack(txt):
-        for k, v in (("TELNET", b(s["telnet"])), ("FTP", b(s["ftp"])), ("OFFLINE", b(s["offline"])),
+        for k, v in (("TELNET", "0" if tm == "off" else "1"), ("TELNET_LOGIN", "1" if tm == "login" else "0"), ("FTP", b(s["ftp"])), ("OFFLINE", b(s["offline"])),
                      ("ONVIF", b(o["enabled"])), ("ONVIF_PTZ", b(o["ptz"])),
                      ("MUTE_FACTORY_PROMPT", b(c["mute_factory_prompt"])),
                      ("PTZ_HOME_ON_BOOT", b(c["ptz_home_on_boot"])),
+                     ("LOGS_KEEP", str(c["logs_keep"])),
                      ("TZ_STRING", f'"{t["tz"]}"'), ("NTP_SERVER", f'"{t["ntp_server"]}"'),
-                     ("SYSLOG_SERVER", f'"{cfg["syslog"]["server"]}"'), ("CAM_HOSTNAME", f'"{c["hostname"]}"')):
+                     ("SYSLOG_SERVER", f'"{cfg["syslog"]["server"]}"'), ("CAM_HOSTNAME", f'"{c["hostname"]}"'),
+                     ("TALK", b(cfg["speaker"]["enabled"])), ("TALK_ALLOW", f'"{cfg["speaker"]["allow"] if cfg["speaker"]["enabled"] else ""}"'),
+                     ("TALK_GAIN", cfg["speaker"]["gain"]), ("TALK_PORT", cfg["speaker"]["port"])):
             txt = set_kv(txt, k, v)
         return txt
     rw(os.path.join(conf, "hack.conf"), hack)
@@ -465,15 +565,38 @@ def patch_firmware(dst, dump):
     return ok
 
 
+def patch_from_card(arg):
+    """Second passage : après un premier démarrage, la caméra a copié son firmware dans <carte>/dump/."""
+    target, mounted = pick_target(arg or "", False)
+    try:
+        dumps = sorted(glob.glob(os.path.join(target, "dump", "*")), key=os.path.getmtime, reverse=True)
+        if not dumps:
+            sys.exit("Aucun dossier dump/ sur la carte : démarrez d'abord la caméra avec cette carte (une fois), puis rééteignez-la.")
+        print(f"Dump utilisé : {dumps[0]}")
+        if not patch_firmware(target, dumps[0]):
+            sys.exit("Patch incomplet : voir les messages ci-dessus (firmware différent de la version testée ?).")
+        os.sync()
+        print("Terminé. Remettez la carte dans la caméra et redémarrez-la : 20 images/s.")
+    finally:
+        if mounted:
+            run("umount", mounted, check=False)
+            os.rmdir(mounted)
+
+
 # ---------- programme ----------
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", help="fichier YAML de configuration")
     ap.add_argument("--target", help="/dev/sdX1 ou point de montage de la carte SD")
+    ap.add_argument("--patch-firmware", action="store_true",
+                    help="applique le patch 20 images/s depuis le dump que la caméra a écrit sur la carte (dump/), puis quitte")
     ap.add_argument("--yes", action="store_true", help="non interactif : aucune question, aucune confirmation")
     ap.add_argument("--dry-run", action="store_true", help="n'écrit rien")
     ap.add_argument("--save-config", help="enregistre la configuration finale (défaut : proposé en fin d'assistant)")
     a = ap.parse_args()
+
+    if a.patch_firmware:
+        return patch_from_card(a.target)
 
     cfg = DEFAULTS
     if a.config:
@@ -494,6 +617,11 @@ def main():
     generated = None
     if o["enabled"] and o["password"] == "auto":
         generated = o["password"] = secrets.token_urlsafe(12)
+
+    sec = cfg["security"]
+    root_generated = None
+    if sec["root_password"] == "auto":
+        root_generated = sec["root_password"] = secrets.token_urlsafe(12)
 
     target, mounted = ((cfg["target"], None) if (a.dry_run and not cfg["target"]) else pick_target(cfg["target"], a.yes))
     print(f"\nCarte cible : {target}")
@@ -526,6 +654,8 @@ def main():
         print(f"Réglages enregistrés dans {save} (droits 600).")
     if generated:
         print(f"\nMot de passe ONVIF généré (à noter, affiché une seule fois) : {generated}")
+    if root_generated:
+        print(f"Mot de passe root généré (telnet 'login' et port 23) : {root_generated}")
     print("\nTerminé. Éteignez la caméra, insérez la carte, rallumez : voir docs/INSTALL.md (vérifications).")
 
 

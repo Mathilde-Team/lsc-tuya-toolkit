@@ -25,6 +25,7 @@ camera:
   hostname: ""                       # nom d'hôte (utile dans le syslog) ; vide = inchangé
   ptz_home_on_boot: true             # recentrage matériel au démarrage (positions absolues fiables)
   mute_factory_prompt: true
+  logs_keep: 20                     # journaux de démarrage conservés sur la SD (0 = tout garder)
 
 onvif:
   enabled: true
@@ -33,9 +34,12 @@ onvif:
   ptz: true
 
 services:
-  telnet: true                       # port 24 SANS mot de passe : à passer à false une fois réglé
+  telnet: "open"                     # open = shell root SANS mot de passe (pour régler) ; login = root + security.root_password ; off = coupé
   ftp: false
   offline: true                      # coupe les connexions vers le cloud Tuya
+
+security:
+  root_password: "auto"            # mot de passe root (ports telnet 23 et du toolkit en mode login) ; "auto" = généré, affiché une fois
 
 video:
   main_codec: 2                      # 0 = H.264 (~11 i/s mesurées ici), 1 = MJPEG (non testé), 2 = H.265 (20 i/s)
@@ -45,5 +49,11 @@ video:
   sub_width: 640                     # le sous-flux RTSP /sub_ch ne fonctionne pas sur ce firmware (testé)
   sub_height: 360
 
+speaker:
+  enabled: false                     # haut-parleur par le LAN (sirène, annonces) ; voir tools/talk/README.md
+  allow: ""                          # IP autorisées, séparées par des virgules (ex. Home Assistant) : OBLIGATOIRE si enabled ; port UDP sans authentification
+  gain: 50                           # volume 1 à 100
+  port: 5004
+
 firmware:
-  dump_dir: ""                       # dossier du dump de VOTRE caméra (anyka_ipc + ISP) pour la vidéo 20 images/s
+  dump_dir: ""                       # inutile en 3.10.78 (20 i/s fabriqué par la caméra au démarrage) ; pour un autre firmware : dump de VOTRE caméra
