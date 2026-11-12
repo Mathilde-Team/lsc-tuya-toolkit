@@ -26,6 +26,7 @@ camera:
   ptz_home_on_boot: true             # recentrage matériel au démarrage (positions absolues fiables)
   mute_factory_prompt: true
   logs_keep: 20                     # journaux de démarrage conservés sur la SD (0 = tout garder)
+  privacy_preset: 0                  # preset « position privée » (0 = désactivé ; docs/PRIVACY.md)
 
 onvif:
   enabled: true
