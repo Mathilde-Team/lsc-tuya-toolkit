@@ -287,3 +287,10 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 
 - `tools/talk/make_sirene.py` : génère `sirene.wav` (PCM 16 bits 8 kHz) et `sirene.ulaw` (G.711 µ-law brut, format attendu par `send_audio.py`) — balayage exponentiel 700–2500 Hz, 4 s, déterministe, sans ffmpeg. Encodeur µ-law ITU-T G.711 en pur Python (round-trip ≤ 512, pas du segment haut ; vecteurs 0xFF→0, 0x7F→0, 0xFE→+8, 0x7E→−8 vérifiés). `--check` confirme la reproductibilité octet pour octet.
 - `sirene.wav`/`sirene.ulaw` remplacés par la sortie du script : provenance démontrable, plus de fichier d'origine inconnue. Mêmes nom, format et durée — la config HA (`docs/HOME_ASSISTANT_SIRENE.md`) est inchangée.
+
+## 21. Position privée par preset (issue #13)
+
+- `custom/scripts/privacy.sh` : envoie la caméra sur le preset `PRIVACY_PRESET` (`ptz_move -p N`, mécanisme présupposé vérifié §17) ; absent, non numérique ou `0` = ne fait rien.
+- Installeur : `camera.privacy_preset` (assistant, `install.example.yaml`, validation « entier positif ou nul ») écrit `PRIVACY_PRESET` dans `hack.conf`.
+- `docs/PRIVACY.md` : création du preset (`ptz_presets.sh -a add_preset` ou `onvif.set_preset`), boutons HA (`onvif.goto_preset`), et limites explicites — une position PTZ ne coupe ni le flux ni le micro.
+- Vérifié hors caméra : `sh -n`, logique `privacy.sh` (désactivé par défaut), `install.py` (render + validation). La création réelle du preset et le bouton HA restent à essayer sur la caméra.

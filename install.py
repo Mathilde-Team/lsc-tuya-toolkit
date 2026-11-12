@@ -39,7 +39,8 @@ DEFAULTS = {
                 "ip": "", "netmask": "255.255.255.0", "gateway": ""},
     "time": {"tz": "CET-1CEST,M3.5.0,M10.5.0/3", "ntp_server": ""},
     "syslog": {"server": ""},
-    "camera": {"hostname": "", "ptz_home_on_boot": True, "mute_factory_prompt": True, "logs_keep": 20},
+    "camera": {"hostname": "", "ptz_home_on_boot": True, "mute_factory_prompt": True, "logs_keep": 20,
+              "privacy_preset": 0},
     "onvif": {"enabled": True, "user": "admin", "password": "auto", "ptz": True},
     "services": {"telnet": "open", "ftp": False, "offline": True},
     "security": {"root_password": "auto"},
@@ -194,6 +195,7 @@ def wizard(cfg):
     s["ftp"] = ask_bool("Serveur FTP", s["ftp"])
     c["ptz_home_on_boot"] = ask_bool("Recentrer la caméra à chaque démarrage (positions absolues fiables)", c["ptz_home_on_boot"])
     c["logs_keep"] = int(ask("Journaux de démarrage conservés sur la SD (0 = tout garder)", c["logs_keep"]))
+    c["privacy_preset"] = int(ask("Numéro du preset « position privée » (0 = désactivé ; voir docs/PRIVACY.md)", c["privacy_preset"]))
     v = cfg["video"]
     print("\n== Flux vidéo (codec : 0=H.264, 1=MJPEG, 2=H.265) ==")
     print("  Constaté ici : H.265 1920x1080 à 20 i/s est fluide ; H.264 ne donnait que ~11 i/s ; plus de 1920x1080 fait boucler la caméra.")
@@ -306,6 +308,8 @@ def validate(cfg):
     srv = cfg["syslog"]["server"]
     if srv and not re.fullmatch(r"[A-Za-z0-9.\-]+:\d{1,5}", srv):
         err.append("syslog.server doit être de la forme hote:port")
+    if not isinstance(c["privacy_preset"], int) or c["privacy_preset"] < 0:
+        err.append("camera.privacy_preset doit être un entier positif ou nul")
     if not isinstance(c["logs_keep"], int) or c["logs_keep"] < 0:
         err.append("camera.logs_keep doit être un entier positif ou nul")
     if c["hostname"] and not re.fullmatch(r"[A-Za-z0-9\-]{1,32}", c["hostname"]):
@@ -481,6 +485,7 @@ def render(dst, cfg):
                      ("MUTE_FACTORY_PROMPT", b(c["mute_factory_prompt"])),
                      ("PTZ_HOME_ON_BOOT", b(c["ptz_home_on_boot"])),
                      ("LOGS_KEEP", str(c["logs_keep"])),
+                     ("PRIVACY_PRESET", str(c["privacy_preset"])),
                      ("TZ_STRING", f'"{t["tz"]}"'), ("NTP_SERVER", f'"{t["ntp_server"]}"'),
                      ("SYSLOG_SERVER", f'"{cfg["syslog"]["server"]}"'), ("CAM_HOSTNAME", f'"{c["hostname"]}"'),
                      ("TALK", b(cfg["speaker"]["enabled"])), ("TALK_ALLOW", f'"{cfg["speaker"]["allow"] if cfg["speaker"]["enabled"] else ""}"'),
