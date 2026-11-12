@@ -294,3 +294,9 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - Installeur : `camera.privacy_preset` (assistant, `install.example.yaml`, validation « entier positif ou nul ») écrit `PRIVACY_PRESET` dans `hack.conf`.
 - `docs/PRIVACY.md` : création du preset (`ptz_presets.sh -a add_preset` ou `onvif.set_preset`), boutons HA (`onvif.goto_preset`), et limites explicites — une position PTZ ne coupe ni le flux ni le micro.
 - Vérifié hors caméra : `sh -n`, logique `privacy.sh` (désactivé par défaut), `install.py` (render + validation). La création réelle du preset et le bouton HA restent à essayer sur la caméra.
+
+## 22. Outillage de l'audit des connexions sortantes (issue #1)
+
+- `tools/audit_sorties.py` : analyse un pcap (format classique tcpdump, Ethernet/IPv4/IPv6, VLAN 802.1Q) et produit le rapport markdown — noms DNS demandés (questions DNS), destinations contactées hors RFC 1918/link-local avec ports. `--ip` restreint à l'émetteur caméra, `--masque` masque le dernier octet des IP avant publication dans `docs/SECURITY.md`. Pur Python, aucune dépendance.
+- `docs/SECURITY.md` : section « Audit des connexions sortantes » (méthode de capture ≥ 24 h, analyse, statut en cours) ; la limite « connexions sortantes non listées » pointe désormais vers cette méthode.
+- Vérifié : pcap synthétique (requêtes DNS dont une d'un autre hôte exclu par `--ip`, trafic LAN exclu, UDP et TCP sortants) — rapport exact ; `--masque` effectif. La capture réelle 24 h reste à produire sur le matériel.
