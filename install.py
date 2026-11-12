@@ -45,6 +45,7 @@ DEFAULTS = {
     "security": {"root_password": "auto"},
     "video": {"main_codec": 2, "main_width": 1920, "main_height": 1080,
               "sub_codec": 2, "sub_width": 640, "sub_height": 360},
+    "speaker": {"enabled": False, "allow": "", "gain": 50, "port": 5004},
     "firmware": {"dump_dir": ""},
 }
 CODECS = {0: "H264", 1: "MJPEG", 2: "H265"}
@@ -206,8 +207,15 @@ def wizard(cfg):
             w = ask("  Largeur (px)", v[pre + "_width"], required=True)
             h = ask("  Hauteur (px)", v[pre + "_height"], required=True)
         v[pre + "_width"], v[pre + "_height"] = w, h
+    sp = cfg["speaker"]
+    print("\n== Haut-parleur par le LAN (sirène, annonces) ==")
+    print("  Port UDP sans authentification : seule l'IP indiquée (ex. votre Home Assistant) pourra envoyer du son.")
+    sp["enabled"] = ask_bool("Activer le haut-parleur par le LAN", sp["enabled"])
+    if sp["enabled"]:
+        sp["allow"] = ask("IP autorisée à envoyer du son", sp["allow"], required=True)
+        sp["gain"] = ask("Volume (1 à 100)", sp["gain"])
     print("\n== Dump du firmware d'origine (pour la vidéo 20 images/s) ==")
-    print("  Laissez vide au premier passage ; voir docs/INSTALL.md (étape 4).")
+    print("  Inutile avec le firmware 3.10.78 : le 20 i/s est fabriqué par la caméra au démarrage. Voir docs/INSTALL.md (étape 4).")
     cfg["firmware"]["dump_dir"] = ask("Dossier contenant anyka_ipc et l'ISP extraits de VOTRE caméra", cfg["firmware"]["dump_dir"])
     return cfg
 
@@ -336,6 +344,21 @@ def validate(cfg):
             warn.append("flux principal au-dessus de 1920x1080 : une caméra a bouclé au redémarrage à 2304x1296")
         if v["sub_width"] * v["sub_height"] > v["main_width"] * v["main_height"]:
             err.append("video: le flux secondaire ne peut pas être plus grand que le principal")
+    sp = cfg["speaker"]
+    if sp["enabled"]:
+        try:
+            ipaddress.IPv4Address(str(sp["allow"]))
+        except ValueError:
+            err.append("speaker.allow: IPv4 obligatoire (seule cette machine pourra envoyer du son)")
+        try:
+            sp["gain"], sp["port"] = int(sp["gain"]), int(sp["port"])
+        except (TypeError, ValueError):
+            err.append("speaker.gain et speaker.port doivent être des entiers")
+        else:
+            if not 1 <= sp["gain"] <= 100:
+                err.append("speaker.gain: 1 à 100")
+            if not 1024 <= sp["port"] <= 65535:
+                err.append("speaker.port: 1024 à 65535")
     tm = telnet_mode(cfg["services"]["telnet"])
     cfg["services"]["telnet"] = tm
     if tm not in ("open", "login", "off"):
@@ -450,7 +473,9 @@ def render(dst, cfg):
                      ("MUTE_FACTORY_PROMPT", b(c["mute_factory_prompt"])),
                      ("PTZ_HOME_ON_BOOT", b(c["ptz_home_on_boot"])),
                      ("TZ_STRING", f'"{t["tz"]}"'), ("NTP_SERVER", f'"{t["ntp_server"]}"'),
-                     ("SYSLOG_SERVER", f'"{cfg["syslog"]["server"]}"'), ("CAM_HOSTNAME", f'"{c["hostname"]}"')):
+                     ("SYSLOG_SERVER", f'"{cfg["syslog"]["server"]}"'), ("CAM_HOSTNAME", f'"{c["hostname"]}"'),
+                     ("TALK", b(cfg["speaker"]["enabled"])), ("TALK_ALLOW", f'"{cfg["speaker"]["allow"] if cfg["speaker"]["enabled"] else ""}"'),
+                     ("TALK_GAIN", cfg["speaker"]["gain"]), ("TALK_PORT", cfg["speaker"]["port"])):
             txt = set_kv(txt, k, v)
         return txt
     rw(os.path.join(conf, "hack.conf"), hack)

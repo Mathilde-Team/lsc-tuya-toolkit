@@ -48,5 +48,11 @@ video:
   sub_width: 640                     # le sous-flux RTSP /sub_ch ne fonctionne pas sur ce firmware (testé)
   sub_height: 360
 
+speaker:
+  enabled: false                     # haut-parleur par le LAN (sirène, annonces) ; voir tools/talk/README.md
+  allow: ""                          # IP autorisée à envoyer du son (ex. Home Assistant) : OBLIGATOIRE si enabled ; port UDP sans authentification
+  gain: 50                           # volume 1 à 100
+  port: 5004
+
 firmware:
-  dump_dir: ""                       # dossier du dump de VOTRE caméra (anyka_ipc + ISP) pour la vidéo 20 images/s
+  dump_dir: ""                       # inutile en 3.10.78 (20 i/s fabriqué par la caméra au démarrage) ; pour un autre firmware : dump de VOTRE caméra
