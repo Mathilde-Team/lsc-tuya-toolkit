@@ -212,7 +212,7 @@ def wizard(cfg):
     print("  Port UDP sans authentification : seule l'IP indiquée (ex. votre Home Assistant) pourra envoyer du son.")
     sp["enabled"] = ask_bool("Activer le haut-parleur par le LAN", sp["enabled"])
     if sp["enabled"]:
-        sp["allow"] = ask("IP autorisée à envoyer du son", sp["allow"], required=True)
+        sp["allow"] = ask("IP autorisées à envoyer du son (séparées par des virgules)", sp["allow"], required=True)
         sp["gain"] = ask("Volume (1 à 100)", sp["gain"])
     print("\n== Dump du firmware d'origine (pour la vidéo 20 images/s) ==")
     print("  Inutile avec le firmware 3.10.78 : le 20 i/s est fabriqué par la caméra au démarrage. Voir docs/INSTALL.md (étape 4).")
@@ -346,10 +346,15 @@ def validate(cfg):
             err.append("video: le flux secondaire ne peut pas être plus grand que le principal")
     sp = cfg["speaker"]
     if sp["enabled"]:
+        ips = [x for x in re.split(r"[,\s]+", str(sp["allow"])) if x]
         try:
-            ipaddress.IPv4Address(str(sp["allow"]))
+            if not ips or len(ips) > 8:
+                raise ValueError
+            for x in ips:
+                ipaddress.IPv4Address(x)
         except ValueError:
-            err.append("speaker.allow: IPv4 obligatoire (seule cette machine pourra envoyer du son)")
+            err.append("speaker.allow: 1 à 8 adresses IPv4 séparées par des virgules (seules ces machines pourront envoyer du son)")
+        sp["allow"] = ",".join(ips)
         try:
             sp["gain"], sp["port"] = int(sp["gain"]), int(sp["port"])
         except (TypeError, ValueError):

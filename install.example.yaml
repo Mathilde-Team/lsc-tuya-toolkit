@@ -50,7 +50,7 @@ video:
 
 speaker:
   enabled: false                     # haut-parleur par le LAN (sirène, annonces) ; voir tools/talk/README.md
-  allow: ""                          # IP autorisée à envoyer du son (ex. Home Assistant) : OBLIGATOIRE si enabled ; port UDP sans authentification
+  allow: ""                          # IP autorisées, séparées par des virgules (ex. Home Assistant) : OBLIGATOIRE si enabled ; port UDP sans authentification
   gain: 50                           # volume 1 à 100
   port: 5004
 

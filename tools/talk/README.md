@@ -6,7 +6,7 @@
 Le micro et la vidéo ne sont pas touchés. Testé sur la caméra IPC-XC-C323 (AK3918EV330, firmware 3.10.78.1269).
 
 - **Format** : G.711 µ-law, 8 kHz, mono, brut, en paquets UDP de 160 à 1024 octets (20 ms = 160 octets).
-- **Port** : `TALK_PORT` (5004 par défaut). **Filtre** : `TALK_ALLOW=<IPv4>` n'accepte que cette source.
+- **Port** : `TALK_PORT` (5004 par défaut). **Filtre** : `TALK_ALLOW=IP1,IP2` (8 max) n'accepte que ces sources.
   Sans `TALK_ALLOW`, toute machine du LAN peut faire parler la caméra : à toujours renseigner.
 - `TALK_GAIN` : volume en pour-cent (1 à 100).
 - La bibliothèque attend 40 s après le démarrage, et referme la voie audio après 1,5 s sans paquet.

@@ -2,7 +2,7 @@
  * talk_inject.so : entrée audio LAN pour anyka_ipc (haut-parleur).
  * Chargée par LD_PRELOAD. Reçoit en UDP du G.711 µ-law 8 kHz mono brut et
  * le passe au décodeur « talk » interne (ht_audio_codec_play_talk_data).
- * Variables : TALK_PORT (défaut 5004), TALK_ALLOW (IPv4 unique autorisée, sinon toutes),
+ * Variables : TALK_PORT (défaut 5004), TALK_ALLOW (IPv4 autorisées séparées par des virgules, 8 max ; sinon toutes),
  * TALK_GAIN (volume en pour-cent, 1..100, défaut 100).
  */
 #include <pthread.h>
@@ -38,6 +38,38 @@ static unsigned char lin_ulaw(int s)
     return ~(sign | (e << 4) | ((s >> (e + 3)) & 0x0F));
 }
 
+#define MAX_ALLOW 8
+static in_addr_t allowed[MAX_ALLOW];
+static int n_allowed;
+
+static void parse_allow(const char *a)
+{
+    char tmp[16];
+    int n = 0;
+    for (;; a++) {
+        if (*a == ',' || *a == ' ' || *a == 0) {
+            if (n && n_allowed < MAX_ALLOW) {
+                tmp[n] = 0;
+                allowed[n_allowed++] = inet_addr(tmp);
+            }
+            n = 0;
+            if (*a == 0)
+                break;
+        } else if (n < 15) {
+            tmp[n++] = *a;
+        }
+    }
+}
+
+static int is_allowed(in_addr_t ip)
+{
+    int i;
+    for (i = 0; i < n_allowed; i++)
+        if (allowed[i] == ip)
+            return 1;
+    return 0;
+}
+
 static void apply_gain(unsigned char *b, int n, int pct)
 {
     int i;
@@ -58,10 +90,11 @@ static void *worker(void *arg)
     struct sockaddr_in sa, from;
     socklen_t fl;
     int s, open = 0, idle = 0, n;
-    in_addr_t ok = allow ? inet_addr(allow) : 0;
     struct pollfd pf;
 
     (void)arg;
+    if (allow)
+        parse_allow(allow);
     sleep(STARTUP_DELAY_S);
     s = socket(AF_INET, SOCK_DGRAM, 0);
     if (s < 0)
@@ -81,7 +114,7 @@ static void *worker(void *arg)
             fl = sizeof from;
             n = recvfrom(s, buf, sizeof buf, 0, (struct sockaddr *)&from, &fl);
         }
-        if (n > 0 && (!allow || from.sin_addr.s_addr == ok)) {
+        if (n > 0 && (!allow || is_allowed(from.sin_addr.s_addr))) {
             if (!open) {
                 ht_audio_codec_talk_open();
                 open = 1;

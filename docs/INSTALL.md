@@ -99,7 +99,7 @@ Autre firmware ou contrôle depuis le PC (le patch n'est alors appliqué que si 
 ## 4 bis. Haut-parleur par le LAN (facultatif)
 
 Section `speaker:` du YAML (`enabled`, `allow`, `gain`, `port`). La caméra ouvre alors un port UDP qui reçoit du G.711 µ-law
-8 kHz ; **seule l'IP `allow` est acceptée** (le port n'a pas d'authentification : indiquez votre Home Assistant et fermez le
+8 kHz ; **seules les IP de `allow` (liste séparée par des virgules) sont acceptées** (le port n'a pas d'authentification : indiquez votre Home Assistant et fermez le
 port ailleurs). Envoi d'un son : `tools/talk/send_audio.py <ip> sirene.wav --max 10`. Détails : `tools/talk/README.md`.
 
 ## 5. Après les réglages : durcir
