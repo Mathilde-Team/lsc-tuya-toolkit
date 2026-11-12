@@ -34,7 +34,7 @@ chmod 600 install.yaml
 | `network` | `ssid`, `password`, `security` (3 = WPA/WPA2), `dhcp`, `ip`, `netmask`, `gateway` |
 | `time` | `tz` (chaîne POSIX), `ntp_server` (vide = pas de NTP) |
 | `syslog` | `server` au format `hote:port`, UDP (vide = désactivé) |
-| `camera` | `hostname`, `ptz_home_on_boot`, `mute_factory_prompt`, `logs_keep` (rotation des journaux de démarrage, 0 = tout garder) |
+| `camera` | `hostname`, `ptz_home_on_boot`, `mute_factory_prompt`, `logs_keep` (rotation des journaux de démarrage, 0 = tout garder), `privacy_preset` (preset « position privée », 0 = désactivé — voir `docs/PRIVACY.md`) |
 | `onvif` | `enabled`, `user`, `password` (`auto` = généré, vide = sans authentification), `ptz` |
 | `security` | `root_password` (`auto` = généré ; écrit dans `shadow` sur la SD) |
 | `services` | `telnet` (`open` / `login` / `off`), `ftp`, `offline` (coupe le cloud Tuya) |
