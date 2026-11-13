@@ -10,7 +10,8 @@ Principe : seul Home Assistant parle au port UDP de la caméra (`speaker.allow` 
 /config/talk/sirene.ulaw       (tools/talk/sirene.ulaw : déjà en G.711 µ-law 8 kHz, ffmpeg n'est pas nécessaire)
 ```
 
-Pour d'autres sons, convertissez-les sur un PC : `ffmpeg -i son.mp3 -ac 1 -ar 8000 -f mulaw son.ulaw`.
+Pour d'autres sons, convertissez-les sur un PC : `ffmpeg -i son.mp3 -ac 1 -ar 8000 -f mulaw son.ulaw`. La sirène livrée
+(`tools/talk/sirene.ulaw`) est entièrement synthétisée par `tools/talk/make_sirene.py` — libre de droits, sans fichier du fabricant.
 
 ## 2. `configuration.yaml`
 

@@ -28,6 +28,21 @@ load_cfg() {
     fi
 }
 
+purge_logs() {
+  # Rotation des journaux de demarrage (issue #7) : garde les LOGS_KEEP
+  # derniers demarrages de chaque fichier (run, entrypoint, anyka_debug),
+  # purge le reste. LOGS_KEEP absent, vide ou 0 = rotation desactivee.
+  keep="${LOGS_KEEP:-0}"
+  case "${keep}" in ''|*[!0-9]*) return 0 ;; esac
+  [ "${keep}" -ge 1 ] || return 0
+  for pat in run entrypoint anyka_debug; do
+    ls -1t "${SD_DIR}/logs/${pat}".*.log 2>/dev/null | tail -n "+$((keep + 1))" | while IFS= read -r f; do
+      rm -f "${f}"
+    done
+  done
+  log "Journaux de demarrage purges (LOGS_KEEP=${keep})"
+}
+
 save_syslog_tail() {
     if [ "${SAVE_SYSLOG}" != "1" ]; then
         return 0
@@ -87,6 +102,7 @@ wait_anyka() {
 log "entrypoint starting"
 
 load_cfg
+purge_logs
 save_syslog_tail
 
 set_time() {

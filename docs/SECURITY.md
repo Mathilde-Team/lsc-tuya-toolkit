@@ -21,6 +21,19 @@ Les adresses du réseau de l'auteur sont volontairement absentes.
 | Info | Aucun mot de passe, jeton ou porte dérobée codé en dur trouvé dans les chaînes de `anyka_ipc` (analyse statique). | — |
 | Info | **Pas de SSH** : ports 22 et 2222 fermés, aucun binaire `ssh`/`dropbear`. Le telnet envoie tout en clair. | — |
 
+## Audit des connexions sortantes (issue #1)
+
+Prouver que la caméra n'émet plus rien vers Internet une fois le cloud coupé
+(`OFFLINE=1` + blocage routeur) : capturer au moins 24 h, puis analyser.
+
+1. **Capture** (routeur OpenWrt ou PC en miroir de port) :
+   `tcpdump -i eth0 -w camera.pcap host <ip_caméra>` pendant ≥ 24 h.
+2. **Analyse** (PC) : `python3 tools/audit_sorties.py camera.pcap --ip <ip_caméra>`
+   — noms DNS demandés et destinations contactées, hors réseau local.
+   `--masque` remplace le dernier octet de chaque IP avant publication ici.
+3. **Rapport** : coller la sortie (masquée) dans cette section. Statut :
+   **en cours** — outillage livré, capture 24 h à produire sur le matériel.
+
 ## Recommandations, par ordre d'efficacité
 
 1. **Routeur** : bloquer tout le trafic sortant de la caméra vers Internet ; n'autoriser que son accès depuis votre PC/NVR vers le port 554. Idéalement un VLAN dédié aux objets connectés.
@@ -31,5 +44,5 @@ Les adresses du réseau de l'auteur sont volontairement absentes.
 
 ## Limites
 
-- Le RTSP n'a pas été testé avec authentification ; les connexions sortantes n'ont pas été listées (`netstat -tn`).
+- Le RTSP n'a pas été testé avec authentification ; les connexions sortantes n'ont pas encore été auditées sur 24 h (méthode et outillage : section « Audit des connexions sortantes », issue #1).
 - Analyse statique du binaire seulement : aucune recherche de vulnérabilités mémoire n'a été faite.

@@ -277,7 +277,31 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - `hack.sh` ne définissait pas `CFG_FILE` : `hack.conf` n'y était jamais lu. Corrigé.
 - **Installeur** : section `speaker:` (IP autorisée obligatoire), `AUTO_PATCH_FW`.
 
-## 19. Détection de mouvement locale vers MQTT (opérationnelle)
+## 19. Rotation des journaux de démarrage (issue #7)
+
+- **Constat** : les journaux de démarrage s'accumulent sur la SD (usure, bruit — ~1800 fichiers, 50 Mo constatés).
+- **Correctif** : `purge_logs` dans `entrypoint.sh`, exécuté à chaque démarrage : garde les `LOGS_KEEP` derniers démarrages de chaque famille (`run.*.log`, `entrypoint.*.log`, `anyka_debug.*.log`), purge le reste. `LOGS_KEEP=20` par défaut dans `hack.conf` ; absent, vide ou `0` = rotation désactivée (tout est gardé). L'installeur expose `camera.logs_keep` (assistant, YAML, contrôle de validité) et l'écrit dans `hack.conf`.
+- **Vérifié hors caméra** : purge simulée sur 60 fichiers factices (30 démarrages × 3 familles) → il en reste exactement 30 ; `LOGS_KEEP=0` ne supprime rien ; valeurs invalides (non numériques) ne font rien. Non encore observé sur la caméra réelle.
+
+## 20. Sirène générée par script (issue #14)
+
+- `tools/talk/make_sirene.py` : génère `sirene.wav` (PCM 16 bits 8 kHz) et `sirene.ulaw` (G.711 µ-law brut, format attendu par `send_audio.py`) — balayage exponentiel 700–2500 Hz, 4 s, déterministe, sans ffmpeg. Encodeur µ-law ITU-T G.711 en pur Python (round-trip ≤ 512, pas du segment haut ; vecteurs 0xFF→0, 0x7F→0, 0xFE→+8, 0x7E→−8 vérifiés). `--check` confirme la reproductibilité octet pour octet.
+- `sirene.wav`/`sirene.ulaw` remplacés par la sortie du script : provenance démontrable, plus de fichier d'origine inconnue. Mêmes nom, format et durée — la config HA (`docs/HOME_ASSISTANT_SIRENE.md`) est inchangée.
+
+## 21. Position privée par preset (issue #13)
+
+- `custom/scripts/privacy.sh` : envoie la caméra sur le preset `PRIVACY_PRESET` (`ptz_move -p N`, mécanisme présupposé vérifié §17) ; absent, non numérique ou `0` = ne fait rien.
+- Installeur : `camera.privacy_preset` (assistant, `install.example.yaml`, validation « entier positif ou nul ») écrit `PRIVACY_PRESET` dans `hack.conf`.
+- `docs/PRIVACY.md` : création du preset (`ptz_presets.sh -a add_preset` ou `onvif.set_preset`), boutons HA (`onvif.goto_preset`), et limites explicites — une position PTZ ne coupe ni le flux ni le micro.
+- Vérifié hors caméra : `sh -n`, logique `privacy.sh` (désactivé par défaut), `install.py` (render + validation). La création réelle du preset et le bouton HA restent à essayer sur la caméra.
+
+## 22. Outillage de l'audit des connexions sortantes (issue #1)
+
+- `tools/audit_sorties.py` : analyse un pcap (format classique tcpdump, Ethernet/IPv4/IPv6, VLAN 802.1Q) et produit le rapport markdown — noms DNS demandés (questions DNS), destinations contactées hors RFC 1918/link-local avec ports. `--ip` restreint à l'émetteur caméra, `--masque` masque le dernier octet des IP avant publication dans `docs/SECURITY.md`. Pur Python, aucune dépendance.
+- `docs/SECURITY.md` : section « Audit des connexions sortantes » (méthode de capture ≥ 24 h, analyse, statut en cours) ; la limite « connexions sortantes non listées » pointe désormais vers cette méthode.
+- Vérifié : pcap synthétique (requêtes DNS dont une d'un autre hôte exclu par `--ip`, trafic LAN exclu, UDP et TCP sortants) — rapport exact ; `--masque` effectif. La capture réelle 24 h reste à produire sur le matériel.
+
+## 23. Détection de mouvement locale vers MQTT (opérationnelle)
 
 - **État** : opérationnelle et validée en conditions réelles sur une caméra (passages détectés, `OFF` après le maintien, aucun `ON` perdu en QoS 1).
 - **Détection** (`tools/motion/md_inject.so`, `LD_PRELOAD`) : le firmware initialise `ak_md` mais ne l'active que depuis le service Tuya ; `md_inject` appelle `ht_montion_detect_set_active_cb` puis `ht_montion_detect_open`, et publie `ON`/`OFF` en MQTT (QoS 1, retain, 3 essais). Options : `MOTION_TOPIC`, `MOTION_HOLD`, `MOTION_SENS` (0..2), `MOTION_HUMAN`.
