@@ -46,6 +46,8 @@ DEFAULTS = {
     "video": {"main_codec": 2, "main_width": 1920, "main_height": 1080,
               "sub_codec": 2, "sub_width": 640, "sub_height": 360},
     "speaker": {"enabled": False, "allow": "", "gain": 50, "port": 5004},
+    "motion": {"enabled": False, "topic": "camera/motion", "hold": 30, "sensitivity": 0, "human": False,
+               "broker_host": "", "broker_port": 1883, "broker_user": "", "broker_password": ""},
     "firmware": {"dump_dir": ""},
 }
 CODECS = {0: "H264", 1: "MJPEG", 2: "H265"}
@@ -214,6 +216,17 @@ def wizard(cfg):
     if sp["enabled"]:
         sp["allow"] = ask("IP autorisées à envoyer du son (séparées par des virgules)", sp["allow"], required=True)
         sp["gain"] = ask("Volume (1 à 100)", sp["gain"])
+    mo = cfg["motion"]
+    print("\n== Détection de mouvement locale (sans cloud) publiée en MQTT (ON/OFF) ==")
+    mo["enabled"] = ask_bool("Activer la détection de mouvement MQTT", mo["enabled"])
+    if mo["enabled"]:
+        mo["broker_host"] = ask("IP du broker MQTT", mo["broker_host"], required=True)
+        mo["broker_port"] = ask("Port du broker", mo["broker_port"])
+        mo["broker_user"] = ask("Utilisateur MQTT (vide = anonyme)", mo["broker_user"])
+        if mo["broker_user"]:
+            mo["broker_password"] = ask("Mot de passe MQTT", mo["broker_password"], secret=True, required=True)
+        mo["topic"] = ask("Topic MQTT", mo["topic"], required=True)
+        mo["hold"] = ask("Secondes avant le OFF", mo["hold"])
     print("\n== Dump du firmware d'origine (pour la vidéo 20 images/s) ==")
     print("  Inutile avec le firmware 3.10.78 : le 20 i/s est fabriqué par la caméra au démarrage. Voir docs/INSTALL.md (étape 4).")
     cfg["firmware"]["dump_dir"] = ask("Dossier contenant anyka_ipc et l'ISP extraits de VOTRE caméra", cfg["firmware"]["dump_dir"])
@@ -364,6 +377,30 @@ def validate(cfg):
                 err.append("speaker.gain: 1 à 100")
             if not 1024 <= sp["port"] <= 65535:
                 err.append("speaker.port: 1024 à 65535")
+    mo = cfg["motion"]
+    if mo["enabled"]:
+        try:
+            ipaddress.IPv4Address(str(mo["broker_host"]))
+        except ValueError:
+            err.append("motion.broker_host: adresse IPv4 du broker MQTT obligatoire")
+        try:
+            mo["broker_port"], mo["hold"], mo["sensitivity"] = int(mo["broker_port"]), int(mo["hold"]), int(mo["sensitivity"])
+        except (TypeError, ValueError):
+            err.append("motion.broker_port, hold et sensitivity doivent être des entiers")
+        else:
+            if not 1 <= mo["broker_port"] <= 65535:
+                err.append("motion.broker_port: 1 à 65535")
+            if not 1 <= mo["hold"] <= 3600:
+                err.append("motion.hold: 1 à 3600 secondes")
+            if mo["sensitivity"] not in (0, 1, 2):
+                err.append("motion.sensitivity: 0, 1 ou 2")
+        if not re.fullmatch(r"[A-Za-z0-9_/.-]{1,100}", str(mo["topic"])):
+            err.append("motion.topic: lettres, chiffres et _ / . - (100 caractères max)")
+        for k in ("broker_user", "broker_password"):
+            if len(str(mo[k])) > 90 or re.search(r"[\r\n\x00]", str(mo[k])):
+                err.append(f"motion.{k}: 90 caractères max, sans retour à la ligne")
+        if mo["broker_user"] and not mo["broker_password"]:
+            err.append("motion.broker_password: obligatoire si broker_user est renseigné")
     tm = telnet_mode(cfg["services"]["telnet"])
     cfg["services"]["telnet"] = tm
     if tm not in ("open", "login", "off"):
@@ -480,10 +517,26 @@ def render(dst, cfg):
                      ("TZ_STRING", f'"{t["tz"]}"'), ("NTP_SERVER", f'"{t["ntp_server"]}"'),
                      ("SYSLOG_SERVER", f'"{cfg["syslog"]["server"]}"'), ("CAM_HOSTNAME", f'"{c["hostname"]}"'),
                      ("TALK", b(cfg["speaker"]["enabled"])), ("TALK_ALLOW", f'"{cfg["speaker"]["allow"] if cfg["speaker"]["enabled"] else ""}"'),
-                     ("TALK_GAIN", cfg["speaker"]["gain"]), ("TALK_PORT", cfg["speaker"]["port"])):
+                     ("TALK_GAIN", cfg["speaker"]["gain"]), ("TALK_PORT", cfg["speaker"]["port"]),
+                     ("MOTION", b(cfg["motion"]["enabled"])), ("MOTION_TOPIC", f'"{cfg["motion"]["topic"]}"'),
+                     ("MOTION_HOLD", cfg["motion"]["hold"]), ("MOTION_SENS", cfg["motion"]["sensitivity"]),
+                     ("MOTION_HUMAN", '"1"' if cfg["motion"]["human"] else '""')):
             txt = set_kv(txt, k, v)
         return txt
     rw(os.path.join(conf, "hack.conf"), hack)
+
+    mo = cfg["motion"]
+    cred = os.path.join(conf, "mqtt.cred")
+    if mo["enabled"]:
+        # Identifiants hors dépôt : écrits seulement sur la SD, lisibles par root uniquement
+        with open(cred, "w", newline="\n") as f:
+            f.write(f"{mo['broker_host']}\n{mo['broker_port']}\n{mo['broker_user']}\n{mo['broker_password']}\n")
+        try:
+            os.chmod(cred, 0o600)
+        except OSError:
+            pass
+    elif os.path.exists(cred):
+        os.remove(cred)
 
     v = cfg["video"]
 

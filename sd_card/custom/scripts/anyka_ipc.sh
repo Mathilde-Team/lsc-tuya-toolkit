@@ -13,6 +13,12 @@ TALK=0
 TALK_PORT=5004
 TALK_ALLOW=""
 TALK_GAIN=50
+MOTION=0
+MOTION_TOPIC="camera/motion"
+MOTION_HOLD=30
+MOTION_SENS=0
+MOTION_HUMAN=""
+CLOCKFIX=1
 [ -f "${CFG_FILE}" ] && . "${CFG_FILE}"
 PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin"
 
@@ -46,9 +52,16 @@ start() {
   fi
 
   echo "start ipc service..."
-  # Haut-parleur par le LAN (tools/talk) : seulement si TALK=1 et TALK_ALLOW renseigné
-  if [ "$TALK" = "1" ] && [ -n "$TALK_ALLOW" ] && [ -f "${CUSTOM_DIR}/bin/talk_inject.so" ]; then
-    LD_PRELOAD="${CUSTOM_DIR}/bin/talk_inject.so" TALK_PORT="$TALK_PORT" TALK_ALLOW="$TALK_ALLOW" TALK_GAIN="$TALK_GAIN" \
+  # Bibliothèques injectées (LD_PRELOAD) : haut-parleur LAN, détection de mouvement MQTT, anti-décalage d'horloge
+  PRELOAD=""
+  add_lib() { [ -f "${CUSTOM_DIR}/bin/$1" ] && PRELOAD="${PRELOAD:+${PRELOAD}:}${CUSTOM_DIR}/bin/$1"; }
+  [ "$TALK" = "1" ] && [ -n "$TALK_ALLOW" ] && add_lib talk_inject.so
+  [ "$MOTION" = "1" ] && [ -f "${CUSTOM_DIR}/configs/mqtt.cred" ] && add_lib md_inject.so
+  [ "$CLOCKFIX" = "1" ] && add_lib clockfix.so
+  [ -n "$MOTION_HUMAN" ] && export MOTION_HUMAN
+  if [ -n "$PRELOAD" ]; then
+    LD_PRELOAD="$PRELOAD" TALK_PORT="$TALK_PORT" TALK_ALLOW="$TALK_ALLOW" TALK_GAIN="$TALK_GAIN" \
+      MOTION_MQTT_FILE="${CUSTOM_DIR}/configs/mqtt.cred" MOTION_TOPIC="$MOTION_TOPIC" MOTION_HOLD="$MOTION_HOLD" MOTION_SENS="$MOTION_SENS" \
       anyka_ipc >>"$LOG_FILE" 2>&1 &
   else
     anyka_ipc >>"$LOG_FILE" 2>&1 &

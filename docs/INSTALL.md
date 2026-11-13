@@ -102,6 +102,14 @@ Section `speaker:` du YAML (`enabled`, `allow`, `gain`, `port`). La caméra ouvr
 8 kHz ; **seules les IP de `allow` (liste séparée par des virgules) sont acceptées** (le port n'a pas d'authentification : indiquez votre Home Assistant et fermez le
 port ailleurs). Envoi d'un son : `tools/talk/send_audio.py <ip> sirene.wav --max 10`. Détails : `tools/talk/README.md`.
 
+## 4 ter. Détection de mouvement vers MQTT (facultatif, opérationnelle)
+
+Section `motion:` du YAML (`enabled`, `topic`, `hold`, `sensitivity`, `broker_host`, `broker_port`, `broker_user`, `broker_password`).
+La caméra publie `ON` au premier mouvement et `OFF` après `hold` secondes sans mouvement (MQTT 3.1.1, QoS 1, retain, sans TLS).
+Le mot de passe du broker est écrit uniquement sur la SD (`custom/configs/mqtt.cred`, mode 600). `CLOCKFIX=1` (par défaut) empêche le saut de +8 h de l'horloge.
+Côté Home Assistant : `binary_sensor` MQTT avec `payload_on: "ON"` et `payload_off: "OFF"` sur le topic choisi.
+La détection est validée sur une caméra réelle ; le filtre humain (`MOTION_HUMAN`) n'est pas encore fiable. Détails : `tools/motion/README.md`.
+
 ## 5. Après les réglages : durcir
 
 - **Mot de passe root** : `security.root_password` est écrit (hash MD5-crypt) dans le fichier `shadow` de la SD, que le

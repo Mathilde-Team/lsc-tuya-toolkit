@@ -54,5 +54,16 @@ speaker:
   gain: 50                           # volume 1 à 100
   port: 5004
 
+motion:
+  enabled: false                     # détection de mouvement locale (sans cloud), publiée en MQTT : ON puis OFF après `hold` secondes ; voir tools/motion/README.md
+  topic: "camera/motion"             # un topic par caméra (ex. camera188/motion)
+  hold: 30                           # secondes sans mouvement avant OFF
+  human: false                       # EXPÉRIMENTAL : filtre humain du firmware (liblvhsr), non validé ; voir tools/motion/README.md
+  sensitivity: 0                     # 0 (la moins sensible) à 2
+  broker_host: ""                    # IP du broker MQTT (obligatoire si enabled) ; MQTT 3.1.1 sans TLS : réseau local uniquement
+  broker_port: 1883
+  broker_user: ""                    # laisser vide si le broker est anonyme
+  broker_password: ""                # écrit seulement dans custom/configs/mqtt.cred (mode 600) sur la SD ; install.yaml est ignoré par git
+
 firmware:
   dump_dir: ""                       # inutile en 3.10.78 (20 i/s fabriqué par la caméra au démarrage) ; pour un autre firmware : dump de VOTRE caméra

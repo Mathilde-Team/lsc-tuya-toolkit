@@ -276,3 +276,13 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - **Patch automatique** : `custom/scripts/patch_fw.sh` fabrique `anyka_ipc_fps20b` et l'ISP 20 i/s sur la caméra si les MD5 sont ceux du firmware 3.10.78 ; résultat identique octet pour octet aux outils Python (MD5 vérifiés sur la caméra).
 - `hack.sh` ne définissait pas `CFG_FILE` : `hack.conf` n'y était jamais lu. Corrigé.
 - **Installeur** : section `speaker:` (IP autorisée obligatoire), `AUTO_PATCH_FW`.
+
+## 19. Détection de mouvement locale vers MQTT (opérationnelle)
+
+- **État** : opérationnelle et validée en conditions réelles sur une caméra (passages détectés, `OFF` après le maintien, aucun `ON` perdu en QoS 1).
+- **Détection** (`tools/motion/md_inject.so`, `LD_PRELOAD`) : le firmware initialise `ak_md` mais ne l'active que depuis le service Tuya ; `md_inject` appelle `ht_montion_detect_set_active_cb` puis `ht_montion_detect_open`, et publie `ON`/`OFF` en MQTT (QoS 1, retain, 3 essais). Options : `MOTION_TOPIC`, `MOTION_HOLD`, `MOTION_SENS` (0..2), `MOTION_HUMAN`.
+- **Horloge** (`tools/clockfix/clockfix.so`) : bloque le saut de +8 h de `settimeofday`. **Limite connue** : l'heure incrustée (OSD) reste en UTC (1 h de retard).
+- **Installeur** : section `motion:` (`install.example.yaml`), `mqtt.cred` généré sur la SD uniquement (mode 600), `hack.conf` (`MOTION*`, `CLOCKFIX`).
+- **Filtre humain** : le firmware embarque `liblvhsr.so` (désactivé par défaut) ; avec `MOTION_HUMAN=1` il ne se distingue pas encore d'un mouvement simple (un objet a aussi déclenché, délai de 10 à 28 s). Voir `tools/motion/README.md`.
+- **Installeur** : option `motion.human` (`MOTION_HUMAN`, désactivée par défaut, expérimentale). **Reste à tester** : liste dans `tools/motion/README.md` (objet vs humain, sensibilités 0/1/2, jour/nuit, délai, topic « humain » séparé).
+- **Déploiement** : la caméra « 188 » est équipée et validée ; la caméra « 187 » n'a pas encore la détection (à installer avec l'installeur).
