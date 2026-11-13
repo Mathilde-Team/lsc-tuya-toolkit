@@ -16,3 +16,15 @@ Constats issus du journal de la caméra et du désassemblage de `anyka_ipc` (fir
 - `ht_ptz_set_cmd` ne traite que les commandes 9 (veille) et 10 (réveil). La position moteur choisie par la commande 9 n'est pas déterminée.
 - Sans cloud, seule la partie PTZ est utile : le preset de `docs/PRIVACY.md` joue ce rôle. La pause du service média ne coupe pas le RTSP local (non testé, à vérifier).
 - Il existe aussi des **masques d'image** (`ak_vpss_mask_set_area`, `AK_ISP_set_main_chan_mask_area`) : zones noircies dans la vidéo, piste pour une vraie confidentialité. Non testé.
+
+## Fonctions ajoutées (#9 et #13)
+
+Fonctions trouvées par désassemblage de `anyka_ipc` (voir `docs/FIRMWARE_COMMANDS.md`) et appelées par `md_inject.so`.
+
+| Fonction | MQTT | ONVIF | État |
+|---|---|---|---|
+| Jour/nuit/auto : `ht_night_mode_set_irled_mode` (0 auto, 1 jour, 2 nuit) | `<base>/night/set` = `auto`/`day`/`night`, état retained `<base>/night` | Imaging `SetImagingSettings` `IrCutFilter` `ON` (jour) / `OFF` (nuit) / `AUTO` | testé sur la .188 |
+| Privacy : `privacy.sh on/off` (preset PTZ `PRIVACY_PRESET` / `PRIVACY_HOME_PRESET`) | `<base>/privacy/set` = `ON`/`OFF`, état `<base>/privacy` | relais 0 (fermé = privé) | code en place, non testé ; preset à créer |
+
+`<base>` = `MOTION_TOPIC` sans le dernier élément. Un fichier `/tmp/md_cmd` (`night day`, `privacy on`) sert de passerelle ONVIF -> `md_inject.so`.
+Le patch `tools/onvif/imaging_auto.patch` ajoute `AUTO` à ONVIF. La bascule jour/nuit en boucle au crépuscule reste à traiter (hystérésis `ps_auto_*`).

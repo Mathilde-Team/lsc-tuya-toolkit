@@ -10,6 +10,11 @@
  *   MOTION_TOPIC      topic MQTT (défaut camera/motion)
  *   MOTION_HOLD       secondes avant OFF (défaut 10)
  *   MOTION_SENS       sensibilité du firmware 0..2 (défaut : celle du firmware)
+ * Commandes (désassemblage : ht_night_mode_set_irled_mode 0 auto / 1 jour / 2 nuit) :
+ *   MQTT <base>/night/set  = auto|day|night   -> état retained <base>/night
+ *   MQTT <base>/privacy/set = ON|OFF          -> privacy.sh on|off, état retained <base>/privacy
+ *   (<base> = MOTION_TOPIC sans son dernier élément ; ex. camera/motion -> camera)
+ *   Fichier /tmp/md_cmd, une ligne "night day" ou "privacy on" : même effet (utilisé par ONVIF).
  *   MOTION_HUMAN      1 = active le filtre humain du firmware (liblvhsr), 0 = le coupe (défaut : inchangé)
  */
 #include <fcntl.h>
@@ -28,6 +33,8 @@ extern int ht_montion_detect_set_active_cb(void (*cb)(long long));
 extern long syscall(long n, ...);
 extern int ht_montion_detect_open(void);
 extern int ht_montion_detect_set_sensitivity(int level);
+extern int ht_night_mode_set_irled_mode(int mode);
+extern int system(const char *cmd);
 extern int ht_montion_detect_set_human_filter(int enable);
 
 static volatile int ev_count;
@@ -181,6 +188,196 @@ static void announce(const char *topic, const char *state)
     logmsg("mqtt publish failed");
 }
 
+
+static char base[64];
+static const char *night_name[] = {"auto", "day", "night"};
+
+static void apply_night(const char *v)
+{
+    char t[96];
+    int m = !strcmp(v, "auto") ? 0 : !strcmp(v, "day") ? 1 : !strcmp(v, "night") ? 2 : -1;
+
+    if (m < 0)
+        return;
+    logmsg(ht_night_mode_set_irled_mode(m) == 0 ? "night mode set" : "night mode refused");
+    strcpy(t, base);
+    strcat(t, "/night");
+    if (have_mqtt)
+        publish(t, night_name[m]);
+}
+
+static void apply_privacy(const char *v)
+{
+    char t[96];
+    int on = !strcmp(v, "ON") || !strcmp(v, "on");
+
+    if (!on && strcmp(v, "OFF") && strcmp(v, "off"))
+        return;
+    logmsg(on ? "privacy on" : "privacy off");
+    system(on ? "/tmp/sd/custom/scripts/privacy.sh on" : "/tmp/sd/custom/scripts/privacy.sh off");
+    strcpy(t, base);
+    strcat(t, "/privacy");
+    if (have_mqtt)
+        publish(t, on ? "ON" : "OFF");
+}
+
+static void handle(const char *topic, const char *val)
+{
+    int l = strlen(topic);
+
+    if (l > 10 && !strcmp(topic + l - 10, "/night/set"))
+        apply_night(val);
+    else if (l > 12 && !strcmp(topic + l - 12, "/privacy/set"))
+        apply_privacy(val);
+}
+
+static void poll_file(void)
+{
+    char b[64];
+    int fd = open("/tmp/md_cmd", O_RDONLY), n;
+    char *sp;
+
+    if (fd < 0)
+        return;
+    n = read(fd, b, sizeof b - 1);
+    close(fd);
+    unlink("/tmp/md_cmd");
+    if (n <= 0)
+        return;
+    b[n] = 0;
+    while (n > 0 && (b[n - 1] == '\n' || b[n - 1] == '\r' || b[n - 1] == ' '))
+        b[--n] = 0;
+    for (sp = b; *sp && *sp != ' '; sp++)
+        ;
+    if (!*sp)
+        return;
+    *sp++ = 0;
+    if (!strcmp(b, "night"))
+        apply_night(sp);
+    else if (!strcmp(b, "privacy"))
+        apply_privacy(sp);
+}
+
+/* Abonné MQTT : QoS 0, PINGREQ toutes les 30 s, reconnexion automatique. */
+static int subscribe_loop(void)
+{
+    unsigned char pkt[256], rx[256];
+    struct sockaddr_in sa;
+    struct pollfd pf;
+    int s, n = 0, body, r, idle = 0, i;
+    static const char *sub[] = {"/night/set", "/privacy/set"};
+
+    s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s < 0)
+        return -1;
+    memset(&sa, 0, sizeof sa);
+    sa.sin_family = AF_INET;
+    sa.sin_port = htons(atoi(port));
+    sa.sin_addr.s_addr = inet_addr(host);
+    if (connect(s, (struct sockaddr *)&sa, sizeof sa) < 0) {
+        close(s);
+        return -1;
+    }
+    pkt[n++] = 0x10;
+    body = n++;
+    n += put_str(pkt + n, "MQTT");
+    pkt[n++] = 4;
+    pkt[n++] = user[0] ? 0xC2 : 0x02;
+    pkt[n++] = 0;
+    pkt[n++] = 60;
+    n += put_str(pkt + n, "anyka-cmd");
+    if (user[0]) {
+        n += put_str(pkt + n, user);
+        n += put_str(pkt + n, pass);
+    }
+    pkt[body] = n - body - 1;
+    write(s, pkt, n);
+    pf.fd = s;
+    pf.events = POLLIN;
+    if (poll(&pf, 1, 3000) <= 0 || read(s, rx, sizeof rx) < 4 || rx[0] != 0x20 || rx[3] != 0) {
+        close(s);
+        return -1;
+    }
+    for (i = 0; i < 2; i++) {
+        char t[96];
+
+        strcpy(t, base);
+        strcat(t, sub[i]);
+        n = 0;
+        pkt[n++] = 0x82;
+        body = n++;
+        pkt[n++] = 0;
+        pkt[n++] = i + 1;
+        n += put_str(pkt + n, t);
+        pkt[n++] = 0;
+        pkt[body] = n - body - 1;
+        write(s, pkt, n);
+    }
+    logmsg("command subscriber ready");
+    for (;;) {
+        poll_file();
+        r = poll(&pf, 1, 1000);
+        if (r > 0) {
+            r = read(s, rx, sizeof rx - 1);
+            if (r <= 0)
+                break;
+            idle = 0;
+            for (n = 0; n + 2 <= r;) {
+                int len = rx[n + 1], tl;
+
+                if (n + 2 + len > r)
+                    break;
+                if ((rx[n] & 0xF0) == 0x30 && len > 2) {
+                    char topic[96], val[32];
+                    int pl;
+
+                    tl = (rx[n + 2] << 8) | rx[n + 3];
+                    pl = len - 2 - tl;
+                    if (tl < (int)sizeof topic && pl > 0 && pl < (int)sizeof val) {
+                        memcpy(topic, rx + n + 4, tl);
+                        topic[tl] = 0;
+                        memcpy(val, rx + n + 4 + tl, pl);
+                        val[pl] = 0;
+                        handle(topic, val);
+                    }
+                }
+                n += 2 + len;
+            }
+        } else if (++idle >= 30) {
+            idle = 0;
+            pkt[0] = 0xC0;
+            pkt[1] = 0;
+            if (write(s, pkt, 2) < 2)
+                break;
+        }
+    }
+    close(s);
+    return 0;
+}
+
+static void *cmd_worker(void *arg)
+{
+    const char *t = getenv("MOTION_TOPIC");
+    char *sl;
+
+    (void)arg;
+    strncpy(base, t ? t : "camera/motion", sizeof base - 1);
+    sl = strrchr(base, '/');
+    if (sl)
+        *sl = 0;
+    sleep(STARTUP_DELAY_S + 5);
+    for (;;) {
+        if (have_mqtt) {
+            if (subscribe_loop() < 0)
+                sleep(10);
+        } else {
+            poll_file();
+            sleep(1);
+        }
+    }
+    return 0;
+}
+
 static void *worker(void *arg)
 {
     const char *f = getenv("MOTION_MQTT_FILE");
@@ -224,4 +421,5 @@ __attribute__((constructor)) static void md_init(void)
 {
     pthread_t t;
     pthread_create(&t, 0, worker, 0);
+    pthread_create(&t, 0, cmd_worker, 0);
 }

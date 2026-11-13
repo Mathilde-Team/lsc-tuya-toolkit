@@ -1,0 +1,11 @@
+#!/bin/sh
+# Appelé par onvif_simple_server (SetImagingSettings, variables ONVIF_IMAGING_*).
+# IrCutFilter ON = filtre IR engagé = mode jour ; OFF = mode nuit (vision IR).
+# La commande est transmise à md_inject.so (fichier lu chaque seconde), qui appelle
+# ht_night_mode_set_irled_mode (0 auto, 1 jour, 2 nuit). Voir docs/NIGHT_AND_PRIVACY.md.
+case "${ONVIF_IMAGING_IRCUT_FILTER}" in
+    ON)   echo "night day" > /tmp/md_cmd ;;
+    OFF)  echo "night night" > /tmp/md_cmd ;;
+    AUTO) echo "night auto" > /tmp/md_cmd ;;
+esac
+exit 0

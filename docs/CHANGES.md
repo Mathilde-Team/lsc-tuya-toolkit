@@ -310,3 +310,9 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - **Filtre humain** : le firmware embarque `liblvhsr.so` (désactivé par défaut) ; avec `MOTION_HUMAN=1` il ne se distingue pas encore d'un mouvement simple (un objet a aussi déclenché, délai de 10 à 28 s). Voir `tools/motion/README.md`.
 - **Installeur** : option `motion.human` (`MOTION_HUMAN`, désactivée par défaut, expérimentale). **Reste à tester** : liste dans `tools/motion/README.md` (objet vs humain, sensibilités 0/1/2, jour/nuit, délai, topic « humain » séparé).
 - **Déploiement** : la caméra « 188 » est équipée et validée ; la caméra « 187 » est équipée (détection active, aucun échec de publication) mais sans passage validé. Sa carte SD est montée en lecture seule au démarrage : un déploiement à la main demande `mount -o remount,rw /tmp/sd` (elle repasse en lecture seule au redémarrage).
+
+## 24. Jour/nuit et privacy par MQTT et ONVIF (#9, #13)
+
+- `md_inject.so` : abonné MQTT (`<base>/night/set`, `<base>/privacy/set`) et fichier `/tmp/md_cmd`.
+- ONVIF Imaging activé (`set_imaging`, patch `imaging_auto.patch`), relais 0 = privacy.
+- `privacy.sh on|off`, `docs/FIRMWARE_COMMANDS.md` et `tools/firmware/gen_commands.py`.

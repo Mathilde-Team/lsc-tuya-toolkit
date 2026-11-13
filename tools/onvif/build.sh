@@ -15,6 +15,8 @@ mkdir -p "$WORK" && cd "$WORK"
 git -C onvif_simple_server checkout -q -f 7b3941a   # version testee
 # Positions absolues PTZ normalisees -1..1 (voir docs/ONVIF.md) : x/y d'AbsoluteMove et de GetStatus
 git -C onvif_simple_server apply "$HERE/ptz_absolu_normalise.patch"
+# IrCutFilter AUTO (jour/nuit/auto, voir docs/NIGHT_AND_PRIVACY.md)
+git -C onvif_simple_server apply "$HERE/imaging_auto.patch"
 S="$WORK/onvif_simple_server/extras"
 
 curl -sSLo zlib.tgz https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz
@@ -50,7 +52,7 @@ SD="$HERE/../../sd_card/custom"
 mkdir -p "$SD/onvif/www/onvif" "$SD/bin"
 cp onvif_simple_server "$SD/onvif/www/onvif/"
 for d in device_service_files events_service_files generic_files media_service_files \
-         media2_service_files ptz_service_files deviceio_service_files; do
+         media2_service_files ptz_service_files deviceio_service_files imaging_service_files; do
     cp -R "$d" "$SD/onvif/www/onvif/"
 done
 cp mini_cgi_httpd "$SD/bin/"

@@ -1,0 +1,25 @@
+diff --git a/imaging_service.c b/imaging_service.c
+index 1d24be5..28085e7 100644
+--- a/imaging_service.c
++++ b/imaging_service.c
+@@ -174,7 +174,7 @@ int imaging_set_imaging_settings()
+ 
+     val = get_element_in_element("IrCutFilter", settings);
+     if (val != NULL) {
+-        if ((strcmp(val, "ON") != 0) && (strcmp(val, "OFF") != 0))
++        if ((strcmp(val, "ON") != 0) && (strcmp(val, "OFF") != 0) && (strcmp(val, "AUTO") != 0))
+             goto invalid;
+         snprintf(values[4], sizeof(values[4]), "%s", val);
+         present[4] = 1;
+diff --git a/imaging_service_files/GetOptions.xml b/imaging_service_files/GetOptions.xml
+index c17b856..14887a4 100644
+--- a/imaging_service_files/GetOptions.xml
++++ b/imaging_service_files/GetOptions.xml
+@@ -15,6 +15,7 @@
+                 %FOCUS%
+                 <tt:IrCutFilterModes>ON</tt:IrCutFilterModes>
+                 <tt:IrCutFilterModes>OFF</tt:IrCutFilterModes>
++                <tt:IrCutFilterModes>AUTO</tt:IrCutFilterModes>
+                 <tt:Sharpness><tt:Min>0</tt:Min><tt:Max>1</tt:Max></tt:Sharpness>
+                 <tt:WideDynamicRange>
+                     <tt:Mode>ON</tt:Mode>

@@ -22,6 +22,7 @@ exec >> "${LOG_FILE}" 2>&1
 load_cfg() {
     # Defaults
     PRIVACY_PRESET=0
+    PRIVACY_HOME_PRESET=0
 
     if [ -f "${CFG_FILE}" ]; then
         # shellcheck disable=SC1090
@@ -31,17 +32,25 @@ load_cfg() {
 
 load_cfg
 
-case "${PRIVACY_PRESET}" in
+# Usage : privacy.sh [on|off]  (on par défaut). off = retour au preset PRIVACY_HOME_PRESET.
+ACTION="${1:-on}"
+if [ "${ACTION}" = "off" ]; then
+    TARGET="${PRIVACY_HOME_PRESET}"
+else
+    TARGET="${PRIVACY_PRESET}"
+fi
+
+case "${TARGET}" in
     ''|*[!0-9]*|0)
-        log "PRIVACY_PRESET absent ou nul : rien a faire"
+        log "preset ${ACTION} absent ou nul : rien a faire"
         exit 0
         ;;
 esac
 
-log "privacy.sh -> preset ${PRIVACY_PRESET}"
+log "privacy.sh ${ACTION} -> preset ${TARGET}"
 if [ ! -x "${SCRIPTS_DIR}/ptz_move" ]; then
     log "ERROR ptz_move manquant : ${SCRIPTS_DIR}/ptz_move"
     exit 1
 fi
-"${SCRIPTS_DIR}/ptz_move" -p "${PRIVACY_PRESET}"
+"${SCRIPTS_DIR}/ptz_move" -p "${TARGET}"
 log "privacy.sh fait"
