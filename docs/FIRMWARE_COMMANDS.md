@@ -374,3 +374,15 @@ Colonnes :
 | `ht_tuya_stream_storage_tf_status` | 0x0006fd18 | 0 | tuya stream storage tf status | non analysé | non | non testé |
 | `ht_tuya_uuid_check` | 0x00070f08 | 3 | tuya uuid check | non analysé | non | non testé |
 
+
+## Graphe d'appels (Ghidra)
+
+`tools/firmware/ExportCalls.java` exporte « appelant / type / appelé » (CALL = appel direct, PTR = adresse de fonction stockée) pour toutes les fonctions de `anyka_ipc`. Il demande Ghidra 12.2 et Java 25. Commande :
+
+`JAVA_HOME=<jdk25> analyzeHeadless <projet> anyka -import anyka_ipc -processor ARM:LE:32:v5t -scriptPath tools/firmware -postScript ExportCalls.java calls.tsv`
+
+L'analyse dure une quinzaine de minutes et donne environ 28 000 liens. Exemples vérifiés :
+
+- `ht_night_mode_set_irled_mode` est appelée par `ht_tuya_func_set_night_mode` et par **`handleRecvData`** (réception de données : piste d'une commande locale à analyser).
+- `IPC_APP_set_sleep_mode` est appelée par `ht_tuya_service_start` et `FUN_0007a5e4`.
+- `ht_ptz_set_cmd` est appelée par `IPC_APP_ptz_start_move`, `IPC_APP_ptz_stop_move` et `IPC_APP_set_sleep_mode`.
