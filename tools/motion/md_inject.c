@@ -10,11 +10,14 @@
  *   MOTION_TOPIC      topic MQTT (défaut camera/motion)
  *   MOTION_HOLD       secondes avant OFF (défaut 10)
  *   MOTION_SENS       sensibilité du firmware 0..2 (défaut : celle du firmware)
- * Commandes (désassemblage : ht_night_mode_set_irled_mode 0 auto / 1 jour / 2 nuit) :
+ * Commandes : passerelle générique tools/gateway/gateway.c pilotée par dp_table.h (issue #53).
+ *   Abonnement MQTT unique <base>/+/set ; <base>/<fonction>/set -> état retained <base>/<fonction>.
+ *   Alias historiques inchangés (désassemblage : ht_night_mode_set_irled_mode 0 auto / 1 jour / 2 nuit) :
  *   MQTT <base>/night/set  = auto|day|night   -> état retained <base>/night
  *   MQTT <base>/privacy/set = ON|OFF          -> privacy.sh on|off, état retained <base>/privacy
+ *   Autres fonctions : seulement les DP « Exposé = oui » de docs/firmware/DP_VALUES.md (voir docs/TOPICS.md).
  *   (<base> = MOTION_TOPIC sans son dernier élément ; ex. camera/motion -> camera)
- *   Fichier /tmp/md_cmd, une ligne "night day" ou "privacy on" : même effet (utilisé par ONVIF).
+ *   Fichier /tmp/md_cmd, une ligne "<fonction> <valeur>" ("night day", "privacy on") : même effet (utilisé par ONVIF).
  *   MOTION_HUMAN      1 = active le filtre humain du firmware (liblvhsr), 0 = le coupe (défaut : inchangé)
  */
 #include <fcntl.h>
@@ -26,15 +29,16 @@
 #include <poll.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include "gateway.h"
 
-#define STARTUP_DELAY_S 50
+#ifndef STARTUP_DELAY_S
+#define STARTUP_DELAY_S 50 /* surchargé à 0 par les tests hôte (tools/gateway/test) */
+#endif
 
 extern int ht_montion_detect_set_active_cb(void (*cb)(long long));
 extern long syscall(long n, ...);
 extern int ht_montion_detect_open(void);
 extern int ht_montion_detect_set_sensitivity(int level);
-extern int ht_night_mode_set_irled_mode(int mode);
-extern int system(const char *cmd);
 extern int ht_montion_detect_set_human_filter(int enable);
 
 static volatile int ev_count;
@@ -117,14 +121,42 @@ static int put_str(unsigned char *o, const char *s)
     return l + 2;
 }
 
-/* MQTT 3.1.1, QoS 1 + retain (attend le PUBACK), une connexion par message. Longueurs < 128 octets par champ. */
+/* Longueur restante MQTT (1 à 2 octets, < 16384) ; sans division : décalages. */
+static int put_len(unsigned char *o, int l)
+{
+    if (l < 128) {
+        o[0] = l;
+        return 1;
+    }
+    o[0] = (l & 127) | 128;
+    o[1] = l >> 7;
+    return 2;
+}
+
+/* Écrit en-tête + longueur variable devant le corps construit à partir de pkt + 3. */
+static int frame(unsigned char *pkt, unsigned char type, int body_len)
+{
+    unsigned char h[3];
+    int hl = 1 + put_len(h + 1, body_len), i;
+
+    h[0] = type;
+    /* le corps commence en pkt + 3 : on recolle l'en-tête juste avant */
+    for (i = 0; i < hl; i++)
+        pkt[3 - hl + i] = h[i];
+    return 3 - hl;
+}
+
+/* MQTT 3.1.1, QoS 1 + retain (attend le PUBACK), une connexion par message. Topic < 128, charge < 900 octets. */
 static int publish(const char *topic, const char *payload)
 {
-    unsigned char pkt[512], ack[8];
+    unsigned char pkt[1040], ack[8]; /* 3 + 2 + 127 + 2 + 900 */
+    int tl = strlen(topic), pl = strlen(payload), off;
     struct sockaddr_in sa;
     struct pollfd pf;
     int s, n = 0, body, r, ok = 0;
 
+    if (tl > 127 || pl > 900)
+        return -1;
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0)
         return -1;
@@ -153,16 +185,14 @@ static int publish(const char *topic, const char *payload)
     pf.fd = s;
     pf.events = POLLIN;
     if (poll(&pf, 1, 3000) > 0 && (r = read(s, ack, sizeof ack)) >= 4 && ack[0] == 0x20 && ack[3] == 0) {
-        n = 0;
-        pkt[n++] = 0x33;
-        body = n++;
+        n = 3;
         n += put_str(pkt + n, topic);
         pkt[n++] = 0;
         pkt[n++] = 1;
-        memcpy(pkt + n, payload, strlen(payload));
-        n += strlen(payload);
-        pkt[body] = n - body - 1;
-        write(s, pkt, n);
+        memcpy(pkt + n, payload, pl);
+        n += pl;
+        off = frame(pkt, 0x33, n - 3);
+        write(s, pkt + off, n - off);
         if (poll(&pf, 1, 3000) > 0 && read(s, ack, sizeof ack) >= 4 && ack[0] == 0x40)
             ok = 1;
     }
@@ -190,52 +220,16 @@ static void announce(const char *topic, const char *state)
 
 
 static char base[64];
-static const char *night_name[] = {"auto", "day", "night"};
 
-static void apply_night(const char *v)
+static int pub_state(const char *topic, const char *payload)
 {
-    char t[96];
-    int m = !strcmp(v, "auto") ? 0 : !strcmp(v, "day") ? 1 : !strcmp(v, "night") ? 2 : -1;
-
-    if (m < 0)
-        return;
-    logmsg(ht_night_mode_set_irled_mode(m) == 0 ? "night mode set" : "night mode refused");
-    strcpy(t, base);
-    strcat(t, "/night");
-    if (have_mqtt)
-        publish(t, night_name[m]);
-}
-
-static void apply_privacy(const char *v)
-{
-    char t[96];
-    int on = !strcmp(v, "ON") || !strcmp(v, "on");
-
-    if (!on && strcmp(v, "OFF") && strcmp(v, "off"))
-        return;
-    logmsg(on ? "privacy on" : "privacy off");
-    system(on ? "/tmp/sd/custom/scripts/privacy.sh on" : "/tmp/sd/custom/scripts/privacy.sh off");
-    strcpy(t, base);
-    strcat(t, "/privacy");
-    if (have_mqtt)
-        publish(t, on ? "ON" : "OFF");
-}
-
-static void handle(const char *topic, const char *val)
-{
-    int l = strlen(topic);
-
-    if (l > 10 && !strcmp(topic + l - 10, "/night/set"))
-        apply_night(val);
-    else if (l > 12 && !strcmp(topic + l - 12, "/privacy/set"))
-        apply_privacy(val);
+    return have_mqtt ? publish(topic, payload) : -1;
 }
 
 static void poll_file(void)
 {
-    char b[64];
+    char b[160];
     int fd = open("/tmp/md_cmd", O_RDONLY), n;
-    char *sp;
 
     if (fd < 0)
         return;
@@ -245,27 +239,39 @@ static void poll_file(void)
     if (n <= 0)
         return;
     b[n] = 0;
-    while (n > 0 && (b[n - 1] == '\n' || b[n - 1] == '\r' || b[n - 1] == ' '))
-        b[--n] = 0;
-    for (sp = b; *sp && *sp != ' '; sp++)
-        ;
-    if (!*sp)
-        return;
-    *sp++ = 0;
-    if (!strcmp(b, "night"))
-        apply_night(sp);
-    else if (!strcmp(b, "privacy"))
-        apply_privacy(sp);
+    gw_line(b);
 }
 
-/* Abonné MQTT : QoS 0, PINGREQ toutes les 30 s, reconnexion automatique. */
+/* Un PUBLISH reçu (QoS 0 ou 1) : topic + charge utile -> passerelle. */
+static void on_publish(const unsigned char *p, int len, int qos)
+{
+    char topic[96], val[160];
+    int tl, off, pl;
+
+    if (len < 2)
+        return;
+    tl = (p[0] << 8) | p[1];
+    off = 2 + tl + (qos ? 2 : 0);
+    pl = len - off;
+    if (tl <= 0 || tl >= (int)sizeof topic || pl <= 0 || pl >= (int)sizeof val)
+        return;
+    memcpy(topic, p + 2, tl);
+    topic[tl] = 0;
+    memcpy(val, p + off, pl);
+    val[pl] = 0;
+    gw_topic(topic, val);
+}
+
+/* Abonné MQTT : filtre unique <base>/+/set (QoS 0), PINGREQ toutes les 30 s, reconnexion automatique,
+ * capteurs republiés toutes les 5 min. Paquets découpés sur plusieurs lectures : tampon cumulatif. */
 static int subscribe_loop(void)
 {
-    unsigned char pkt[256], rx[256];
+    static int first = 1;
+    unsigned char pkt[256], rx[1024];
     struct sockaddr_in sa;
     struct pollfd pf;
-    int s, n = 0, body, r, idle = 0, i;
-    static const char *sub[] = {"/night/set", "/privacy/set"};
+    int s, n = 0, body, r, idle = 0, have = 0, sensors = 0, off;
+    const char *sub = gw_subscription();
 
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0)
@@ -298,50 +304,60 @@ static int subscribe_loop(void)
         close(s);
         return -1;
     }
-    for (i = 0; i < 2; i++) {
-        char t[96];
-
-        strcpy(t, base);
-        strcat(t, sub[i]);
-        n = 0;
-        pkt[n++] = 0x82;
-        body = n++;
-        pkt[n++] = 0;
-        pkt[n++] = i + 1;
-        n += put_str(pkt + n, t);
-        pkt[n++] = 0;
-        pkt[body] = n - body - 1;
-        write(s, pkt, n);
-    }
+    n = 3;
+    pkt[n++] = 0;
+    pkt[n++] = 1;
+    n += put_str(pkt + n, sub);
+    pkt[n++] = 0;
+    off = frame(pkt, 0x82, n - 3);
+    write(s, pkt + off, n - off);
     logmsg("command subscriber ready");
+    if (first) {
+        first = 0;
+        gw_publish_all();
+    }
     for (;;) {
         poll_file();
+        if (++sensors >= 300) {
+            sensors = 0;
+            gw_publish_sensors();
+        }
         r = poll(&pf, 1, 1000);
         if (r > 0) {
-            r = read(s, rx, sizeof rx - 1);
+            r = read(s, rx + have, sizeof rx - have);
             if (r <= 0)
                 break;
+            have += r;
             idle = 0;
-            for (n = 0; n + 2 <= r;) {
-                int len = rx[n + 1], tl;
+            for (;;) {
+                int len, lb, i, mult;
 
-                if (n + 2 + len > r)
+                if (have < 2)
                     break;
-                if ((rx[n] & 0xF0) == 0x30 && len > 2) {
-                    char topic[96], val[32];
-                    int pl;
-
-                    tl = (rx[n + 2] << 8) | rx[n + 3];
-                    pl = len - 2 - tl;
-                    if (tl < (int)sizeof topic && pl > 0 && pl < (int)sizeof val) {
-                        memcpy(topic, rx + n + 4, tl);
-                        topic[tl] = 0;
-                        memcpy(val, rx + n + 4 + tl, pl);
-                        val[pl] = 0;
-                        handle(topic, val);
-                    }
+                /* longueur restante variable (jusqu'à 4 octets) */
+                len = 0;
+                mult = 0;
+                for (lb = 1; lb <= 4 && lb < have; lb++) {
+                    len |= (rx[lb] & 127) << mult;
+                    mult += 7;
+                    if (!(rx[lb] & 128))
+                        break;
                 }
-                n += 2 + len;
+                if (lb > 4) {
+                    have = 0; /* trame invalide : on jette le tampon */
+                    break;
+                }
+                if (lb >= have || 1 + lb + len > have) {
+                    if (1 + lb + len > (int)sizeof rx)
+                        have = 0; /* trop grand pour le tampon : ignoré */
+                    break;
+                }
+                if ((rx[0] & 0xF0) == 0x30)
+                    on_publish(rx + 1 + lb, len, (rx[0] >> 1) & 3);
+                n = 1 + lb + len;
+                for (i = n; i < have; i++)
+                    rx[i - n] = rx[i];
+                have -= n;
             }
         } else if (++idle >= 30) {
             idle = 0;
@@ -365,6 +381,7 @@ static void *cmd_worker(void *arg)
     sl = strrchr(base, '/');
     if (sl)
         *sl = 0;
+    gw_init(base, pub_state, logmsg);
     sleep(STARTUP_DELAY_S + 5);
     for (;;) {
         if (have_mqtt) {

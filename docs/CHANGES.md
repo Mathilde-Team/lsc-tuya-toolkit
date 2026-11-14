@@ -316,3 +316,11 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - `md_inject.so` : abonné MQTT (`<base>/night/set`, `<base>/privacy/set`) et fichier `/tmp/md_cmd`.
 - ONVIF Imaging activé (`set_imaging`, patch `imaging_auto.patch`), relais 0 = privacy.
 - `privacy.sh on|off`, `docs/FIRMWARE_COMMANDS.md` et `tools/firmware/gen_commands.py`.
+
+## 25. Passerelle : runtime MQTT générique piloté par `dp_table.h` (#53)
+
+- `tools/gateway/gateway.c` lié dans `md_inject.so` : abonnement unique `<base>/+/set`, `/tmp/md_cmd` en `<fonction> <valeur>`, conversion bool/enum/int/action/sensor, appel `IPC_APP_set_*`, état retained relu par `IPC_APP_get_*`.
+- Seuls les DP confirmés dans `docs/firmware/DP_VALUES.md` (nouveau, format pour les lots #54 à #58) sont appelés ; aujourd'hui **aucun** : `night` et `privacy` gardent exactement leur comportement.
+- MQTT : longueur restante variable (publications jusqu'à 900 octets, nécessaire pour la découverte HA #59), réception par tampon cumulatif.
+- `build.sh` : vérifie qu'aucun symbole libc nouveau ni routine de division n'est importé ; tests PC dans `tools/gateway/test/`.
+- Vérifié sur PC uniquement (tests unitaires + mosquitto). **À tester sur caméra** : `night`/`privacy` par MQTT et ONVIF, absence de régression de la détection.
