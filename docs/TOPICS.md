@@ -11,6 +11,7 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 - Fonction sans `set_` : lecture seule (`sensor`), pas de topic `/set`.
 - Le même ordre peut venir d'ONVIF : les deux canaux écrivent dans `/tmp/md_cmd`.
 - **Alias historiques conservés** : `<base>/night` (= `night_mode`, DP 108) et `<base>/privacy` (preset privé).
+- **Activation** : aucune ligne n'est abonnée ni publiée au démarrage ; `DP_ENABLE` (voir `tools/motion/README.md`) active des lignes pour test, dans l'attente des lots de décompilation.
 - Les **types sont une heuristique** sur le nom ; chaque ligne est confirmée par un lot de décompilation (issues #54 à #58) avant d'être exposée.
 
 ## Table

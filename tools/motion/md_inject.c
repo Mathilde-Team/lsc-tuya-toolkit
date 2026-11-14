@@ -16,6 +16,17 @@
  *   (<base> = MOTION_TOPIC sans son dernier élément ; ex. camera/motion -> camera)
  *   Fichier /tmp/md_cmd, une ligne "night day" ou "privacy on" : même effet (utilisé par ONVIF).
  *   MOTION_HUMAN      1 = active le filtre humain du firmware (liblvhsr), 0 = le coupe (défaut : inchangé)
+ *
+ * Passerelle générique (issue #53), pilotée par tools/gateway/dp_table.h :
+ *   DP_ENABLE  liste d'entrées de la table à exposer (numéros de DP ou noms séparés par
+ *              des virgules, ou "all"). Défaut : vide, aucune entrée exposée (night et
+ *              privacy seuls, comportement inchangé).
+ *   DP_POLL    secondes entre republications de l'état des entrées actives pourvues d'un
+ *              getter (défaut 60 ; 0 = état publié au démarrage et après chaque commande seulement).
+ *   Entrée active : commande MQTT <base>/<fonction>/set (ON/OFF, entier ou action) et
+ *   ligne "/tmp/md_cmd" "<fonction> <valeur>" ; état publié retained sur <base>/<fonction>.
+ *   Convention d'appel assumée int f(int) (voir dp_table.h) : n'activer une ligne qu'après
+ *   confirmation par son lot de décompilation (issues #54 à #58) ou pour la tester.
  */
 #include <fcntl.h>
 #include <pthread.h>
@@ -27,7 +38,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include "dp_table.h"
+
+/* délai avant de toucher au firmware (le laisser s'initialiser) ; surchargeable à la compilation
+ * (-DSTARTUP_DELAY_S=1 pour les tests logiciels, voir test_gateway.sh) */
+#ifndef STARTUP_DELAY_S
 #define STARTUP_DELAY_S 50
+#endif
 
 extern int ht_montion_detect_set_active_cb(void (*cb)(long long));
 extern long syscall(long n, ...);
@@ -192,6 +209,177 @@ static void announce(const char *topic, const char *state)
 static char base[64];
 static const char *night_name[] = {"auto", "day", "night"};
 
+/* ---------- passerelle générique (dp_table.h, issue #53) ---------- */
+
+static unsigned char dp_active[DP_TABLE_LEN];
+static int dp_poll_s = 60;
+
+/* entier décimal sans division (libgcc non liée) ; retourne la fin de chaîne */
+static char *fmt_int(char *o, int v)
+{
+    static const long pw[] = {1000000000, 100000000, 10000000, 1000000, 100000, 10000, 1000, 100, 10, 1};
+    long t = v;
+    int i, k, started = 0;
+
+    if (v < 0) {
+        *o++ = '-';
+        t = -(long)v;
+    }
+    for (i = 0; i < 10; i++) {
+        k = 0;
+        while (t >= pw[i]) {
+            t -= pw[i];
+            k++;
+        }
+        if (k || started || i == 9) {
+            *o++ = '0' + k;
+            started = 1;
+        }
+    }
+    return o;
+}
+
+/* DP_ENABLE : "all" ou liste (noms ou numéros de DP) séparés par des virgules */
+static void dp_parse_enable(const char *spec)
+{
+    char buf[256], *tok, *p, m[64];
+    int i, n = 0;
+
+    if (!spec || !*spec)
+        return;
+    strncpy(buf, spec, sizeof buf - 1);
+    buf[sizeof buf - 1] = 0;
+    for (tok = buf; *tok; tok = p) {
+        int matched = 0;
+
+        p = tok;
+        while (*p && *p != ',')
+            p++;
+        if (*p)
+            *p++ = 0;
+        while (*tok == ' ' || *tok == '\t')
+            tok++;
+        if (!*tok)
+            continue;
+        if (!strcmp(tok, "all")) {
+            for (i = 0; i < DP_TABLE_LEN; i++)
+                dp_active[i] = 1;
+            matched = 1;
+        } else {
+            int dp = atoi(tok);
+
+            for (i = 0; i < DP_TABLE_LEN; i++)
+                if ((dp && dp_table[i].dp == dp) || !strcmp(dp_table[i].name, tok)) {
+                    dp_active[i] = 1;
+                    matched = 1;
+                }
+        }
+        if (!matched) {
+            int tl = strlen(tok);
+
+            if (tl > (int)sizeof m - 20)
+                tl = (int)sizeof m - 20;
+            strcpy(m, "dp_enable ignored: ");
+            memcpy(m + 19, tok, tl);
+            m[19 + tl] = 0;
+            logmsg(m);
+        }
+    }
+    for (i = 0; i < DP_TABLE_LEN; i++)
+        n += dp_active[i] != 0;
+    if (n) {
+        char *o;
+
+        strcpy(m, "dp table entries active: ");
+        o = fmt_int(m + strlen(m), n);
+        *o = 0;
+        logmsg(m);
+    }
+}
+
+static int dp_find(const char *name)
+{
+    int i;
+
+    for (i = 0; i < DP_TABLE_LEN; i++)
+        if (dp_active[i] && !strcmp(dp_table[i].name, name))
+            return i;
+    return -1;
+}
+
+/* état retained : getter appelé avec 0 (convention assumée, voir dp_table.h) */
+static void dp_publish_state(int i)
+{
+    const struct dp_entry *e = dp_table + i;
+    char m[80], t[96], s[16];
+    char *o;
+    int v;
+
+    if (!e->get)
+        return;
+    v = e->get(0);
+    if (e->kind == DP_BOOL)
+        strcpy(s, v ? "ON" : "OFF");
+    else {
+        o = fmt_int(s, v);
+        *o = 0;
+    }
+    strcpy(m, "dp ");
+    strcat(m, e->name);
+    strcat(m, " = ");
+    strcat(m, s);
+    logmsg(m);
+    if (have_mqtt) {
+        strcpy(t, base);
+        strcat(t, "/");
+        strcat(t, e->name);
+        publish(t, s);
+    }
+}
+
+/* commande <base>/<fonction>/set ou /tmp/md_cmd "<fonction> <valeur>" */
+static void dp_apply(int i, const char *val)
+{
+    const struct dp_entry *e = dp_table + i;
+    char m[96], t[96], s[16];
+    int v = 0, r;
+    char *o;
+
+    if (!e->set || e->kind == DP_SENSOR)
+        return;
+    if (e->kind == DP_BOOL) {
+        if (!strcmp(val, "ON") || !strcmp(val, "on") || !strcmp(val, "1"))
+            v = 1;
+        else if (!strcmp(val, "OFF") || !strcmp(val, "off") || !strcmp(val, "0"))
+            v = 0;
+        else {
+            logmsg("dp payload ignored: bool attendu (ON/OFF)");
+            return;
+        }
+    } else
+        v = atoi(val); /* enum/int/action : entier en texte, valeurs précisées par les lots */
+    r = e->set(v);
+    strcpy(m, "dp ");
+    strcat(m, e->name);
+    strcat(m, r == 0 ? " ok" : " refused");
+    logmsg(m);
+    if (e->get)
+        dp_publish_state(i);
+    else if (have_mqtt && e->kind != DP_ACTION) {
+        /* pas de getter : on publie la valeur appliquée comme état retained */
+        if (e->kind == DP_BOOL)
+            strcpy(s, v ? "ON" : "OFF");
+        else {
+            o = fmt_int(s, v);
+            *o = 0;
+        }
+        strcpy(t, base);
+        strcat(t, "/");
+        strcat(t, e->name);
+        publish(t, s);
+    }
+}
+
 static void apply_night(const char *v)
 {
     char t[96];
@@ -223,17 +411,32 @@ static void apply_privacy(const char *v)
 
 static void handle(const char *topic, const char *val)
 {
-    int l = strlen(topic);
+    int l = strlen(topic), bl = strlen(base), nl;
+    char name[48];
+    int i;
 
-    if (l > 10 && !strcmp(topic + l - 10, "/night/set"))
+    if (l > 10 && !strcmp(topic + l - 10, "/night/set")) {
         apply_night(val);
-    else if (l > 12 && !strcmp(topic + l - 12, "/privacy/set"))
+        return;
+    }
+    if (l > 12 && !strcmp(topic + l - 12, "/privacy/set")) {
         apply_privacy(val);
+        return;
+    }
+    /* entrée de la table : <base>/<fonction>/set, active seulement */
+    nl = l - bl - 5;
+    if (nl <= 0 || nl >= (int)sizeof name || strncmp(topic, base, bl) || topic[bl] != '/' || strcmp(topic + l - 4, "/set"))
+        return;
+    memcpy(name, topic + bl + 1, nl);
+    name[nl] = 0;
+    i = dp_find(name);
+    if (i >= 0)
+        dp_apply(i, val);
 }
 
 static void poll_file(void)
 {
-    char b[64];
+    char b[128];
     int fd = open("/tmp/md_cmd", O_RDONLY), n;
     char *sp;
 
@@ -256,16 +459,24 @@ static void poll_file(void)
         apply_night(sp);
     else if (!strcmp(b, "privacy"))
         apply_privacy(sp);
+    else {
+        int i = dp_find(b);
+
+        if (i >= 0)
+            dp_apply(i, sp);
+    }
 }
 
-/* Abonné MQTT : QoS 0, PINGREQ toutes les 30 s, reconnexion automatique. */
+/* Abonné MQTT : QoS 0, PINGREQ toutes les 30 s, reconnexion automatique.
+ * Abonnements : alias night/privacy + une commande par entrée active de dp_table. */
 static int subscribe_loop(void)
 {
     unsigned char pkt[256], rx[256];
     struct sockaddr_in sa;
     struct pollfd pf;
-    int s, n = 0, body, r, idle = 0, i;
-    static const char *sub[] = {"/night/set", "/privacy/set"};
+    static char topics[2 + DP_TABLE_LEN][96];
+    static const char *sub[2 + DP_TABLE_LEN];
+    int nsubs = 2, s, n = 0, body, r, idle = 0, secs = 0, i;
 
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0)
@@ -298,22 +509,36 @@ static int subscribe_loop(void)
         close(s);
         return -1;
     }
-    for (i = 0; i < 2; i++) {
-        char t[96];
-
-        strcpy(t, base);
-        strcat(t, sub[i]);
+    strcpy(topics[0], base);
+    strcat(topics[0], "/night/set");
+    strcpy(topics[1], base);
+    strcat(topics[1], "/privacy/set");
+    for (i = 0; i < DP_TABLE_LEN && nsubs < (int)(sizeof sub / sizeof sub[0]); i++) {
+        if (!dp_active[i] || dp_table[i].kind == DP_SENSOR)
+            continue;
+        strcpy(topics[nsubs], base);
+        strcat(topics[nsubs], "/");
+        strcat(topics[nsubs], dp_table[i].name);
+        strcat(topics[nsubs], "/set");
+        nsubs++;
+    }
+    for (i = 0; i < nsubs; i++) {
+        sub[i] = topics[i];
         n = 0;
         pkt[n++] = 0x82;
         body = n++;
         pkt[n++] = 0;
         pkt[n++] = i + 1;
-        n += put_str(pkt + n, t);
+        n += put_str(pkt + n, sub[i]);
         pkt[n++] = 0;
         pkt[body] = n - body - 1;
         write(s, pkt, n);
     }
     logmsg("command subscriber ready");
+    /* état retained des entrées actives au démarrage */
+    for (i = 0; i < DP_TABLE_LEN; i++)
+        if (dp_active[i] && dp_table[i].get)
+            dp_publish_state(i);
     for (;;) {
         poll_file();
         r = poll(&pf, 1, 1000);
@@ -343,12 +568,22 @@ static int subscribe_loop(void)
                 }
                 n += 2 + len;
             }
-        } else if (++idle >= 30) {
-            idle = 0;
-            pkt[0] = 0xC0;
-            pkt[1] = 0;
-            if (write(s, pkt, 2) < 2)
-                break;
+        } else {
+            idle++;
+            if (idle >= 30) {
+                idle = 0;
+                pkt[0] = 0xC0;
+                pkt[1] = 0;
+                if (write(s, pkt, 2) < 2)
+                    break;
+            }
+            /* republication périodique de l'état (approximative : 1 s par silence) */
+            if (dp_poll_s && ++secs >= dp_poll_s) {
+                secs = 0;
+                for (i = 0; i < DP_TABLE_LEN; i++)
+                    if (dp_active[i] && dp_table[i].get)
+                        dp_publish_state(i);
+            }
         }
     }
     close(s);
@@ -358,13 +593,22 @@ static int subscribe_loop(void)
 static void *cmd_worker(void *arg)
 {
     const char *t = getenv("MOTION_TOPIC");
+    const char *en = getenv("DP_ENABLE");
+    const char *po = getenv("DP_POLL");
     char *sl;
 
     (void)arg;
     strncpy(base, t ? t : "camera/motion", sizeof base - 1);
+    base[sizeof base - 1] = 0;
     sl = strrchr(base, '/');
     if (sl)
         *sl = 0;
+    dp_parse_enable(en);
+    if (po) {
+        dp_poll_s = atoi(po);
+        if (dp_poll_s < 0)
+            dp_poll_s = 0;
+    }
     sleep(STARTUP_DELAY_S + 5);
     for (;;) {
         if (have_mqtt) {

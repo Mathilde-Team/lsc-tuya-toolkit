@@ -62,6 +62,8 @@ motion:
   hold: 30                           # secondes sans mouvement avant OFF
   human: false                       # EXPÉRIMENTAL : filtre humain du firmware (liblvhsr), non validé ; voir tools/motion/README.md
   sensitivity: 0                     # 0 (la moins sensible) à 2
+  dp_enable: ""                      # passerelle générique (issue #53) : numéros de DP ou noms séparés par des virgules (ex. "103,watermark_onoff"), ou "all" ; vide = aucune. N'activer qu'une ligne confirmée par son lot (#54 à #58) ou à tester
+  dp_poll: 60                        # secondes entre republications de l'état des entrées actives (0 = démarrage et commandes seuls)
   broker_host: ""                    # IP du broker MQTT (obligatoire si enabled) ; MQTT 3.1.1 sans TLS : réseau local uniquement
   broker_port: 1883
   broker_user: ""                    # laisser vide si le broker est anonyme

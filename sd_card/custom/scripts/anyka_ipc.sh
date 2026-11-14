@@ -18,6 +18,8 @@ MOTION_TOPIC="camera/motion"
 MOTION_HOLD=30
 MOTION_SENS=0
 MOTION_HUMAN=""
+DP_ENABLE=""
+DP_POLL=60
 CLOCKFIX=1
 [ -f "${CFG_FILE}" ] && . "${CFG_FILE}"
 PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin"
@@ -59,9 +61,11 @@ start() {
   [ "$MOTION" = "1" ] && [ -f "${CUSTOM_DIR}/configs/mqtt.cred" ] && add_lib md_inject.so
   [ "$CLOCKFIX" = "1" ] && add_lib clockfix.so
   [ -n "$MOTION_HUMAN" ] && export MOTION_HUMAN
+  [ -n "$DP_ENABLE" ] && export DP_ENABLE
   if [ -n "$PRELOAD" ]; then
     LD_PRELOAD="$PRELOAD" TALK_PORT="$TALK_PORT" TALK_ALLOW="$TALK_ALLOW" TALK_GAIN="$TALK_GAIN" \
       MOTION_MQTT_FILE="${CUSTOM_DIR}/configs/mqtt.cred" MOTION_TOPIC="$MOTION_TOPIC" MOTION_HOLD="$MOTION_HOLD" MOTION_SENS="$MOTION_SENS" \
+      DP_ENABLE="$DP_ENABLE" DP_POLL="$DP_POLL" \
       anyka_ipc >>"$LOG_FILE" 2>&1 &
   else
     anyka_ipc >>"$LOG_FILE" 2>&1 &

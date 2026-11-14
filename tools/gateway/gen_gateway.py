@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Génère tools/gateway/dp_table.h et docs/TOPICS.md depuis docs/firmware/DP_TABLE.md.
 Usage : gen_gateway.py [DP_TABLE.md] [dp_table.h] [TOPICS.md]
-Les types sont une heuristique sur le nom ; ils sont à confirmer par les lots de décompilation (DP_VALUES.md)."""
+Les types sont une heuristique sur le nom ; ils sont à confirmer par les lots de décompilation (DP_VALUES.md).
+La convention d'appel des IPC_APP_* (int f(int)) est une hypothèse de travail : voir l'en-tête de dp_table.h."""
 import re, sys
 
 src = sys.argv[1] if len(sys.argv) > 1 else "docs/firmware/DP_TABLE.md"
@@ -51,19 +52,33 @@ assert not dups, dups
 with open(hdr, "w", encoding="utf-8") as f:
     f.write("/* Généré par tools/gateway/gen_gateway.py : ne pas éditer. */\n"
             "#ifndef DP_TABLE_H\n#define DP_TABLE_H\n\n"
+            "/* Convention d'appel ASSUMÉE, à confirmer lot par lot (issues #54 à #58,\n"
+            " * livrable docs/firmware/DP_VALUES.md) : setter int f(int valeur) ; getter\n"
+            " * int f(int), appelé avec 0. Le runtime (tools/motion/md_inject.c) n'appelle\n"
+            " * une entrée que si elle est activée explicitement (DP_ENABLE), donc rien\n"
+            " * n'est exposé tant que le lot correspondant n'a pas confirmé la ligne. */\n\n"
             "enum dp_kind { DP_BOOL, DP_ENUM, DP_INT, DP_ACTION, DP_SENSOR };\n\n"
-            "struct dp_entry {\n  int dp;\n  const char *name;      /* topic : <base>/<name>[/set] */\n"
+            "struct dp_entry {\n"
+            "  int dp;\n"
+            "  const char *name;      /* topic : <base>/<name>[/set] */\n"
             "  enum dp_kind kind;     /* heuristique, voir DP_VALUES.md */\n"
-            "  const char *setter;    /* IPC_APP_* d'écriture ou NULL */\n"
-            "  const char *getter;    /* IPC_APP_* de lecture ou NULL */\n};\n\n"
-            "static const struct dp_entry dp_table[] = {\n")
+            "  int (*set)(int);       /* IPC_APP_set_* ou action ; NULL = lecture seule */\n"
+            "  int (*get)(int);       /* IPC_APP_get_* ; NULL = pas d'état lisible */\n"
+            "};\n\n")
+    externs = sorted({("IPC_APP_%s" % r["fn"]) for r in rows if r["kind"] == "ACTION"} |
+                     {("IPC_APP_%s" % r["setter"]) for r in rows if r["setter"]} |
+                     {("IPC_APP_%s" % r["getter"]) for r in rows if r["getter"]})
+    for e in externs:
+        f.write("extern int %s(int);\n" % e)
+    f.write("\nstatic const struct dp_entry dp_table[] = {\n")
     for r in rows:
-        q = lambda s: '"IPC_APP_%s"' % s if s else "0"
         k = r["kind"]
         if k == "ACTION":
-            f.write('  {%d, "%s", DP_ACTION, %s, 0},\n' % (r["dp"], r["name"], q(r["fn"])))
+            f.write('  {%d, "%s", DP_ACTION, IPC_APP_%s, 0},\n' % (r["dp"], r["name"], r["fn"]))
         else:
-            f.write('  {%d, "%s", DP_%s, %s, %s},\n' % (r["dp"], r["name"], k, q(r["setter"]), q(r["getter"])))
+            set_ = "IPC_APP_%s" % r["setter"] if r["setter"] else "0"
+            get_ = "IPC_APP_%s" % r["getter"] if r["getter"] else "0"
+            f.write('  {%d, "%s", DP_%s, %s, %s},\n' % (r["dp"], r["name"], k, set_, get_))
     f.write("};\n\n#define DP_TABLE_LEN %d\n\n#endif\n" % len(rows))
 
 CH = {"BOOL": "ON / OFF", "ENUM": "valeur à confirmer", "INT": "entier, plage à confirmer",
@@ -82,6 +97,7 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 - Fonction sans `set_` : lecture seule (`sensor`), pas de topic `/set`.
 - Le même ordre peut venir d'ONVIF : les deux canaux écrivent dans `/tmp/md_cmd`.
 - **Alias historiques conservés** : `<base>/night` (= `night_mode`, DP 108) et `<base>/privacy` (preset privé).
+- **Activation** : aucune ligne n'est abonnée ni publiée au démarrage ; `DP_ENABLE` (voir `tools/motion/README.md`) active des lignes pour test, dans l'attente des lots de décompilation.
 - Les **types sont une heuristique** sur le nom ; chaque ligne est confirmée par un lot de décompilation (issues #54 à #58) avant d'être exposée.
 
 ## Table

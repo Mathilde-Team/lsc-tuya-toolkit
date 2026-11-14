@@ -13,6 +13,32 @@ depuis le service Tuya : sans cloud, `md_inject.so` appelle `ht_montion_detect_s
 | `MOTION_HOLD` | secondes sans mouvement avant `OFF` | 10 |
 | `MOTION_SENS` | sensibilité firmware 0..2 | celle du firmware |
 | `MOTION_HUMAN` | `1` active le filtre humain, `0` le coupe | inchangé (désactivé : `bool_human_filter_enable = 0`) |
+| `DP_ENABLE` | entrées de la passerelle à exposer (voir ci-dessous) | aucune |
+| `DP_POLL` | secondes entre republications de l'état | 60 |
+
+## Passerelle générique pilotée par la table des DP (issue #53)
+
+L'abonné de commandes n'est plus limité à `night` et `privacy` : il est piloté par
+`tools/gateway/dp_table.h` (générée depuis `docs/firmware/DP_TABLE.md`, voir `docs/TOPICS.md`).
+
+- **Commande** : topic MQTT `<base>/<fonction>/set` ou ligne `/tmp/md_cmd` `<fonction> <valeur>`.
+  Charges utiles : booléen `ON`/`OFF` (aussi `0`/`1`), entier en texte pour les enum/int/action.
+- **État** : publié *retained* sur `<base>/<fonction>` au démarrage, après chaque commande,
+  puis toutes les `DP_POLL` secondes pour les entrées actives pourvues d'un getter.
+  Le journal de la caméra retrace chaque appel (`dp <fonction> ok|refused`, `dp <fonction> = <valeur>`).
+- **Activation** : `DP_ENABLE` = liste de numéros de DP ou de noms (`103,watermark_onoff`), ou `all`.
+  Par défaut **vide** : aucune entrée de la table n'est abonnée ni appelée, `night` et `privacy`
+  gardent exactement leur comportement antérieur. Câblé dans `hack.conf` (`DP_ENABLE`, `DP_POLL`)
+  et l'installeur (`motion.dp_enable`, `motion.dp_poll`).
+
+**Prudence** : la convention d'appel des `IPC_APP_*` est *assumée* (`int f(int)`, getter appelé avec 0,
+voir l'en-tête de `dp_table.h`) ; les lots de décompilation #54 à #58 doivent confirmer chaque ligne
+(signature réelle, valeurs admises) avant qu'elle soit exposée par défaut. N'activez une ligne que
+pour la tester ou une fois confirmée. Les essais sur caméra restent faits par Mathilde.
+
+**Test local (sans caméra)** : `test_gateway.sh` compile une version hôte avec des stubs des
+fonctions du firmware, démarre un broker `mosquitto` local et vérifie commandes, états retained,
+alias `night`/`privacy`, canal `/tmp/md_cmd` et respect du défaut « rien d'exposé ».
 
 ## Types de détection du firmware
 

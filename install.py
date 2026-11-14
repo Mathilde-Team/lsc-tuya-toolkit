@@ -48,7 +48,8 @@ DEFAULTS = {
               "sub_codec": 2, "sub_width": 640, "sub_height": 360},
     "speaker": {"enabled": False, "allow": "", "gain": 50, "port": 5004},
     "motion": {"enabled": False, "topic": "camera/motion", "hold": 30, "sensitivity": 0, "human": False,
-               "broker_host": "", "broker_port": 1883, "broker_user": "", "broker_password": ""},
+               "broker_host": "", "broker_port": 1883, "broker_user": "", "broker_password": "",
+               "dp_enable": "", "dp_poll": 60},
     "firmware": {"dump_dir": ""},
 }
 CODECS = {0: "H264", 1: "MJPEG", 2: "H265"}
@@ -230,6 +231,8 @@ def wizard(cfg):
             mo["broker_password"] = ask("Mot de passe MQTT", mo["broker_password"], secret=True, required=True)
         mo["topic"] = ask("Topic MQTT", mo["topic"], required=True)
         mo["hold"] = ask("Secondes avant le OFF", mo["hold"])
+        mo["dp_enable"] = ask("Entrées de la table des DP à exposer (numéros ou noms séparés par des virgules, ex. 103,watermark_onoff ; vide = aucune, voir tools/motion/README.md)", mo["dp_enable"])
+        mo["dp_poll"] = ask("Secondes entre republications de l'état (0 = démarrage et commandes seuls)", mo["dp_poll"])
     print("\n== Dump du firmware d'origine (pour la vidéo 20 images/s) ==")
     print("  Inutile avec le firmware 3.10.78 : le 20 i/s est fabriqué par la caméra au démarrage. Voir docs/INSTALL.md (étape 4).")
     cfg["firmware"]["dump_dir"] = ask("Dossier contenant anyka_ipc et l'ISP extraits de VOTRE caméra", cfg["firmware"]["dump_dir"])
@@ -408,6 +411,15 @@ def validate(cfg):
                 err.append(f"motion.{k}: 90 caractères max, sans retour à la ligne")
         if mo["broker_user"] and not mo["broker_password"]:
             err.append("motion.broker_password: obligatoire si broker_user est renseigné")
+        try:
+            mo["dp_poll"] = int(mo["dp_poll"])
+        except (TypeError, ValueError):
+            err.append("motion.dp_poll: entier requis")
+        else:
+            if not 0 <= mo["dp_poll"] <= 3600:
+                err.append("motion.dp_poll: 0 à 3600 secondes")
+        if not re.fullmatch(r"[A-Za-z0-9_, ]{0,90}", str(mo["dp_enable"])):
+            err.append("motion.dp_enable: lettres, chiffres, virgules (90 caractères max)")
     tm = telnet_mode(cfg["services"]["telnet"])
     cfg["services"]["telnet"] = tm
     if tm not in ("open", "login", "off"):
@@ -529,7 +541,8 @@ def render(dst, cfg):
                      ("TALK_GAIN", cfg["speaker"]["gain"]), ("TALK_PORT", cfg["speaker"]["port"]),
                      ("MOTION", b(cfg["motion"]["enabled"])), ("MOTION_TOPIC", f'"{cfg["motion"]["topic"]}"'),
                      ("MOTION_HOLD", cfg["motion"]["hold"]), ("MOTION_SENS", cfg["motion"]["sensitivity"]),
-                     ("MOTION_HUMAN", '"1"' if cfg["motion"]["human"] else '""')):
+                     ("MOTION_HUMAN", '"1"' if cfg["motion"]["human"] else '""'),
+                     ("DP_ENABLE", f'"{cfg["motion"]["dp_enable"]}"'), ("DP_POLL", cfg["motion"]["dp_poll"])):
             txt = set_kv(txt, k, v)
         return txt
     rw(os.path.join(conf, "hack.conf"), hack)
