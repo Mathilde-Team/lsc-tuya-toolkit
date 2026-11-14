@@ -12,7 +12,16 @@ depuis le service Tuya : sans cloud, `md_inject.so` appelle `ht_montion_detect_s
 | `MOTION_TOPIC` | topic MQTT | `camera/motion` |
 | `MOTION_HOLD` | secondes sans mouvement avant `OFF` | 10 |
 | `MOTION_SENS` | sensibilité firmware 0..2 | celle du firmware |
+| `HA_DISCOVERY` | `0` = pas de découverte Home Assistant (voir `docs/HOME_ASSISTANT_DISCOVERY.md`) | `1` |
+| `HA_PREFIX` | préfixe de découverte HA | `homeassistant` |
 | `MOTION_HUMAN` | `1` active le filtre humain, `0` le coupe | inchangé (désactivé : `bool_human_filter_enable = 0`) |
+
+## Commandes (passerelle, issue #53)
+
+`md_inject.so` embarque la passerelle `tools/gateway/gateway.c` : abonnement MQTT unique `<base>/+/set`
+(`<base>` = `MOTION_TOPIC` sans son dernier élément) et fichier `/tmp/md_cmd` (`<fonction> <valeur>`).
+`night` (`auto`/`day`/`night`) et `privacy` (`ON`/`OFF`) gardent leur comportement ; les autres fonctions
+de `docs/TOPICS.md` ne sont actives qu'une fois confirmées dans `docs/firmware/DP_VALUES.md`. Voir `tools/gateway/README.md`.
 
 ## Types de détection du firmware
 
@@ -30,7 +39,7 @@ depuis le service Tuya : sans cloud, `md_inject.so` appelle `ht_montion_detect_s
 
 ## Compilation / test
 
-`./build.sh` (uClibc : `-nostdlib`, symboles vérifiés). Journal : lignes `[md_inject] … human filter set`.
+`./build.sh` (uClibc : `-nostdlib`, régénère `dp_table.h`, refuse tout symbole libc nouveau ou toute division). Journal : lignes `[md_inject] … human filter set`.
 
 ## Résultats du test `MOTION_HUMAN=1` (une caméra, de jour, sensibilité du firmware)
 

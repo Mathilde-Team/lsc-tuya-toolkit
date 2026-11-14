@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""Génère tools/gateway/dp_table.h et docs/TOPICS.md depuis docs/firmware/DP_TABLE.md.
-Usage : gen_gateway.py [DP_TABLE.md] [dp_table.h] [TOPICS.md]
-Les types sont une heuristique sur le nom ; ils sont à confirmer par les lots de décompilation (DP_VALUES.md)."""
-import re, sys
+"""Génère tools/gateway/dp_table.h et docs/TOPICS.md depuis docs/firmware/DP_TABLE.md
+et docs/firmware/DP_VALUES.md (confirmations des lots de décompilation).
+Usage : gen_gateway.py [DP_TABLE.md] [dp_table.h] [TOPICS.md] [DP_VALUES.md]
+Sans ligne « Exposé = oui » dans DP_VALUES.md, un DP garde son type heuristique et n'est PAS
+exposé par la passerelle (aucun pointeur de fonction généré, aucun appel possible)."""
+import os, re, sys
 
 src = sys.argv[1] if len(sys.argv) > 1 else "docs/firmware/DP_TABLE.md"
 hdr = sys.argv[2] if len(sys.argv) > 2 else "tools/gateway/dp_table.h"
 doc = sys.argv[3] if len(sys.argv) > 3 else "docs/TOPICS.md"
+val = sys.argv[4] if len(sys.argv) > 4 else "docs/firmware/DP_VALUES.md"
+KINDS = ("bool", "enum", "int", "action", "sensor")
+ABIS = {"int": "ABI_INT", "str": "ABI_STR", "aucun": "ABI_NONE", "—": "ABI_NONE", "-": "ABI_NONE"}
 
 ACTIONS = ("reboot", "format_sd_card", "unmount_sd_card", "ptz_start_move", "ptz_stop_move", "ptz_check")
 ISSUES = {  # DP -> issue de lot
@@ -44,6 +49,42 @@ for l in open(src, encoding="utf-8"):
                      kind=kind(name, bool(setter) or name in ACTIONS), handler=handler, addr=addr))
 rows.sort(key=lambda r: r["dp"])
 
+def load_values(path):
+    """Lignes de DP_VALUES.md : | DP | Fonction | Type | Valeurs | Écriture | Lecture | Effets | Preuve | Exposé |"""
+    conf = {}
+    if not os.path.exists(path):
+        return conf
+    for l in open(path, encoding="utf-8"):
+        c = [x.strip() for x in l.strip().strip("|").split("|")]
+        if len(c) != 9 or not c[0].isdigit():
+            continue
+        dp, typ, vals, wr, rd, proof, exp = int(c[0]), c[2].strip("`").lower(), c[3], c[4].strip("`"), c[5].strip("`"), c[7], c[8].lower()
+        assert typ in KINDS, "DP %d : type %r inconnu" % (dp, typ)
+        assert wr in ABIS and rd in ABIS, "DP %d : écriture/lecture = int, str ou aucun" % dp
+        toks = re.findall(r"`([^`]+)`", vals)
+        if typ == "enum":
+            assert toks, "DP %d : enum sans valeurs `a` `b`" % dp
+            v = "|".join(toks)
+        elif typ == "int":
+            assert len(toks) == 2 and all(re.fullmatch(r"-?\d+", t) for t in toks), "DP %d : int = `min` `max`" % dp
+            v = "%s..%s" % tuple(toks)
+        else:
+            v = None
+        expose = exp.startswith("oui")
+        assert not expose or re.search(r"0x[0-9a-f]+", proof), "DP %d exposé sans adresse dans Preuve" % dp
+        conf[dp] = dict(kind=typ.upper(), values=v, set_abi=ABIS[wr], get_abi=ABIS[rd], exposed=expose, raw=vals)
+    return conf
+
+conf = load_values(val)
+for r in rows:
+    c = conf.get(r["dp"])
+    r.update(values=None, set_abi="ABI_NONE", get_abi="ABI_NONE", exposed=False, confirmed=bool(c))
+    if c:
+        r.update(kind=c["kind"], values=c["values"], set_abi=c["set_abi"], get_abi=c["get_abi"],
+                 exposed=c["exposed"], raw=c["raw"])
+        if r["kind"] == "ACTION" and not r["setter"]:
+            r["setter"] = r["fn"]
+
 names = [r["name"] for r in rows]
 dups = {n for n in names if names.count(n) > 1}
 assert not dups, dups
@@ -51,20 +92,46 @@ assert not dups, dups
 with open(hdr, "w", encoding="utf-8") as f:
     f.write("/* Généré par tools/gateway/gen_gateway.py : ne pas éditer. */\n"
             "#ifndef DP_TABLE_H\n#define DP_TABLE_H\n\n"
-            "enum dp_kind { DP_BOOL, DP_ENUM, DP_INT, DP_ACTION, DP_SENSOR };\n\n"
+            "enum dp_kind { DP_BOOL, DP_ENUM, DP_INT, DP_ACTION, DP_SENSOR };\n"
+            "/* Passage de la valeur (r0) : ABI_INT entier, ABI_STR chaîne, ABI_NONE sans argument / sans lecture. */\n"
+            "enum dp_abi { ABI_NONE, ABI_INT, ABI_STR };\n\n"
+            "/* Type générique : l'appel réel est casté selon set_abi/get_abi (gateway.c). */\n"
+            "typedef long (*dp_fn)(void);\n\n"
             "struct dp_entry {\n  int dp;\n  const char *name;      /* topic : <base>/<name>[/set] */\n"
-            "  enum dp_kind kind;     /* heuristique, voir DP_VALUES.md */\n"
+            "  enum dp_kind kind;     /* confirmé si exposed, sinon heuristique */\n"
             "  const char *setter;    /* IPC_APP_* d'écriture ou NULL */\n"
-            "  const char *getter;    /* IPC_APP_* de lecture ou NULL */\n};\n\n"
-            "static const struct dp_entry dp_table[] = {\n")
+            "  const char *getter;    /* IPC_APP_* de lecture ou NULL */\n"
+            "  enum dp_abi set_abi;   /* argument de setter */\n"
+            "  enum dp_abi get_abi;   /* retour de getter */\n"
+            "  const char *values;    /* enum : \"a|b|c\" ; int : \"min..max\" ; NULL sinon */\n"
+            "  int exposed;           /* 1 = confirmé par DP_VALUES.md (Exposé = oui) */\n"
+            "  dp_fn set_fn;          /* résolu au chargement (symbole faible), NULL si non exposé */\n"
+            "  dp_fn get_fn;\n};\n\n")
+    q = lambda s: '"IPC_APP_%s"' % s if s else "0"
+    syms = []
     for r in rows:
-        q = lambda s: '"IPC_APP_%s"' % s if s else "0"
+        if r["exposed"]:
+            for fn in (r["setter"], r["getter"]):
+                if fn and fn not in syms:
+                    syms.append(fn)
+    if syms:
+        f.write("/* Symboles exportés par anyka_ipc (nm -D) ; faibles : absents = NULL, jamais appelés. */\n")
+        for fn in syms:
+            f.write("extern long IPC_APP_%s(void) __attribute__((weak));\n" % fn)
+        f.write("\n")
+    f.write("static const struct dp_entry dp_table[] = {\n")
+    for r in rows:
         k = r["kind"]
-        if k == "ACTION":
-            f.write('  {%d, "%s", DP_ACTION, %s, 0},\n' % (r["dp"], r["name"], q(r["fn"])))
-        else:
-            f.write('  {%d, "%s", DP_%s, %s, %s},\n' % (r["dp"], r["name"], k, q(r["setter"]), q(r["getter"])))
-    f.write("};\n\n#define DP_TABLE_LEN %d\n\n#endif\n" % len(rows))
+        setter = r["setter"] if k != "ACTION" else (r["setter"] or r["fn"])
+        getter = r["getter"] if k != "ACTION" else None
+        ex = r["exposed"]
+        f.write('  {%d, "%s", DP_%s, %s, %s, %s, %s, %s, %d, %s, %s},\n' % (
+            r["dp"], r["name"], k, q(setter), q(getter), r["set_abi"], r["get_abi"],
+            '"%s"' % r["values"] if r["values"] else "0", 1 if ex else 0,
+            "IPC_APP_%s" % setter if ex and setter else "0",
+            "IPC_APP_%s" % getter if ex and getter else "0"))
+    f.write("};\n\n#define DP_TABLE_LEN %d\n#define DP_EXPOSED_LEN %d\n\n#endif\n" % (
+        len(rows), sum(1 for r in rows if r["exposed"])))
 
 CH = {"BOOL": "ON / OFF", "ENUM": "valeur à confirmer", "INT": "entier, plage à confirmer",
       "ACTION": "ordre (charge utile ignorée ou paramètres)", "SENSOR": "lecture seule"}
@@ -82,21 +149,25 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 - Fonction sans `set_` : lecture seule (`sensor`), pas de topic `/set`.
 - Le même ordre peut venir d'ONVIF : les deux canaux écrivent dans `/tmp/md_cmd`.
 - **Alias historiques conservés** : `<base>/night` (= `night_mode`, DP 108) et `<base>/privacy` (preset privé).
-- Les **types sont une heuristique** sur le nom ; chaque ligne est confirmée par un lot de décompilation (issues #54 à #58) avant d'être exposée.
+- Les **types sont une heuristique** sur le nom tant qu'un lot de décompilation (issues #54 à #58) ne les a pas confirmés dans `docs/firmware/DP_VALUES.md`.
+- **Seuls les DP « exposé = oui »** sont pilotés par la passerelle (`tools/gateway/gateway.c`) ; les autres sont ignorés (journal `gateway: unknown or unexposed`).
+- Le canal fichier `/tmp/md_cmd` accepte une ligne `<fonction> <valeur>` (ex. `night day`, `flip_onoff ON`).
 
 ## Table
 
-| DP | Topic | Type | Valeurs | Écriture | Lecture | Lot |
-|---|---|---|---|---|---|---|
+| DP | Topic | Type | Valeurs | Écriture | Lecture | Lot | Exposé |
+|---|---|---|---|---|---|---|---|
 """)
     for r in rows:
         lot = "#%d" % ISSUES[r["dp"]] if r["dp"] in ISSUES else "#58"
-        f.write("| %d | `%s` | %s | %s | %s | %s | %s |\n" % (
-            r["dp"], r["name"], r["kind"].lower(), CH[r["kind"]],
+        vals = r["raw"] if r["confirmed"] else CH[r["kind"]]
+        f.write("| %d | `%s` | %s | %s | %s | %s | %s | %s |\n" % (
+            r["dp"], r["name"], r["kind"].lower() + ("" if r["confirmed"] else " ?"), vals,
             "`%s`" % (r["setter"] or r["fn"]) if r["kind"] != "SENSOR" else "—",
-            "`%s`" % r["getter"] if r["getter"] else "—", lot))
+            "`%s`" % r["getter"] if r["getter"] else "—", lot, "oui" if r["exposed"] else "non"))
     if unresolved:
         f.write("\n## DP sans fonction `IPC_APP_*` identifiée\n\n| DP | Gestionnaire | Adresse |\n|---|---|---|\n")
         for dp, h, a in sorted(unresolved):
             f.write("| %d | `%s` | %s |\n" % (dp, h, a))
-print(len(rows), "DP exposables,", len(unresolved), "sans fonction")
+print(len(rows), "DP exposables,", sum(1 for r in rows if r["exposed"]), "exposés (confirmés),",
+      len(unresolved), "sans fonction")

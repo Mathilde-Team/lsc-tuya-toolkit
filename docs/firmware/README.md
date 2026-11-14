@@ -9,10 +9,11 @@ Base commune pour tous les travaux sur la caméra (issues #28 à #50 et suivante
 | [DP_TABLE.md](DP_TABLE.md) | les 67 commandes Tuya (numéro de DP → gestionnaire → `IPC_APP_*`) |
 | [MODULES.md](MODULES.md) | un module (fichier source) par ligne |
 | [DECOMPILE.md](DECOMPILE.md) | comment décompiler sans les sources (méthode, script, pièges) |
+| [DP_VALUES.md](DP_VALUES.md) | types, valeurs et signatures confirmés par les lots #54 à #58 (**rédigé à la main**, lu par la passerelle) |
 | [../TOPICS.md](../TOPICS.md) | convention de topics MQTT de la passerelle locale (générée) |
 | [../FIRMWARE_COMMANDS.md](../FIRMWARE_COMMANDS.md) | les 311 fonctions `IPC_APP_*`/`ht_*` appelables en `LD_PRELOAD` |
 
-Tout est **généré** ; ne pas éditer à la main (sauf ce README).
+Tout est **généré** ; ne pas éditer à la main (sauf ce README et `DP_VALUES.md`).
 
 ## Chiffres (`anyka_ipc` 3.10.78.1269, Ghidra 12.2)
 

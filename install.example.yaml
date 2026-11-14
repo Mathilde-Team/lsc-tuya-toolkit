@@ -62,6 +62,7 @@ motion:
   hold: 30                           # secondes sans mouvement avant OFF
   human: false                       # EXPÉRIMENTAL : filtre humain du firmware (liblvhsr), non validé ; voir tools/motion/README.md
   sensitivity: 0                     # 0 (la moins sensible) à 2
+  ha_discovery: true                 # entités Home Assistant créées automatiquement (découverte MQTT) ; voir docs/HOME_ASSISTANT_DISCOVERY.md
   broker_host: ""                    # IP du broker MQTT (obligatoire si enabled) ; MQTT 3.1.1 sans TLS : réseau local uniquement
   broker_port: 1883
   broker_user: ""                    # laisser vide si le broker est anonyme

@@ -18,6 +18,8 @@ MOTION_TOPIC="camera/motion"
 MOTION_HOLD=30
 MOTION_SENS=0
 MOTION_HUMAN=""
+HA_DISCOVERY=1
+HA_PREFIX="homeassistant"
 CLOCKFIX=1
 [ -f "${CFG_FILE}" ] && . "${CFG_FILE}"
 PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin"
@@ -62,6 +64,7 @@ start() {
   if [ -n "$PRELOAD" ]; then
     LD_PRELOAD="$PRELOAD" TALK_PORT="$TALK_PORT" TALK_ALLOW="$TALK_ALLOW" TALK_GAIN="$TALK_GAIN" \
       MOTION_MQTT_FILE="${CUSTOM_DIR}/configs/mqtt.cred" MOTION_TOPIC="$MOTION_TOPIC" MOTION_HOLD="$MOTION_HOLD" MOTION_SENS="$MOTION_SENS" \
+      HA_DISCOVERY="$HA_DISCOVERY" HA_PREFIX="$HA_PREFIX" \
       anyka_ipc >>"$LOG_FILE" 2>&1 &
   else
     anyka_ipc >>"$LOG_FILE" 2>&1 &
