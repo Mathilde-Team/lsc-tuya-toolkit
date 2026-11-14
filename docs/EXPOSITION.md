@@ -9,14 +9,14 @@ Légende : ✅ fonctionne ; `*` pourrait l'être (service ONVIF ou topic possibl
 |---|---|---|---|
 | Flux vidéo RTSP (H.265, 720p/1080p, 20 i/s) | Flux principal local, sans cloud | ✅ Media | —  (RTSP direct) |
 | PTZ continu (haut/bas/gauche/droite/stop) | Déplacement par pas fixe via `ptz_move` | ✅ PTZ | ✅¹ DP 119/116 (natif firmware) |
-| PTZ absolu normalisé (-1..1) et position | Aller à une position, lire la position suivie par calcul | ✅ PTZ | * |
-| Préréglages PTZ (créer, aller à, supprimer) et position maison | Positions mémorisées du toolkit (`ptz_presets.sh`) | ✅ PTZ | * |
-| Recentrage au démarrage / calibrage PTZ | `PTZ_HOME_ON_BOOT`, `ptz_calibrate.sh` | — | * |
+| PTZ absolu normalisé (-1..1) et position | Aller à une position, lire la position suivie par calcul | ✅ PTZ | ✅¹ `ptz_absolute`, `ptz_position` |
+| Préréglages PTZ (créer, aller à, supprimer) et position maison | Positions mémorisées du toolkit (`ptz_presets.sh`) | ✅ PTZ | ✅¹ `ptz_preset_*`, `ptz_presets` |
+| Recentrage au démarrage / calibrage PTZ | `PTZ_HOME_ON_BOOT`, `ptz_calibrate.sh` | — | ✅¹ `ptz_home`, `ptz_calibrate` |
 | Mode jour/nuit/auto (alias `night`) | Filtre IR et LED infrarouges | ✅ Imaging IrCut | ✅ `night` |
 | Mode privé (alias `privacy`) | Envoie la caméra sur le preset privé (`privacy.sh`) | ✅ DeviceIO relais 0 | ✅ `privacy` |
 | Détection de mouvement locale | `md_inject.so` publie le mouvement | * Events MotionAlarm (`onvif_notify_server` absent) | ✅ `motion` |
 | Redémarrage de la caméra | `reboot` propre | ✅ Device SystemReboot | ✅¹ `system_reboot` |
-| Haut-parleur par le LAN / annonce / sirène | Audio G.711 µ-law par UDP (`talk_inject.so`, `send_audio.py`) | — (pas de sortie audio ONVIF) | * (UDP aujourd'hui, via HA) |
+| Haut-parleur par le LAN / annonce / sirène | Audio G.711 µ-law par UDP (`talk_inject.so`, `send_audio.py`) | — (pas de sortie audio ONVIF) | ✅¹ `speaker_siren`, `speaker_play` |
 | Micro (audio AAC dans le RTSP) | Son entrant | ✅ Media (audio) | — |
 | LED d'état (état_led) | Voyant de la caméra (`state_led.sh`) | — | ✅ `light_onoff` (DP 101) |
 | Heure / NTP / fuseau | Horloge locale, anti-falsification | Device SetSystemDateAndTime (*) | — |
@@ -33,7 +33,7 @@ Légende : ✅ fonctionne ; `*` pourrait l'être (service ONVIF ou topic possibl
 | `sleep_mode` (105) | Mode veille (routé vers `privacy` : le natif plante sans cloud) | *  DeviceIO relais | ✅ |
 | `alarm_sensitivity` (106) | Sensibilité de l'alarme de mouvement (0 bas, 1 moyen, 2 haut) | — | ✅ |
 | `night_mode` (108) | Mode jour/nuit (0 auto, 1 jour, 2 nuit) | ✅ Imaging IrCut (alias `night`) | ✅ |
-| `sd_storage` (109) | Capacité, utilisé et libre de la carte SD | — | * (3 sorties à gérer) |
+| `sd_storage` (109) | Capacité, utilisé et libre de la carte SD | — | ✅ JSON en Kio |
 | `sd_status` (110) | Code d'état de la carte SD | — | ✅ |
 | `format_sd_card` (111) | Formate la SD (destructif) | — | exclu |
 | `unmount_sd_card` (112) | Démonte la SD | — | exclu |
@@ -95,4 +95,4 @@ Légende : ✅ fonctionne ; `*` pourrait l'être (service ONVIF ou topic possibl
 | `audible_alarm_onoff` (247) | Alarme sonore | *  DeviceIO relais | ✅ |
 | `door_control` (248) | Commande de porte (0–6 ; 6 appelle `ht_cardoor_ctrl`) | — | ✅¹ |
 
-**Bilan MQTT** : 55 DP sur 61 ✅ ; 109 `*` ; 111, 112, 150, 151 exclus (SD). Côté ONVIF, aujourd'hui : PTZ, Imaging IrCut, relais privé, reboot et profil Media. Le canal `/tmp/md_cmd` peut porter tous les DP, mais ONVIF n'a pas de service standard pour la plupart des réglages (`—`).
+**Bilan MQTT** : 56 DP sur 61 ✅ (dont 109) ; 111, 112, 150, 151 exclus (SD). Côté ONVIF, aujourd'hui : PTZ, Imaging IrCut, relais privé, reboot et profil Media. Le canal `/tmp/md_cmd` peut porter tous les DP, mais ONVIF n'a pas de service standard pour la plupart des réglages (`—`).
