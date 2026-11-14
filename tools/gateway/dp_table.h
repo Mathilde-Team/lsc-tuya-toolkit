@@ -31,6 +31,8 @@ extern long IPC_APP_set_flip_onoff(void) __attribute__((weak));
 extern long IPC_APP_get_flip_onoff(void) __attribute__((weak));
 extern long IPC_APP_set_watermark_onoff(void) __attribute__((weak));
 extern long IPC_APP_get_watermark_onoff(void) __attribute__((weak));
+extern long IPC_APP_set_sleep_mode(void) __attribute__((weak));
+extern long IPC_APP_get_sleep_mode(void) __attribute__((weak));
 extern long IPC_APP_set_alarm_sensitivity(void) __attribute__((weak));
 extern long IPC_APP_get_alarm_sensitivity(void) __attribute__((weak));
 extern long IPC_APP_set_night_mode(void) __attribute__((weak));
@@ -122,7 +124,7 @@ static const struct dp_entry dp_table[] = {
   {101, "light_onoff", DP_BOOL, "IPC_APP_set_light_onoff", "IPC_APP_get_light_onoff", ABI_INT, ABI_INT, 0, 1, IPC_APP_set_light_onoff, IPC_APP_get_light_onoff},
   {103, "flip_onoff", DP_BOOL, "IPC_APP_set_flip_onoff", "IPC_APP_get_flip_onoff", ABI_INT, ABI_INT, 0, 1, IPC_APP_set_flip_onoff, IPC_APP_get_flip_onoff},
   {104, "watermark_onoff", DP_BOOL, "IPC_APP_set_watermark_onoff", "IPC_APP_get_watermark_onoff", ABI_INT, ABI_INT, 0, 1, IPC_APP_set_watermark_onoff, IPC_APP_get_watermark_onoff},
-  {105, "sleep_mode", DP_BOOL, "IPC_APP_set_sleep_mode", "IPC_APP_get_sleep_mode", ABI_INT, ABI_INT, 0, 0, 0, 0},
+  {105, "sleep_mode", DP_BOOL, "IPC_APP_set_sleep_mode", "IPC_APP_get_sleep_mode", ABI_INT, ABI_INT, 0, 1, IPC_APP_set_sleep_mode, IPC_APP_get_sleep_mode},
   {106, "alarm_sensitivity", DP_ENUM, "IPC_APP_set_alarm_sensitivity", "IPC_APP_get_alarm_sensitivity", ABI_STR, ABI_STR, "0|1|2", 1, IPC_APP_set_alarm_sensitivity, IPC_APP_get_alarm_sensitivity},
   {108, "night_mode", DP_ENUM, "IPC_APP_set_night_mode", "IPC_APP_get_night_mode", ABI_STR, ABI_STR, "0|1|2", 1, IPC_APP_set_night_mode, IPC_APP_get_night_mode},
   {109, "sd_storage", DP_SENSOR, 0, "IPC_APP_get_sd_storage", ABI_NONE, ABI_NONE, 0, 0, 0, 0},
@@ -183,6 +185,6 @@ static const struct dp_entry dp_table[] = {
 };
 
 #define DP_TABLE_LEN 61
-#define DP_EXPOSED_LEN 55
+#define DP_EXPOSED_LEN 56
 
 #endif

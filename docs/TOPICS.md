@@ -22,7 +22,7 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 | 101 | `light_onoff` | bool | ON / OFF | `set_light_onoff` | `get_light_onoff` | #58 | oui |
 | 103 | `flip_onoff` | bool | ON / OFF | `set_flip_onoff` | `get_flip_onoff` | #54 | oui |
 | 104 | `watermark_onoff` | bool | ON / OFF | `set_watermark_onoff` | `get_watermark_onoff` | #54 | oui |
-| 105 | `sleep_mode` | bool | ON / OFF | `set_sleep_mode` | `get_sleep_mode` | #58 | non |
+| 105 | `sleep_mode` | bool | ON / OFF | `set_sleep_mode` | `get_sleep_mode` | #58 | oui |
 | 106 | `alarm_sensitivity` | enum | `0` `1` `2` | `set_alarm_sensitivity` | `get_alarm_sensitivity` | #55 | oui |
 | 108 | `night_mode` | enum | `0` `1` `2` | `set_night_mode` | `get_night_mode` | #58 | oui |
 | 109 | `sd_storage` | sensor | capacité de la carte SD | — | `get_sd_storage` | #56 | non |

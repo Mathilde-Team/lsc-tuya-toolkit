@@ -335,6 +335,13 @@ int gw_command(const char *name, const char *val)
         return apply_night(val);
     if (!strcmp(name, "privacy"))
         return apply_privacy(val);
+    if (!strcmp(name, "sleep_mode")) {
+        /* DP 105 natif met en pause le service média Tuya et fait planter anyka_ipc sans cloud */
+        if (apply_privacy(val) < 0)
+            return -1;
+        state("sleep_mode", is_on(val) ? "ON" : "OFF");
+        return 0;
+    }
     e = find(name);
     if (!e || !e->exposed) {
         say("gateway: unknown or unexposed", name, 0);

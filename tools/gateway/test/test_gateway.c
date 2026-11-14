@@ -73,8 +73,9 @@ int main(void)
     CHECK(gw_topic("camera/watermark_onoff/set", "ON") == 0 && !strcmp(wm, "1") && PUB("camera/watermark_onoff", "ON"));
 
     /* enum */
-    CHECK(gw_topic("camera/sleep_mode/set", "1") == 0 && sleepm == 1 && PUB("camera/sleep_mode", "1"));
-    CHECK(gw_topic("camera/sleep_mode/set", "3") < 0 && sleepm == 1);
+    /* sleep_mode est routé vers privacy : le natif n'est jamais appelé */
+    CHECK(gw_topic("camera/sleep_mode/set", "ON") == 0 && sleepm == 0 && strstr(last_sys, "privacy.sh on") && PUB("camera/sleep_mode", "ON"));
+    CHECK(gw_topic("camera/sleep_mode/set", "3") < 0 && sleepm == 0);
     CHECK(gw_topic("camera/sd_record_mode/set", "always") == 0 && !strcmp(recmode, "always") && PUB("camera/sd_record_mode", "always"));
     CHECK(gw_topic("camera/sd_record_mode/set", "alway") < 0);
 

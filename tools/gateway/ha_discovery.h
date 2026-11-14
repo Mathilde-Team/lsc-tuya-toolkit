@@ -22,6 +22,8 @@ static const struct ha_entry ha_table[] = {
    "{\"name\":\"Flip onoff\",\"unique_id\":\"%N_flip_onoff\",\"command_topic\":\"%B/flip_onoff/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"state_topic\":\"%B/flip_onoff\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"switch", "watermark_onoff",
    "{\"name\":\"Watermark onoff\",\"unique_id\":\"%N_watermark_onoff\",\"command_topic\":\"%B/watermark_onoff/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"state_topic\":\"%B/watermark_onoff\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"switch", "sleep_mode",
+   "{\"name\":\"Sleep mode\",\"unique_id\":\"%N_sleep_mode\",\"command_topic\":\"%B/sleep_mode/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"state_topic\":\"%B/sleep_mode\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"select", "alarm_sensitivity",
    "{\"name\":\"Alarm sensitivity\",\"unique_id\":\"%N_alarm_sensitivity\",\"command_topic\":\"%B/alarm_sensitivity/set\",\"options\":[\"0\",\"1\",\"2\"],\"state_topic\":\"%B/alarm_sensitivity\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"select", "night_mode",
@@ -128,6 +130,6 @@ static const struct ha_entry ha_table[] = {
    "{\"name\":\"Door control\",\"unique_id\":\"%N_door_control\",\"command_topic\":\"%B/door_control/set\",\"options\":[\"0\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\"],\"state_topic\":\"%B/door_control\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
 };
 
-#define HA_TABLE_LEN 58
+#define HA_TABLE_LEN 59
 
 #endif
