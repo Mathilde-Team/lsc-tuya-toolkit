@@ -19,22 +19,22 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 
 | DP | Topic | Type | Valeurs | Écriture | Lecture | Lot | Exposé |
 |---|---|---|---|---|---|---|---|
-| 101 | `light_onoff` | bool ? | ON / OFF | `set_light_onoff` | `get_light_onoff` | #58 | non |
+| 101 | `light_onoff` | bool | ON / OFF | `set_light_onoff` | `get_light_onoff` | #58 | oui |
 | 103 | `flip_onoff` | bool | ON / OFF | `set_flip_onoff` | `get_flip_onoff` | #54 | oui |
 | 104 | `watermark_onoff` | bool | ON / OFF | `set_watermark_onoff` | `get_watermark_onoff` | #54 | oui |
-| 105 | `sleep_mode` | enum ? | valeur à confirmer | `set_sleep_mode` | `get_sleep_mode` | #58 | non |
+| 105 | `sleep_mode` | bool | ON / OFF | `set_sleep_mode` | `get_sleep_mode` | #58 | non |
 | 106 | `alarm_sensitivity` | enum | `0` `1` `2` | `set_alarm_sensitivity` | `get_alarm_sensitivity` | #55 | non |
 | 108 | `night_mode` | enum ? | valeur à confirmer | `set_night_mode` | `get_night_mode` | #58 | non |
 | 109 | `sd_storage` | sensor ? | lecture seule | — | `get_sd_storage` | #56 | non |
 | 110 | `sd_status` | sensor | code d'état (entier) | — | `get_sd_status` | #56 | non |
 | 111 | `format_sd_card` | action | aucun | `format_sd_card` | — | #56 | non |
 | 112 | `unmount_sd_card` | action ? | ordre (charge utile ignorée ou paramètres) | `unmount_sd_card` | — | #56 | non |
-| 116 | `ptz_stop_move` | action ? | ordre (charge utile ignorée ou paramètres) | `ptz_stop_move` | — | #57 | non |
+| 116 | `ptz_stop_move` | action | aucun | `ptz_stop_move` | — | #57 | non |
 | 117 | `sd_format_status` | sensor ? | lecture seule | — | `get_sd_format_status` | #56 | non |
-| 119 | `ptz_start_move` | action ? | ordre (charge utile ignorée ou paramètres) | `ptz_start_move` | — | #57 | non |
+| 119 | `ptz_start_move` | action | chaîne `0` à `7` (0 haut, 2 droite, 4 bas, 6 gauche selon le firmware) | `ptz_start_move` | — | #57 | non |
 | 120 | `alarm_siren_onoff` | bool | ON / OFF | `set_alarm_siren_onoff` | `get_alarm_siren_onoff` | #55 | non |
 | 124 | `night_vision_mode` | enum ? | valeur à confirmer | `set_night_vision_mode` | `get_night_vision_mode` | #58 | non |
-| 132 | `ptz_check` | action ? | ordre (charge utile ignorée ou paramètres) | `ptz_check` | — | #57 | non |
+| 132 | `ptz_check` | action | aucun | `ptz_check` | — | #57 | non |
 | 134 | `alarm_function_onoff` | bool | ON / OFF | `set_alarm_function_onoff` | `get_alarm_function_onoff` | #55 | non |
 | 138 | `blub_onoff` | bool ? | ON / OFF | `set_blub_onoff` | `get_blub_onoff` | #58 | non |
 | 139 | `sound_detect_onoff` | bool | ON / OFF | `set_sound_detect_onoff` | `get_sound_detect_onoff` | #55 | non |
@@ -46,8 +46,8 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 | 152 | `pir_detect_switch` | bool ? | ON / OFF | `set_pir_detect_switch` | `get_pir_detect_switch` | #58 | non |
 | 158 | `floodlight_lightness` | int ? | entier, plage à confirmer | `set_floodlight_lightness` | `get_floodlight_lightness` | #58 | non |
 | 159 | `siren_onoff` | bool ? | ON / OFF | `set_siren_onoff` | `get_siren_onoff` | #55 | non |
-| 160 | `ipc_lullaby_volume` | int ? | entier, plage à confirmer | `set_ipc_lullaby_volume` | `get_ipc_lullaby_volume` | #58 | non |
-| 161 | `track_enable` | sensor ? | lecture seule | — | `get_track_enable` | #57 | non |
+| 160 | `ipc_lullaby_volume` | int | `0` `10` | `set_ipc_lullaby_volume` | `get_ipc_lullaby_volume` | #58 | non |
+| 161 | `track_enable` | bool | ON / OFF | `track_enable` | `get_track_enable` | #57 | non |
 | 162 | `system_reboot` | action | charge utile ignorée (envoyer `1`) | `set_system_reboot` | — | #54 | oui |
 | 167 | `cry_detect_onoff` | bool | ON / OFF | `set_cry_detect_onoff` | `get_cry_detect_onoff` | #55 | non |
 | 168 | `alarm_zone_onoff` | bool ? | ON / OFF | `set_alarm_zone_onoff` | `get_alarm_zone_onoff` | #55 | non |
@@ -55,8 +55,8 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 | 170 | `human_filter` | bool | ON / OFF | `set_human_filter` | `get_human_filter` | #55 | non |
 | 172 | `flight_warn_onoff` | bool ? | ON / OFF | `set_flight_warn_onoff` | `get_flight_warn_onoff` | #58 | non |
 | 173 | `flight_warn_time` | int ? | entier, plage à confirmer | `set_flight_warn_time` | `get_flight_warn_time` | #58 | non |
-| 174 | `patrol_switch` | bool ? | ON / OFF | `set_patrol_switch` | — | #57 | non |
-| 175 | `patrol_mode` | enum ? | valeur à confirmer | `set_patrol_mode` | `get_patrol_mode` | #57 | non |
+| 174 | `patrol_switch` | bool | ON / OFF | `set_patrol_switch` | — | #57 | non |
+| 175 | `patrol_mode` | enum | `0` `1` | `set_patrol_mode` | `get_patrol_mode` | #57 | non |
 | 176 | `patrol_tmode` | enum ? | valeur à confirmer | `set_patrol_tmode` | — | #57 | non |
 | 177 | `patrol_time` | int ? | entier, plage à confirmer | `set_patrol_time` | — | #57 | non |
 | 178 | `preset` | int ? | entier, plage à confirmer | `set_preset` | — | #57 | non |
@@ -65,9 +65,9 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 | 190 | `link_move` | int ? | entier, plage à confirmer | `set_link_move` | — | #57 | non |
 | 198 | `object_outline_onoff` | bool | ON / OFF | `set_object_outline_onoff` | `get_object_outline_onoff` | #54 | non |
 | 199 | `link_pos` | int ? | entier, plage à confirmer | `set_link_pos` | — | #57 | non |
-| 232 | `ipc_lullaby_mode` | enum ? | valeur à confirmer | `set_ipc_lullaby_mode` | `get_ipc_lullaby_mode` | #58 | non |
-| 234 | `ipc_lullaby_control` | enum ? | valeur à confirmer | `set_ipc_lullaby_control` | `get_ipc_lullaby_control` | #58 | non |
-| 235 | `ipc_lullaby_list` | enum ? | valeur à confirmer | `set_ipc_lullaby_list` | `get_ipc_lullaby_list` | #58 | non |
+| 232 | `ipc_lullaby_mode` | enum | `0` `1` `2` | `set_ipc_lullaby_mode` | `get_ipc_lullaby_mode` | #58 | non |
+| 234 | `ipc_lullaby_control` | enum | `0` `1` | `set_ipc_lullaby_control` | `get_ipc_lullaby_control` | #58 | non |
+| 235 | `ipc_lullaby_list` | enum | `0` `1` `2` `3` `4` | `set_ipc_lullaby_list` | `get_ipc_lullaby_list` | #58 | non |
 | 236 | `ipc_lullaby_command` | enum ? | valeur à confirmer | `set_ipc_lullaby_command` | — | #58 | non |
 | 238 | `temp_report_c` | sensor ? | lecture seule | — | `get_temp_report_c` | #58 | non |
 | 239 | `temp_report_f` | sensor ? | lecture seule | — | `get_temp_report_f` | #58 | non |

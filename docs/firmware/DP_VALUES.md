@@ -73,6 +73,12 @@ Lu dans le pseudo-C. Ces DP agissent sur la **détection du firmware**, qui n'es
 
 | DP | Fonction | Type | Valeurs | Écriture | Lecture | Effets de bord / persistance | Preuve | Exposé |
 |---|---|---|---|---|---|---|---|---|
+| 119 | ptz_start_move | action | chaîne `0` à `7` (0 haut, 2 droite, 4 bas, 6 gauche selon le firmware) | str | aucun | `ht_ptz_set_cmd` ; directions inversées si `bool_rotate180` | 0x76558 IPC_APP_ptz_start_move : valeurs impaires ignorées | non |
+| 116 | ptz_stop_move | action | aucun | aucun | aucun | `ht_ptz_set_cmd(0,-1)` puis `IPC_APP_ptz_save_pos` | 0x76858 IPC_APP_ptz_stop_move | non |
+| 132 | ptz_check | action | aucun | aucun | aucun | `ht_ptz_calibration()` : recalibrage mécanique | 0x768b0 IPC_APP_ptz_check | non |
+| 161 | track_enable | bool | ON / OFF | int | int | config `bool_track_enable` | 0x76900 IPC_APP_track_enable; 0x7699c IPC_APP_get_track_enable : effet réel non vérifié | non |
+| 175 | patrol_mode | enum | `0` `1` | str | str | config `enum_patrol_mode` | 0x76a7c IPC_APP_set_patrol_mode; 0x76b88 IPC_APP_get_patrol_mode | non |
+| 174 | patrol_switch | bool | ON / OFF | int | aucun | `ht_ptz_set_patrol_mode(0 à 2)` | 0x76c24 IPC_APP_set_patrol_switch | non |
 
 ## Lot 5 : berceuse, température, lumière, PIR, porte (#58)
 
@@ -80,3 +86,9 @@ Lu dans le pseudo-C. Ces DP agissent sur la **détection du firmware**, qui n'es
 
 | DP | Fonction | Type | Valeurs | Écriture | Lecture | Effets de bord / persistance | Preuve | Exposé |
 |---|---|---|---|---|---|---|---|---|
+| 101 | light_onoff | bool | ON / OFF | int | int | config `bool_led_enable` puis `ht_tuya_func_set_indicator_light` : LED témoin de la caméra | 0x7499c IPC_APP_set_light_onoff; 0x74a4c IPC_APP_get_light_onoff : défaut 1 | oui |
+| 105 | sleep_mode | bool | ON / OFF | int | int | config `bool_sleep_mode` ; coupe le service média Tuya, `ht_ptz_set_cmd(9/10)` | 0x748e0 IPC_APP_set_sleep_mode; 0x74970 IPC_APP_get_sleep_mode : remplacé par l'alias `privacy` | non |
+| 232 | ipc_lullaby_mode | enum | `0` `1` `2` | str | str | config `enum_ipc_lullaby_mode` | 0x78604 IPC_APP_set_ipc_lullaby_mode; 0x786e4 IPC_APP_get_ipc_lullaby_mode : lecteur de berceuses non vérifié | non |
+| 160 | ipc_lullaby_volume | int | `0` `10` | int | int | config `enum_ipc_lullaby_volume` | 0x787ec IPC_APP_set_ipc_lullaby_volume; 0x7878c IPC_APP_get_ipc_lullaby_volume | non |
+| 234 | ipc_lullaby_control | enum | `0` `1` | str | str | config `enum_ipc_lullaby_control` | 0x78850 IPC_APP_set_ipc_lullaby_control; 0x78924 IPC_APP_get_ipc_lullaby_control | non |
+| 235 | ipc_lullaby_list | enum | `0` `1` `2` `3` `4` | str | str | config `enum_ipc_lullaby_list` | 0x789c0 IPC_APP_set_ipc_lullaby_list; 0x78a98 IPC_APP_get_ipc_lullaby_list | non |

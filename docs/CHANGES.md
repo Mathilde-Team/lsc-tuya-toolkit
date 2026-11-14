@@ -337,3 +337,9 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - `docs/firmware/DP_VALUES.md` rempli par décompilation (lots 1 à 3, 16 DP lus) ; **exposés** : `flip_onoff` (103), `watermark_onoff` (104), `basic_anti_flicker` (188, `0` `1` `2` ; 2 = 60 Hz), `system_reboot` (162, `reboot -f`). Les autres sont documentés, non exposés (effet sur la détection du firmware, pas sur `md_inject`, ou destructif).
 - Testé sur la caméra .188 : états retained publiés au démarrage, `flip_onoff`, `watermark_onoff`, `basic_anti_flicker` appliqués et relus, valeur hors liste refusée (`gateway: refused`), découverte HA publiée, `night` inchangé. **Non testés** : `system_reboot`, rendu visuel du retournement, affichage des entités dans Home Assistant.
 - Pseudo-C : `tools/firmware/Decompile.java` et `docs/firmware/DECOMPILE.md`.
+
+## 28. DP 101 light_onoff (LED témoin) et lots 4/5 documentés
+
+- `ht_tuya_func_set_flip_mirror` appelle `ak_vpss_effect_set(0, 8, 0|3)` : le flip est une rotation 180° (retournement + miroir ensemble, non séparables) ; inversé si la clé `sensor_inv` est vraie.
+- DP 101 `light_onoff` (LED témoin) exposé et testé sur la .188 (ON/OFF, relu, valeur restaurée).
+- Lots 4 (PTZ) et 5 (berceuse) documentés dans `docs/firmware/DP_VALUES.md`, non exposés (matériel ou effet non vérifié). Température, ampoule, PIR, porte : matériel absent probable, non exposés.

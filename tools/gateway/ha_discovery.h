@@ -16,6 +16,8 @@ static const struct ha_entry ha_table[] = {
    "{\"name\":\"Jour/nuit\",\"unique_id\":\"%N_night\",\"state_topic\":\"%B/night\",\"command_topic\":\"%B/night/set\",\"options\":[\"auto\",\"day\",\"night\"],\"icon\":\"mdi:weather-night\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"switch", "privacy",
    "{\"name\":\"Mode privé\",\"unique_id\":\"%N_privacy\",\"state_topic\":\"%B/privacy\",\"command_topic\":\"%B/privacy/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"icon\":\"mdi:eye-off\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"switch", "light_onoff",
+   "{\"name\":\"Light onoff\",\"unique_id\":\"%N_light_onoff\",\"command_topic\":\"%B/light_onoff/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"state_topic\":\"%B/light_onoff\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"switch", "flip_onoff",
    "{\"name\":\"Flip onoff\",\"unique_id\":\"%N_flip_onoff\",\"command_topic\":\"%B/flip_onoff/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"state_topic\":\"%B/flip_onoff\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"switch", "watermark_onoff",
@@ -26,6 +28,6 @@ static const struct ha_entry ha_table[] = {
    "{\"name\":\"Basic anti flicker\",\"unique_id\":\"%N_basic_anti_flicker\",\"command_topic\":\"%B/basic_anti_flicker/set\",\"options\":[\"0\",\"1\",\"2\"],\"state_topic\":\"%B/basic_anti_flicker\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
 };
 
-#define HA_TABLE_LEN 7
+#define HA_TABLE_LEN 8
 
 #endif
