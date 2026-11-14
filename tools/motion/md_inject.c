@@ -1,21 +1,29 @@
 /*
- * md_inject.so : détection de mouvement locale pour anyka_ipc (sans cloud Tuya).
- * Chargée par LD_PRELOAD. Le firmware initialise la détection (ak_md) mais ne l'active
- * et n'enregistre son callback que depuis le service Tuya. On le fait ici :
- * ht_montion_detect_set_active_cb() puis ht_montion_detect_open().
- * Chaque mouvement est écrit dans le journal et, si MOTION_MQTT_FILE est défini,
- * publié en MQTT (ON au début, OFF après MOTION_HOLD secondes sans nouveau mouvement).
+ * md_inject.so : passerelle locale pour anyka_ipc (sans cloud Tuya) et détection de mouvement.
+ * Chargée par LD_PRELOAD. Deux rôles :
+ * 1. Détection de mouvement : le firmware initialise la détection (ak_md) mais ne l'active
+ *    et n'enregistre son callback que depuis le service Tuya. On le fait ici :
+ *    ht_montion_detect_set_active_cb() puis ht_montion_detect_open(). Chaque mouvement est
+ *    écrit dans le journal et, si MOTION_MQTT_FILE est défini, publié en MQTT
+ *    (ON au début, OFF après MOTION_HOLD secondes sans nouveau mouvement).
+ * 2. Passerelle générique pilotée par la table des DP (tools/gateway/dp_table.h, générée
+ *    depuis docs/firmware/DP_TABLE.md — convention : docs/TOPICS.md) : abonnement à
+ *    <base>/+/set, appel des IPC_APP_set_* du firmware (couche générée dp_calls.h),
+ *    publication retained de l'état. Les getters ne sont appelés qu'une fois leur
+ *    signature confirmée par un lot de décompilation (issues #54 à #58).
  * Variables :
  *   MOTION_MQTT_FILE  fichier de 4 lignes : IP, port, utilisateur, mot de passe (mode 600). Absent = journal seul.
- *   MOTION_TOPIC      topic MQTT (défaut camera/motion)
+ *   MOTION_TOPIC      topic MQTT (défaut camera/motion) ; <base> = ce topic sans son dernier élément
  *   MOTION_HOLD       secondes avant OFF (défaut 10)
  *   MOTION_SENS       sensibilité du firmware 0..2 (défaut : celle du firmware)
+ *   MOTION_HUMAN      1 = active le filtre humain du firmware (liblvhsr), 0 = le coupe (défaut : inchangé)
+ *   GATEWAY           "off" = coupe la passerelle générique (night/privacy restent actifs)
  * Commandes (désassemblage : ht_night_mode_set_irled_mode 0 auto / 1 jour / 2 nuit) :
  *   MQTT <base>/night/set  = auto|day|night   -> état retained <base>/night
  *   MQTT <base>/privacy/set = ON|OFF          -> privacy.sh on|off, état retained <base>/privacy
+ *   MQTT <base>/<fonction>/set = charge utile -> IPC_APP_set_*, état retained <base>/<fonction>
  *   (<base> = MOTION_TOPIC sans son dernier élément ; ex. camera/motion -> camera)
- *   Fichier /tmp/md_cmd, une ligne "night day" ou "privacy on" : même effet (utilisé par ONVIF).
- *   MOTION_HUMAN      1 = active le filtre humain du firmware (liblvhsr), 0 = le coupe (défaut : inchangé)
+ *   Fichier /tmp/md_cmd, une ligne "<fonction> <valeur>" : même effet (utilisé par ONVIF).
  */
 #include <fcntl.h>
 #include <pthread.h>
@@ -26,6 +34,9 @@
 #include <poll.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+#include "../gateway/dp_table.h"
+#include "../gateway/dp_calls.h"
 
 #define STARTUP_DELAY_S 50
 
@@ -221,6 +232,129 @@ static void apply_privacy(const char *v)
         publish(t, on ? "ON" : "OFF");
 }
 
+/* ---- Passerelle générique : pilotée par dp_table.h / dp_calls.h (générés) ---- */
+
+static int gateway_on = 1;
+
+/* Nom de fonction (topic ou /tmp/md_cmd) -> entrée de la table, 0 si inconnue. */
+static const struct dp_entry *dp_lookup(const char *name)
+{
+    int i;
+
+    for (i = 0; i < DP_TABLE_LEN; i++)
+        if (!strcmp(dp_table[i].name, name))
+            return &dp_table[i];
+    return 0;
+}
+
+/* int -> décimal sans division (libgcc non liée), zéros de tête omis. */
+static int fmt_int(char *o, int v)
+{
+    static const long pw[] = {1000000000, 100000000, 10000000, 1000000, 100000, 10000, 1000, 100, 10, 1};
+    long t = v;
+    int i, k, n = 0;
+
+    if (v < 0) {
+        o[n++] = '-';
+        t = -(long)v;
+    }
+    for (i = 0; i < 10; i++) {
+        k = 0;
+        while (t >= pw[i]) {
+            t -= pw[i];
+            k++;
+        }
+        if (k || n > (v < 0) || i == 9)
+            o[n++] = '0' + k;
+    }
+    return n;
+}
+
+/* Commande d'un DP : bool -> "1"/"0", sinon texte brut (le firmware fait atoi, cf. dp_calls.h). */
+static void apply_dp(const struct dp_entry *e, const char *val)
+{
+    char arg[32], t[96], msg[64];
+    const char *state;
+
+    if (e->kind == DP_BOOL) {
+        int on = !strcmp(val, "ON") || !strcmp(val, "on") || !strcmp(val, "1");
+        int off = !strcmp(val, "OFF") || !strcmp(val, "off") || !strcmp(val, "0");
+
+        if (!on && !off)
+            return;
+        arg[0] = on ? '1' : '0';
+        arg[1] = 0;
+        state = on ? "ON" : "OFF";
+    } else {
+        strncpy(arg, val, sizeof arg - 1);
+        arg[sizeof arg - 1] = 0;
+        state = val;
+    }
+    if (dp_call_set(e, arg) != 0) {
+        strcpy(msg, "dp ");
+        strcat(msg, e->name);
+        strcat(msg, " refused");
+        logmsg(msg);
+        return;
+    }
+    strcpy(msg, "dp ");
+    strcat(msg, e->name);
+    strcat(msg, " ok");
+    logmsg(msg);
+    strcpy(t, base);
+    strcat(t, "/");
+    strcat(t, e->name);
+    if (have_mqtt)
+        publish(t, state);
+}
+
+/* Commande générique : topic = <base>/<fonction>/set. */
+static void apply_generic(const char *topic, const char *val)
+{
+    char name[48];
+    const struct dp_entry *e;
+    int bl = strlen(base), l = strlen(topic), nl;
+
+    if (!gateway_on)
+        return;
+    nl = l - bl - 5; /* topic = <base> + '/' + <fonction> + "/set" */
+    if (nl < 1 || nl >= (int)sizeof name)
+        return;
+    memcpy(name, topic, bl);
+    name[bl] = 0;
+    if (strcmp(name, base) || topic[bl] != '/' || strcmp(topic + l - 4, "/set"))
+        return;
+    memcpy(name, topic + bl + 1, nl);
+    name[nl] = 0;
+    e = dp_lookup(name);
+    if (e && e->setter)
+        apply_dp(e, val);
+}
+
+/* État initial : publie retained chaque entrée dont le getter est confirmé (dp_calls.h). */
+static void publish_states(void)
+{
+    char t[96], v[13];
+    const struct dp_entry *e;
+    int i, r;
+
+    if (!have_mqtt || !gateway_on)
+        return;
+    for (i = 0; i < DP_TABLE_LEN; i++) {
+        e = &dp_table[i];
+        if (!e->getter)
+            continue;
+        r = dp_call_get(e);
+        if (r < 0)
+            continue; /* signature non confirmée par un lot : jamais appelée */
+        v[fmt_int(v, r)] = 0;
+        strcpy(t, base);
+        strcat(t, "/");
+        strcat(t, e->name);
+        publish(t, v);
+    }
+}
+
 static void handle(const char *topic, const char *val)
 {
     int l = strlen(topic);
@@ -229,6 +363,8 @@ static void handle(const char *topic, const char *val)
         apply_night(val);
     else if (l > 12 && !strcmp(topic + l - 12, "/privacy/set"))
         apply_privacy(val);
+    else
+        apply_generic(topic, val);
 }
 
 static void poll_file(void)
@@ -236,6 +372,7 @@ static void poll_file(void)
     char b[64];
     int fd = open("/tmp/md_cmd", O_RDONLY), n;
     char *sp;
+    const struct dp_entry *e;
 
     if (fd < 0)
         return;
@@ -256,6 +393,8 @@ static void poll_file(void)
         apply_night(sp);
     else if (!strcmp(b, "privacy"))
         apply_privacy(sp);
+    else if ((e = dp_lookup(b)) != 0 && e->setter)
+        apply_dp(e, sp);
 }
 
 /* Abonné MQTT : QoS 0, PINGREQ toutes les 30 s, reconnexion automatique. */
@@ -264,8 +403,8 @@ static int subscribe_loop(void)
     unsigned char pkt[256], rx[256];
     struct sockaddr_in sa;
     struct pollfd pf;
-    int s, n = 0, body, r, idle = 0, i;
-    static const char *sub[] = {"/night/set", "/privacy/set"};
+    char t[96];
+    int s, n = 0, body, r, idle = 0;
 
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0)
@@ -298,21 +437,18 @@ static int subscribe_loop(void)
         close(s);
         return -1;
     }
-    for (i = 0; i < 2; i++) {
-        char t[96];
-
-        strcpy(t, base);
-        strcat(t, sub[i]);
-        n = 0;
-        pkt[n++] = 0x82;
-        body = n++;
-        pkt[n++] = 0;
-        pkt[n++] = i + 1;
-        n += put_str(pkt + n, t);
-        pkt[n++] = 0;
-        pkt[body] = n - body - 1;
-        write(s, pkt, n);
-    }
+    /* Un seul abonnement <base>/+/set : couvre night, privacy et toute la table. */
+    strcpy(t, base);
+    strcat(t, "/+/set");
+    n = 0;
+    pkt[n++] = 0x82;
+    body = n++;
+    pkt[n++] = 0;
+    pkt[n++] = 1;
+    n += put_str(pkt + n, t);
+    pkt[n++] = 0;
+    pkt[body] = n - body - 1;
+    write(s, pkt, n);
     logmsg("command subscriber ready");
     for (;;) {
         poll_file();
@@ -358,14 +494,18 @@ static int subscribe_loop(void)
 static void *cmd_worker(void *arg)
 {
     const char *t = getenv("MOTION_TOPIC");
+    const char *g = getenv("GATEWAY");
     char *sl;
 
     (void)arg;
+    if (g && !strcmp(g, "off"))
+        gateway_on = 0;
     strncpy(base, t ? t : "camera/motion", sizeof base - 1);
     sl = strrchr(base, '/');
     if (sl)
         *sl = 0;
     sleep(STARTUP_DELAY_S + 5);
+    publish_states();
     for (;;) {
         if (have_mqtt) {
             if (subscribe_loop() < 0)

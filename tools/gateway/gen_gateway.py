@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
-"""Génère tools/gateway/dp_table.h et docs/TOPICS.md depuis docs/firmware/DP_TABLE.md.
-Usage : gen_gateway.py [DP_TABLE.md] [dp_table.h] [TOPICS.md]
+"""Génère tools/gateway/dp_table.h, tools/gateway/dp_calls.h et docs/TOPICS.md
+depuis docs/firmware/DP_TABLE.md.
+Usage : gen_gateway.py [DP_TABLE.md] [dp_table.h] [TOPICS.md] [dp_calls.h]
 Les types sont une heuristique sur le nom ; ils sont à confirmer par les lots de décompilation (DP_VALUES.md)."""
 import re, sys
 
 src = sys.argv[1] if len(sys.argv) > 1 else "docs/firmware/DP_TABLE.md"
 hdr = sys.argv[2] if len(sys.argv) > 2 else "tools/gateway/dp_table.h"
 doc = sys.argv[3] if len(sys.argv) > 3 else "docs/TOPICS.md"
+calls = sys.argv[4] if len(sys.argv) > 4 else "tools/gateway/dp_calls.h"
+
+# Getters dont la signature est confirmée par un lot de décompilation (#54 à #58) :
+# DP -> nom de fonction. Un getter absent d'ici n'est jamais appelé par le runtime
+# (signature inconnue : risque de plantage). Le lot ajoute le DP et régénère.
+CONFIRMED_GETTERS = {}
 
 ACTIONS = ("reboot", "format_sd_card", "unmount_sd_card", "ptz_start_move", "ptz_stop_move", "ptz_check")
 ISSUES = {  # DP -> issue de lot
@@ -99,4 +106,43 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
         f.write("\n## DP sans fonction `IPC_APP_*` identifiée\n\n| DP | Gestionnaire | Adresse |\n|---|---|---|\n")
         for dp, h, a in sorted(unresolved):
             f.write("| %d | `%s` | %s |\n" % (dp, h, a))
-print(len(rows), "DP exposables,", len(unresolved), "sans fonction")
+
+with open(calls, "w", encoding="utf-8") as f:
+    f.write("/* Généré par tools/gateway/gen_gateway.py : ne pas éditer.\n"
+            "   Couche d'appel du runtime (md_inject.c) vers les IPC_APP_* du firmware.\n"
+            "   Convention provisoire des setters : int IPC_APP_set_X(const char *) — la valeur d'un DP\n"
+            "   Tuya est une chaîne (docs/FIRMWARE_COMMANDS.md : « chaîne numérique (atoi) » ;\n"
+            "   IPC_APP_set_night_mode, confirmé au désassemblage, prend « 0 »/« 1 »/« 2 »).\n"
+            "   Chaque lot de décompilation (#54 à #58) confirme la signature réelle dans DP_VALUES.md\n"
+            "   et ajuste CONFIRMED_GETTERS dans gen_gateway.py. */\n"
+            "#ifndef DP_CALLS_H\n#define DP_CALLS_H\n\n#include \"dp_table.h\"\n\n")
+    for r in rows:
+        call = r["setter"] or (r["fn"] if r["kind"] == "ACTION" else None)
+        if call:
+            f.write("extern int IPC_APP_%s(const char *);\n" % call)
+    for dp, fn in sorted(CONFIRMED_GETTERS.items()):
+        f.write("extern int %s(void);\n" % fn)
+    f.write("\n/* Commande : renvoie 0 si le firmware a accepté, -1 si inconnu/refusé. */\n"
+            "static int dp_call_set(const struct dp_entry *e, const char *v)\n{\n"
+            "  switch (e->dp) {\n")
+    for r in rows:
+        call = r["setter"] or (r["fn"] if r["kind"] == "ACTION" else None)
+        if call:
+            f.write("  case %d: return IPC_APP_%s(v);\n" % (r["dp"], call))
+    f.write("  default: return -1;\n  }\n}\n\n"
+            "/* État : appelé seulement pour les getters confirmés par un lot (sinon -1, jamais appelé\n"
+            "   sur la caméra : signature inconnue). Renvoie la valeur, -1 si non confirmé. */\n"
+            "static int dp_call_get(const struct dp_entry *e)\n{\n"
+            "  switch (e->dp) {\n")
+    for r in rows:
+        if not r["getter"]:
+            continue
+        if r["dp"] in CONFIRMED_GETTERS:
+            f.write("  case %d: return %s();\n" % (r["dp"], CONFIRMED_GETTERS[r["dp"]]))
+        else:
+            f.write("  case %d: break; /* IPC_APP_%s : signature à confirmer (lot #%d) */\n"
+                    % (r["dp"], r["getter"], ISSUES.get(r["dp"], 58)))
+    f.write("  default: break;\n  }\n  return -1;\n}\n\n#endif\n")
+
+print(len(rows), "DP exposables,", len(unresolved), "sans fonction,",
+      len(CONFIRMED_GETTERS), "getters confirmés")

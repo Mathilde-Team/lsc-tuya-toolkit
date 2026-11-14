@@ -1,18 +1,40 @@
-# md_inject : détection locale (mouvement / humain) → MQTT
+# md_inject : passerelle locale (table des DP) + détection locale → MQTT
 
-Bibliothèque `LD_PRELOAD` pour `anyka_ipc`. Le firmware initialise la détection mais ne l'active que
-depuis le service Tuya : sans cloud, `md_inject.so` appelle `ht_montion_detect_set_active_cb()` puis
-`ht_montion_detect_open()` et publie `ON` / `OFF` en MQTT 3.1.1 (QoS 1, retain).
+Bibliothèque `LD_PRELOAD` pour `anyka_ipc`. Deux rôles :
+
+1. **Passerelle générique** (issue #53) : `md_inject.so` s'abonne à `<base>/+/set`, cherche la fonction
+   dans la table des DP générée (`tools/gateway/dp_table.h`, issue #52), appelle l'`IPC_APP_set_*`
+   du firmware via la couche générée `tools/gateway/dp_calls.h` et publie l'état *retained*
+   `<base>/<fonction>` (convention : [`docs/TOPICS.md`](../TOPICS.md)). Le canal fichier
+   `/tmp/md_cmd` (une ligne « `<fonction> <valeur>` ») accepte les mêmes commandes (utilisé par ONVIF).
+2. **Détection de mouvement** : le firmware initialise la détection mais ne l'active que
+   depuis le service Tuya : sans cloud, `md_inject.so` appelle `ht_montion_detect_set_active_cb()` puis
+   `ht_montion_detect_open()` et publie `ON` / `OFF` en MQTT 3.1.1 (QoS 1, retain).
+
+Les alias historiques `<base>/night/set` (`ht_night_mode_set_irled_mode`, désassemblage) et
+`<base>/privacy/set` (`privacy.sh`) gardent leur comportement d'origine, indépendamment de la table.
 
 ## Variables
 
 | Variable | Rôle | Défaut |
 |---|---|---|
 | `MOTION_MQTT_FILE` | fichier 4 lignes : IP, port, utilisateur, mot de passe (mode 600) | journal seul |
-| `MOTION_TOPIC` | topic MQTT | `camera/motion` |
+| `MOTION_TOPIC` | topic MQTT ; `<base>` = ce topic sans son dernier élément | `camera/motion` |
 | `MOTION_HOLD` | secondes sans mouvement avant `OFF` | 10 |
 | `MOTION_SENS` | sensibilité firmware 0..2 | celle du firmware |
 | `MOTION_HUMAN` | `1` active le filtre humain, `0` le coupe | inchangé (désactivé : `bool_human_filter_enable = 0`) |
+| `GATEWAY` | `off` coupe la passerelle générique (night/privacy restent actifs) | activée |
+
+## Signatures des `IPC_APP_*` : état et règle
+
+- Les **setters** sont appelés avec la convention provisoire `int IPC_APP_set_X(const char *)` :
+  la valeur d'un DP Tuya est une chaîne (cf. `docs/FIRMWARE_COMMANDS.md` — « chaîne numérique (atoi) » ;
+  `IPC_APP_set_night_mode`, confirmé au désassemblage, prend « 0 »/« 1 »/« 2 »). Le lot de
+  décompilation correspondant (issues #54 à #58) confirme ou corrige dans `gen_gateway.py`.
+- Les **getters** ne sont appelés **qu'une fois leur signature confirmée** par un lot : un getter
+  non confirmé n'est jamais invoqué (risque de plantage). À la confirmation, ajouter le DP dans
+  `CONFIRMED_GETTERS` (`gen_gateway.py`) et régénérer ; l'état initial est alors publié *retained*
+  au démarrage.
 
 ## Types de détection du firmware
 
