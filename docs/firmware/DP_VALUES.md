@@ -32,17 +32,29 @@ Conversion faite par la passerelle (`tools/gateway/gateway.c`) :
 
 ## Lot 1 : image et système (#54)
 
-À compléter (DP 103, 104, 188, 198, 162).
+Lu dans le pseudo-C (`tools/firmware/Decompile.java`), conversions par `docs/firmware/DECOMPILE.md`.
 
 | DP | Fonction | Type | Valeurs | Écriture | Lecture | Effets de bord / persistance | Preuve | Exposé |
 |---|---|---|---|---|---|---|---|---|
+| 103 | flip_onoff | bool | ON / OFF | int | int | config `bool_rotate180` puis `ht_tuya_func_set_flip_mirror(v)` | 0x74a78 IPC_APP_set_flip_onoff; 0x74b08 IPC_APP_get_flip_onoff : set écrit la clé puis applique le retournement si l'écriture réussit | oui |
+| 104 | watermark_onoff | bool | ON / OFF | int | int | config `?` puis `ht_tuya_func_set_osd(v)` | 0x74b34 IPC_APP_set_watermark_onoff; 0x74bc4 IPC_APP_get_watermark_onoff : set écrit la clé puis applique l'OSD; get défaut 1 | oui |
+| 188 | basic_anti_flicker | enum | `0` `1` `2` | str | str | config `?` puis `ht_tuya_func_set_basic_anti_flicker` : 2 → 60 Hz, 0 et 1 → 50 Hz | 0x78390 IPC_APP_set_basic_anti_flicker; 0x78488 IPC_APP_get_basic_anti_flicker : set : `atoi(chaîne)`, refus hors 0/1/2; get renvoie un pointeur de chaîne, défaut 2 | oui |
+| 198 | object_outline_onoff | bool | ON / OFF | int | int | config `bool_object_outline_switch` seulement (aucun appel d'effet dans cette fonction) | 0x79d20 IPC_APP_set_object_outline_onoff; 0x79d50 IPC_APP_get_object_outline_onoff : effet réel non trouvé : lu ailleurs ? à confirmer | non |
+| 162 | system_reboot | action | charge utile ignorée (envoyer `1`) | int | aucun | `system("reboot -f")` si la valeur est non nulle : **redémarrage immédiat sans arrêt propre** | 0x754c8 IPC_APP_set_system_reboot : set n'appelle rien si param=0 | oui |
 
 ## Lot 2 : détection et alarmes (#55)
 
-À compléter (DP 106, 134, 120, 139, 140, 167, 168, 169, 170, 159, 247).
+Lu dans le pseudo-C. Ces DP agissent sur la **détection du firmware**, qui n'est pas notre `md_inject` : laissés non exposés tant qu'un test caméra n'a pas montré l'effet.
 
 | DP | Fonction | Type | Valeurs | Écriture | Lecture | Effets de bord / persistance | Preuve | Exposé |
 |---|---|---|---|---|---|---|---|---|
+| 106 | alarm_sensitivity | enum | `0` `1` `2` | str | str | config `enum_alarm_sensitivity` puis `ht_tuya_func_set_montion_detect_sensitivity(v)` | 0x752ec IPC_APP_set_alarm_sensitivity; 0x7537c IPC_APP_get_alarm_sensitivity : atoi puis refus hors 0/1/2; défaut 1. Agit sur la détection du firmware, pas sur `md_inject` (non câblé) | non |
+| 134 | alarm_function_onoff | bool | ON / OFF | int | int | config `bool_alarm_enable` puis relit et réapplique `IPC_APP_set_human_filter` | 0x751d0 IPC_APP_set_alarm_function_onoff; 0x75268 IPC_APP_get_alarm_function_onoff : get défaut dépend de la clé `pir_support` | non |
+| 170 | human_filter | bool | ON / OFF | int | int | config `bool_human_filter_enable` puis `ht_tuya_func_set_human_filter(v)` | 0x769c8 IPC_APP_set_human_filter; 0x76a50 IPC_APP_get_human_filter : filtre du firmware, pas celui de `md_inject` | non |
+| 120 | alarm_siren_onoff | bool | ON / OFF | int | int | config `bool_alarm_siren_enable` seulement | 0x7541c IPC_APP_set_alarm_siren_onoff; 0x7549c IPC_APP_get_alarm_siren_onoff : aucun effet direct trouvé | non |
+| 139 | sound_detect_onoff | bool | ON / OFF | int | int | config `bool_sound_detect_enable` puis `ht_tuya_func_set_sound_detect(v)` | 0x74fe4 IPC_APP_set_sound_detect_onoff; 0x75078 IPC_APP_get_sound_detect_onoff | non |
+| 140 | sound_sensitivity | enum | `0` `1` | str | str | config `enum_sound_sensitivity` puis `ht_tuya_func_set_sound_detect_sensitivity(v)` | 0x750a4 IPC_APP_set_sound_sensitivity; 0x7513c IPC_APP_get_sound_sensitivity : atoi, refus hors 0/1; défaut 0 | non |
+| 167 | cry_detect_onoff | bool | ON / OFF | int | int | config `bool_cry_detect_enable` puis `ht_tuya_func_set_cry_detect(v)` | 0x7988c IPC_APP_set_cry_detect_onoff; 0x798d0 IPC_APP_get_cry_detect_onoff : défaut selon la clé `support_cry_detect` | non |
 
 ## Lot 3 : carte SD (#56)
 
@@ -50,6 +62,10 @@ Conversion faite par la passerelle (`tools/gateway/gateway.c`) :
 
 | DP | Fonction | Type | Valeurs | Écriture | Lecture | Effets de bord / persistance | Preuve | Exposé |
 |---|---|---|---|---|---|---|---|---|
+| 150 | sd_record_onoff | bool | ON / OFF | int | int | config `bool_sd_record_enable` puis `ht_tuya_stream_storage_set_record_onoff(v)` | 0x75e80 IPC_APP_set_sd_record_onoff; 0x75f08 IPC_APP_get_sd_record_onoff : enregistrement du stockage Tuya, pas celui du NVR (#5) | non |
+| 151 | sd_record_mode | enum | `0` `1` | int | int | config `enum_sd_record_mode` puis force `record_onoff(1)` | 0x75f34 IPC_APP_set_sd_record_mode; 0x75fdc IPC_APP_get_sd_record_mode : refus hors 0/1; défaut 0 | non |
+| 110 | sd_status | sensor | code d'état (entier) | aucun | int | lecture seule : `ht_tuya_stream_storage_tf_status()` | 0x75de8 IPC_APP_get_sd_status : codes non décodés | non |
+| 111 | format_sd_card | action | aucun | aucun | aucun | lance un thread de formatage de la carte SD : **destructif** | 0x76420 IPC_APP_format_sd_card : statut via DP 117 (`get_sd_format_status`) | non |
 
 ## Lot 4 : PTZ natif (#57)
 
