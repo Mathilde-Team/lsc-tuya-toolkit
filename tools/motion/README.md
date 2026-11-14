@@ -12,6 +12,8 @@ depuis le service Tuya : sans cloud, `md_inject.so` appelle `ht_montion_detect_s
 | `MOTION_TOPIC` | topic MQTT | `camera/motion` |
 | `MOTION_HOLD` | secondes sans mouvement avant `OFF` | 10 |
 | `MOTION_SENS` | sensibilité firmware 0..2 | celle du firmware |
+| `HA_DISCOVERY` | `0` = pas de découverte Home Assistant (voir `docs/HOME_ASSISTANT_DISCOVERY.md`) | `1` |
+| `HA_PREFIX` | préfixe de découverte HA | `homeassistant` |
 | `MOTION_HUMAN` | `1` active le filtre humain, `0` le coupe | inchangé (désactivé : `bool_human_filter_enable = 0`) |
 
 ## Commandes (passerelle, issue #53)

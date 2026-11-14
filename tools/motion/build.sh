@@ -1,12 +1,13 @@
 #!/bin/sh
 # Compile md_inject.so pour l'AK3918 (ARM926, uClibc) sans dépendre de la glibc.
-# La passerelle générique (tools/gateway/gateway.c, issue #53) est liée dans la même bibliothèque.
+# La passerelle générique (tools/gateway/gateway.c, #53) et la découverte HA (ha.c, #59) sont liées dans la même bibliothèque.
 set -e
 cd "$(dirname "$0")"
 python3 ../gateway/gen_gateway.py ../../docs/firmware/DP_TABLE.md ../gateway/dp_table.h ../../docs/TOPICS.md ../../docs/firmware/DP_VALUES.md
+python3 ../gateway/gen_ha_discovery.py ../gateway/dp_table.h ../gateway/ha_discovery.h
 arm-linux-gnueabi-gcc -march=armv5te -mfloat-abi=soft -Os -fPIC -shared -nostdlib \
   -fno-stack-protector -fvisibility=hidden -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -I../gateway \
-  -o md_inject.so md_inject.c ../gateway/gateway.c
+  -o md_inject.so md_inject.c ../gateway/gateway.c ../gateway/ha.c
 arm-linux-gnueabi-strip md_inject.so
 arm-linux-gnueabi-readelf -d md_inject.so | grep -E "NEEDED|SONAME" || true
 arm-linux-gnueabi-nm -D md_inject.so

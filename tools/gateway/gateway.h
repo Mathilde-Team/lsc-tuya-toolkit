@@ -30,4 +30,11 @@ void gw_publish_all(void);
 /* Publie les DP exposés de type sensor (appelé périodiquement). */
 void gw_publish_sensors(void);
 
+/* Découverte Home Assistant (issue #59, ha.c) : publie ha_discovery.h en retained sur
+ * <prefix>/<component>/<node>/<object>/config. Renvoie 0 si tout est publié. */
+int gw_ha_announce(const char *prefix, const char *base, const char *motion, gw_publish_fn pub, gw_log_fn log);
+
+/* Substitue %B (base), %N (nœud), %M (topic de mouvement) ; -1 si dépassement. */
+int gw_ha_expand(const char *tpl, const char *base, const char *node, const char *motion, char *out, int max);
+
 #endif

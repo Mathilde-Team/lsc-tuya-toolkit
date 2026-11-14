@@ -324,3 +324,10 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - MQTT : longueur restante variable (publications jusqu'à 900 octets, nécessaire pour la découverte HA #59), réception par tampon cumulatif.
 - `build.sh` : vérifie qu'aucun symbole libc nouveau ni routine de division n'est importé ; tests PC dans `tools/gateway/test/`.
 - Vérifié sur PC uniquement (tests unitaires + mosquitto). **À tester sur caméra** : `night`/`privacy` par MQTT et ONVIF, absence de régression de la détection.
+
+## 26. Passerelle : découverte Home Assistant automatique (#59)
+
+- `tools/gateway/gen_ha_discovery.py` génère `ha_discovery.h` depuis `dp_table.h` ; `ha.c` (lié dans `md_inject.so`) publie en retained `homeassistant/<composant>/<nœud>/<objet>/config` au premier abonnement.
+- Toujours : mouvement (`binary_sensor`), jour/nuit (`select`), mode privé (`switch`) ; puis un composant par DP exposé dans `DP_VALUES.md` (switch, select, number, button, text, sensor).
+- `hack.conf` / installeur : `HA_DISCOVERY` (défaut 1), `HA_PREFIX`. Documentation : `docs/HOME_ASSISTANT_DISCOVERY.md`.
+- Vérifié sur PC (sortie C = sortie Python, JSON valide, publication réelle sur mosquitto). **À tester sur caméra et dans HA.**

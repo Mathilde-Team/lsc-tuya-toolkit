@@ -19,6 +19,8 @@
  *   (<base> = MOTION_TOPIC sans son dernier élément ; ex. camera/motion -> camera)
  *   Fichier /tmp/md_cmd, une ligne "<fonction> <valeur>" ("night day", "privacy on") : même effet (utilisé par ONVIF).
  *   MOTION_HUMAN      1 = active le filtre humain du firmware (liblvhsr), 0 = le coupe (défaut : inchangé)
+ *   HA_DISCOVERY      0 = pas de découverte Home Assistant (défaut 1 : publiée retained au premier abonnement, #59)
+ *   HA_PREFIX         préfixe de découverte HA (défaut homeassistant)
  */
 #include <fcntl.h>
 #include <pthread.h>
@@ -220,6 +222,7 @@ static void announce(const char *topic, const char *state)
 
 
 static char base[64];
+static char motion_topic[96];
 
 static int pub_state(const char *topic, const char *payload)
 {
@@ -313,7 +316,11 @@ static int subscribe_loop(void)
     write(s, pkt + off, n - off);
     logmsg("command subscriber ready");
     if (first) {
+        const char *ha = getenv("HA_DISCOVERY"), *pre = getenv("HA_PREFIX");
+
         first = 0;
+        if (!ha || strcmp(ha, "0"))
+            gw_ha_announce(pre && *pre ? pre : "homeassistant", base, motion_topic, pub_state, logmsg);
         gw_publish_all();
     }
     for (;;) {
@@ -378,6 +385,7 @@ static void *cmd_worker(void *arg)
 
     (void)arg;
     strncpy(base, t ? t : "camera/motion", sizeof base - 1);
+    strncpy(motion_topic, t ? t : "camera/motion", sizeof motion_topic - 1);
     sl = strrchr(base, '/');
     if (sl)
         *sl = 0;

@@ -7,6 +7,8 @@ Remplace le cloud Tuya par des topics MQTT locaux, un par DP de `docs/firmware/D
 | `gen_gateway.py` | génère `dp_table.h` et `docs/TOPICS.md` depuis `DP_TABLE.md` + `DP_VALUES.md` | #52, #53 |
 | `dp_table.h` | table générée (ne pas éditer) | #52, #53 |
 | `gateway.c` / `gateway.h` | runtime générique, lié dans `tools/motion/md_inject.so` | #53 |
+| `gen_ha_discovery.py` | génère `ha_discovery.h` (découverte Home Assistant) depuis `dp_table.h` ; `--print` pour voir les messages | #59 |
+| `ha_discovery.h` / `ha.c` | messages de découverte HA, publiés retained au premier abonnement | #59 |
 | `test/` | tests PC (`run.sh`, `MQTT=1 run.sh` avec mosquitto) | #53 |
 
 ## Fonctionnement (runtime #53)
