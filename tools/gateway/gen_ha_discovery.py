@@ -9,7 +9,7 @@
 
 Entités : toujours motion (binary_sensor), night (select), privacy (switch) ; puis un composant par DP
 exposé (bool -> switch, enum -> select, int -> number, action sans argument -> button,
-action avec argument -> text, sensor -> sensor). Les DP non exposés ne sont jamais annoncés.
+action avec argument -> text, json -> text, sensor -> sensor). Les DP non exposés ne sont jamais annoncés.
 Marqueurs remplacés à l'exécution : %B = base, %N = identifiant de nœud, %M = topic de mouvement.
 """
 import json, re, sys
@@ -55,9 +55,11 @@ def entities(hdr):
                 comp, e = "button", dict(command_topic=cmd, payload_press="PRESS")
             else:
                 comp, e = "text", dict(command_topic=cmd)
+        elif kind == "JSON":
+            comp, e = "text", dict(command_topic=cmd, max=160)
         else:
             comp, e = "sensor", {}
-        if has_get and comp not in ("button", "text"):
+        if has_get and (comp not in ("button", "text") or kind == "JSON"):
             e["state_topic"] = st
         if comp == "sensor" and "state_topic" not in e:
             continue

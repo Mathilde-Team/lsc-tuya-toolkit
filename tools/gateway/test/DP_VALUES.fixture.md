@@ -12,3 +12,6 @@ Valeurs inventées pour exercer `gateway.c` sur PC. Les adresses `0x0` ne sont p
 | 111 | format_sd_card | action | — | aucun | aucun | test | 0x0 fixture | oui |
 | 110 | sd_status | sensor | — | aucun | int | test | 0x0 fixture | oui |
 | 188 | basic_anti_flicker | int | `0` `2` | int | int | test | 0x0 fixture | non |
+| 169 | alarm_zone_draw | json | JSON | str | str | test | 0x0 fixture | oui |
+| 179 | patrol_state | sensor | — | aucun | out | test | 0x0 fixture | oui |
+| 119 | ptz_start_move | action | `0` `2` `4` `6` | str | aucun | test | 0x0 fixture | oui |

@@ -22,6 +22,8 @@
 extern int ht_night_mode_set_irled_mode(int mode);
 extern int system(const char *cmd);
 
+#define GW_MAX 160 /* charge utile maximale (md_inject.c : 160 octets) */
+
 static char gw_base[64];
 static char gw_sub[80];
 static gw_publish_fn gw_pub;
@@ -214,11 +216,19 @@ static const struct dp_entry *find(const char *name)
 
 static void publish_entry(const struct dp_entry *e)
 {
-    char out[64];
+    char out[GW_MAX];
     long r;
 
     if (!e->exposed || !e->get_fn || e->get_abi == ABI_NONE)
         return;
+    if (e->get_abi == ABI_OUT) {
+        int v = 0;
+
+        ((void (*)(int *))e->get_fn)(&v);
+        fmt_int(v, out);
+        state(e->name, out);
+        return;
+    }
     r = e->get_fn();
     if (e->get_abi == ABI_STR) {
         const char *s = (const char *)r;
@@ -243,7 +253,7 @@ static void publish_entry(const struct dp_entry *e)
 
 static int apply_entry(const struct dp_entry *e, const char *v)
 {
-    static char sarg[64];
+    static char sarg[GW_MAX];
     long iv = 0;
     const char *sv = v;
     int vl = strlen(v);
@@ -269,7 +279,13 @@ static int apply_entry(const struct dp_entry *e, const char *v)
             return -1;
         break;
     case DP_ACTION:
+        if (e->values && !in_list(e->values, v))
+            return -1;
         if (e->set_abi == ABI_INT && parse_int(v, &iv))
+            return -1;
+        break;
+    case DP_JSON: /* texte libre transmis tel quel (JSON validé par le firmware) */
+        if (!vl || e->set_abi != ABI_STR)
             return -1;
         break;
     default: /* sensor : lecture seule */

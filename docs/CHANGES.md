@@ -343,3 +343,10 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - `ht_tuya_func_set_flip_mirror` appelle `ak_vpss_effect_set(0, 8, 0|3)` : le flip est une rotation 180° (retournement + miroir ensemble, non séparables) ; inversé si la clé `sensor_inv` est vraie.
 - DP 101 `light_onoff` (LED témoin) exposé et testé sur la .188 (ON/OFF, relu, valeur restaurée).
 - Lots 4 (PTZ) et 5 (berceuse) documentés dans `docs/firmware/DP_VALUES.md`, non exposés (matériel ou effet non vérifié). Température, ampoule, PIR, porte : matériel absent probable, non exposés.
+
+## 29. Exposition de tous les DP (hors actions SD)
+
+- 55 DP sur 61 exposés en MQTT/ONVIF/Home Assistant (nouveaux types `json`, lecture `out`, actions à valeurs).
+- Non exposés : 105 `sleep_mode` (redémarre `anyka_ipc`, utiliser `privacy`), 109 `sd_storage` (3 sorties, à faire), 111/112 (actions SD), 150/151 (activent l'enregistrement sur la SD système).
+- Non testés volontairement : `system_reboot`, `ptz_check`, `preset`, `door_control`, `blub_onoff`, `patrol_switch`.
+

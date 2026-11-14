@@ -10,8 +10,8 @@ src = sys.argv[1] if len(sys.argv) > 1 else "docs/firmware/DP_TABLE.md"
 hdr = sys.argv[2] if len(sys.argv) > 2 else "tools/gateway/dp_table.h"
 doc = sys.argv[3] if len(sys.argv) > 3 else "docs/TOPICS.md"
 val = sys.argv[4] if len(sys.argv) > 4 else "docs/firmware/DP_VALUES.md"
-KINDS = ("bool", "enum", "int", "action", "sensor")
-ABIS = {"int": "ABI_INT", "str": "ABI_STR", "aucun": "ABI_NONE", "—": "ABI_NONE", "-": "ABI_NONE"}
+KINDS = ("bool", "enum", "int", "action", "sensor", "json")
+ABIS = {"int": "ABI_INT", "str": "ABI_STR", "out": "ABI_OUT", "aucun": "ABI_NONE", "—": "ABI_NONE", "-": "ABI_NONE"}
 
 ACTIONS = ("reboot", "format_sd_card", "unmount_sd_card", "ptz_start_move", "ptz_stop_move", "ptz_check")
 ISSUES = {  # DP -> issue de lot
@@ -41,7 +41,7 @@ for l in open(src, encoding="utf-8"):
     if not fns:
         unresolved.append((dp, handler, addr))
         continue
-    setter = next((f for f in fns if f.startswith("set_")), None)
+    setter = next((f for f in fns if f.startswith("set_")), None) or next((f for f in fns if not f.startswith("get_")), None)
     getter = next((f for f in fns if f.startswith("get_")), None)
     base = (setter or getter or fns[0])
     name = re.sub(r"^(set|get)_", "", base)
@@ -62,7 +62,10 @@ def load_values(path):
         assert typ in KINDS, "DP %d : type %r inconnu" % (dp, typ)
         assert wr in ABIS and rd in ABIS, "DP %d : écriture/lecture = int, str ou aucun" % dp
         toks = re.findall(r"`([^`]+)`", vals)
-        if typ == "enum":
+        assert wr != "out", "DP %d : « out » n'existe qu'en lecture" % dp
+        if typ in ("action", "json", "sensor"):
+            v = "|".join(toks) if toks and typ == "action" else None
+        elif typ == "enum":
             assert toks, "DP %d : enum sans valeurs `a` `b`" % dp
             v = "|".join(toks)
         elif typ == "int":
@@ -84,6 +87,9 @@ for r in rows:
                  exposed=c["exposed"], raw=c["raw"])
         if r["kind"] == "ACTION" and not r["setter"]:
             r["setter"] = r["fn"]
+        if r["kind"] == "SENSOR":
+            r["getter"] = r["getter"] or r["setter"] or r["fn"]
+            r["setter"] = None
 
 names = [r["name"] for r in rows]
 dups = {n for n in names if names.count(n) > 1}
@@ -92,9 +98,9 @@ assert not dups, dups
 with open(hdr, "w", encoding="utf-8") as f:
     f.write("/* Généré par tools/gateway/gen_gateway.py : ne pas éditer. */\n"
             "#ifndef DP_TABLE_H\n#define DP_TABLE_H\n\n"
-            "enum dp_kind { DP_BOOL, DP_ENUM, DP_INT, DP_ACTION, DP_SENSOR };\n"
-            "/* Passage de la valeur (r0) : ABI_INT entier, ABI_STR chaîne, ABI_NONE sans argument / sans lecture. */\n"
-            "enum dp_abi { ABI_NONE, ABI_INT, ABI_STR };\n\n"
+            "enum dp_kind { DP_BOOL, DP_ENUM, DP_INT, DP_ACTION, DP_SENSOR, DP_JSON };\n"
+            "/* Passage de la valeur (r0) : ABI_INT entier, ABI_STR chaîne, ABI_NONE sans argument / sans lecture ;\n   lecture seulement : ABI_OUT = la fonction écrit un entier via un pointeur (r0). */\n"
+            "enum dp_abi { ABI_NONE, ABI_INT, ABI_STR, ABI_OUT };\n\n"
             "/* Type générique : l'appel réel est casté selon set_abi/get_abi (gateway.c). */\n"
             "typedef long (*dp_fn)(void);\n\n"
             "struct dp_entry {\n  int dp;\n  const char *name;      /* topic : <base>/<name>[/set] */\n"
@@ -134,7 +140,8 @@ with open(hdr, "w", encoding="utf-8") as f:
         len(rows), sum(1 for r in rows if r["exposed"])))
 
 CH = {"BOOL": "ON / OFF", "ENUM": "valeur à confirmer", "INT": "entier, plage à confirmer",
-      "ACTION": "ordre (charge utile ignorée ou paramètres)", "SENSOR": "lecture seule"}
+      "ACTION": "ordre (charge utile ignorée ou paramètres)", "SENSOR": "lecture seule",
+      "JSON": "texte JSON"}
 with open(doc, "w", encoding="utf-8") as f:
     f.write("""# Convention de topics MQTT (passerelle locale)
 

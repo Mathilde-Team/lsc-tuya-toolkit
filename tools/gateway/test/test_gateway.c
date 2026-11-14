@@ -22,6 +22,11 @@ long IPC_APP_set_sd_record_mode(const char *v) { strcpy(recmode, v); return 0; }
 long IPC_APP_get_sd_record_mode(void) { return (long)recmode; }
 long IPC_APP_set_alarm_sensitivity(long v) { sens = v; return 0; }
 long IPC_APP_get_alarm_sensitivity(void) { return sens; }
+static char zone[160] = "{}", moved[8] = "";
+long IPC_APP_set_alarm_zone_draw(const char *v) { strcpy(zone, v); return 0; }
+long IPC_APP_get_alarm_zone_draw(void) { return (long)zone; }
+void IPC_APP_patrol_state(int *out) { *out = 2; }
+long IPC_APP_ptz_start_move(const char *v) { strcpy(moved, v); return 0; }
 long IPC_APP_format_sd_card(void) { formats++; return 0; }
 long IPC_APP_get_sd_status(void) { return sdst; }
 int ht_night_mode_set_irled_mode(int m) { night = m; return m == 2 ? 0 : 0; }
@@ -85,8 +90,14 @@ int main(void)
 
     /* sensor : pas d'écriture, publié par gw_publish_sensors */
     CHECK(gw_topic("camera/sd_status/set", "1") < 0);
+    npub = 0;
     gw_publish_sensors();
-    CHECK(PUB("camera/sd_status", "3"));
+    CHECK(npub == 2 && PUB("camera/patrol_state", "2")); /* sd_status puis patrol_state (sortie par pointeur) */
+
+    /* json : texte libre transmis tel quel ; sensor « out » ; action à valeurs limitées */
+    CHECK(gw_topic("camera/alarm_zone_draw/set", "{\"num\":1}") == 0 && !strcmp(zone, "{\"num\":1}") && PUB("camera/alarm_zone_draw", "{\"num\":1}"));
+    CHECK(gw_topic("camera/ptz_start_move/set", "4") == 0 && !strcmp(moved, "4"));
+    CHECK(gw_topic("camera/ptz_start_move/set", "3") < 0 && !strcmp(moved, "4"));
 
     /* non exposé / inconnu / mauvais préfixe */
     CHECK(gw_topic("camera/basic_anti_flicker/set", "1") < 0);
@@ -99,7 +110,7 @@ int main(void)
     /* état initial : tous les exposés lisibles */
     npub = 0;
     gw_publish_all();
-    CHECK(npub == 6); /* 7 exposés dont 1 action sans lecture */
+    CHECK(npub == 8); /* 10 exposés dont 2 actions sans lecture */
 
     /* sans MQTT : aucun plantage */
     gw_init("camera", 0, 0);
