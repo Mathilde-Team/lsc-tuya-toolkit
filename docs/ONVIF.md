@@ -50,3 +50,5 @@ Les commandes appellent `ptz_move`, qui appelle `ptzctl` (voir `docs/CHANGES.md`
 ## Retour arrière
 
 Sur la SD : restaurer `custom/configs/onvif_simple_server.conf.orig` et `custom/scripts/onvif.sh.orig` (sauvegardes créées avant le déploiement), puis supprimer `custom/onvif/` et `custom/bin/mini_cgi_httpd`.
+
+Correspondance de chaque fonction de la passerelle MQTT avec un service ONVIF, et plan de tests : [ONVIF_MAPPING.md](ONVIF_MAPPING.md).
