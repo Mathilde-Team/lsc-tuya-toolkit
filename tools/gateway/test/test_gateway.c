@@ -4,6 +4,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include "gateway.h"
 
 static char last_topic[128], last_payload[128], last_log[256], last_sys[128];
@@ -30,7 +31,32 @@ long IPC_APP_ptz_start_move(const char *v) { strcpy(moved, v); return 0; }
 long IPC_APP_format_sd_card(void) { formats++; return 0; }
 long IPC_APP_get_sd_status(void) { return sdst; }
 int ht_night_mode_set_irled_mode(int m) { night = m; return m == 2 ? 0 : 0; }
-int system(const char *c) { strcpy(last_sys, c); return 0; }
+static char sys_all[1024];
+int system(const char *c)
+{
+    FILE *f;
+    const char *o = 0;
+
+    strcpy(last_sys, c);
+    strcat(sys_all, c);
+    strcat(sys_all, "\n");
+    if (strstr(c, "get_position"))
+        o = "180,98,0\n";
+    else if (strstr(c, "get_presets"))
+        o = "1=a,10,20,0\n2=b,30,40,0\n";
+    else if (strstr(c, "add_preset"))
+        o = "3\n";
+    if (o && (f = fopen("/tmp/gw_out", "w"))) {
+        fputs(o, f);
+        fclose(f);
+    }
+    return 0;
+}
+void IPC_APP_get_sd_storage(unsigned long *a, unsigned long *b, unsigned long *c) { *a = 4000000000UL; *b = 1000UL; *c = 3999999000UL; }
+static int talk_open, talk_bytes;
+int ht_audio_codec_talk_open(void) { talk_open++; return 0; }
+int ht_audio_codec_talk_close(void) { return 0; }
+int ht_audio_codec_play_talk_data(unsigned char *b, int n) { (void)b; talk_bytes += n; return 0; }
 
 static int pub(const char *t, const char *p)
 {
@@ -93,12 +119,49 @@ int main(void)
     CHECK(gw_topic("camera/sd_status/set", "1") < 0);
     npub = 0;
     gw_publish_sensors();
-    CHECK(npub == 2 && PUB("camera/patrol_state", "2")); /* sd_status puis patrol_state (sortie par pointeur) */
+    CHECK(npub == 4 && PUB("camera/patrol_state", "2")); /* position, sd_storage, sd_status, patrol_state */
 
     /* json : texte libre transmis tel quel ; sensor « out » ; action à valeurs limitées */
     CHECK(gw_topic("camera/alarm_zone_draw/set", "{\"num\":1}") == 0 && !strcmp(zone, "{\"num\":1}") && PUB("camera/alarm_zone_draw", "{\"num\":1}"));
     CHECK(gw_topic("camera/ptz_start_move/set", "4") == 0 && !strcmp(moved, "4"));
     CHECK(gw_topic("camera/ptz_start_move/set", "3") < 0 && !strcmp(moved, "4"));
+
+    /* sd_storage : trois sorties non signées publiées en JSON */
+    CHECK(gw_topic("camera/sd_storage/set", "1") < 0);
+    npub = 0;
+    gw_publish_all();
+    CHECK(npub >= 12);
+
+    /* alias PTZ : arguments validés avant tout passage au shell */
+    sys_all[0] = 0;
+    CHECK(gw_topic("camera/ptz_absolute/set", "0.5,-0.2") == 0 && strstr(sys_all, "ptz_move -j 0.5,-0.2,0\n") && PUB("camera/ptz_position", "180,98,0"));
+    CHECK(gw_topic("camera/ptz_absolute/set", "0.5,-0.2,0") == 0 && strstr(sys_all, "ptz_move -j 0.5,-0.2,0\n"));
+    sys_all[0] = 0;
+    CHECK(gw_topic("camera/ptz_absolute/set", "1;reboot") < 0 && !sys_all[0]);
+    CHECK(gw_topic("camera/ptz_preset_goto/set", "2") == 0 && strstr(sys_all, "ptz_move -p 2\n"));
+    CHECK(gw_topic("camera/ptz_preset_goto/set", "2 3") < 0 && !strstr(sys_all, "2 3"));
+    CHECK(gw_topic("camera/ptz_preset_save/set", "salon") == 0 && strstr(sys_all, "add_preset -m salon") && !strcmp(last_topic, "camera/ptz_presets") && !strcmp(last_payload, "1=a,10,20,0;2=b,30,40,0"));
+    CHECK(gw_topic("camera/ptz_preset_save/set", "a b") < 0);
+    CHECK(gw_topic("camera/ptz_preset_delete/set", "3") == 0 && strstr(sys_all, "del_preset -n 3"));
+    CHECK(gw_topic("camera/ptz_home/set", "ON") == 0 && strstr(sys_all, "ptz_move -h"));
+    CHECK(gw_topic("camera/ptz_calibrate/set", "ON") == 0 && strstr(sys_all, "ptz_calibrate.sh"));
+    CHECK(gw_topic("camera/ptz_calibrate/set", "x") < 0);
+
+    /* haut-parleur : lecture d'un .ulaw au rythme réel, arrêt à la demande */
+    {
+        FILE *f = fopen("/tmp/sirene.ulaw", "wb");
+        unsigned char z[800] = {0};
+
+        fwrite(z, 1, sizeof z, f);
+        fclose(f);
+    }
+    CHECK(gw_topic("camera/speaker_play/set", "absent") < 0);
+    CHECK(gw_topic("camera/speaker_play/set", "../x") < 0);
+    CHECK(gw_topic("camera/speaker_siren/set", "ON") == 0 && PUB("camera/speaker_siren", "ON"));
+    usleep(150000);
+    CHECK(talk_open >= 1 && talk_bytes > 0);
+    CHECK(gw_topic("camera/speaker_siren/set", "OFF") == 0 && PUB("camera/speaker_siren", "OFF"));
+    usleep(150000);
 
     /* non exposé / inconnu / mauvais préfixe */
     CHECK(gw_topic("camera/basic_anti_flicker/set", "1") < 0);
@@ -111,7 +174,7 @@ int main(void)
     /* état initial : tous les exposés lisibles */
     npub = 0;
     gw_publish_all();
-    CHECK(npub == 8); /* 10 exposés dont 2 actions sans lecture */
+    CHECK(npub == 12); /* position, préréglages, sirène + 9 DP lisibles */
 
     /* sans MQTT : aucun plantage */
     gw_init("camera", 0, 0);

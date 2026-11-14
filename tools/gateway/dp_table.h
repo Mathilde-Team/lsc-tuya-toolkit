@@ -4,8 +4,9 @@
 
 enum dp_kind { DP_BOOL, DP_ENUM, DP_INT, DP_ACTION, DP_SENSOR, DP_JSON };
 /* Passage de la valeur (r0) : ABI_INT entier, ABI_STR chaîne, ABI_NONE sans argument / sans lecture ;
-   lecture seulement : ABI_OUT = la fonction écrit un entier via un pointeur (r0). */
-enum dp_abi { ABI_NONE, ABI_INT, ABI_STR, ABI_OUT };
+   lecture seulement : ABI_OUT = la fonction écrit un entier via un pointeur (r0),
+   ABI_OUT3 = trois entiers non signés via trois pointeurs (r0, r1, r2), publiés en JSON. */
+enum dp_abi { ABI_NONE, ABI_INT, ABI_STR, ABI_OUT, ABI_OUT3 };
 
 /* Type générique : l'appel réel est casté selon set_abi/get_abi (gateway.c). */
 typedef long (*dp_fn)(void);
@@ -37,6 +38,7 @@ extern long IPC_APP_set_alarm_sensitivity(void) __attribute__((weak));
 extern long IPC_APP_get_alarm_sensitivity(void) __attribute__((weak));
 extern long IPC_APP_set_night_mode(void) __attribute__((weak));
 extern long IPC_APP_get_night_mode(void) __attribute__((weak));
+extern long IPC_APP_get_sd_storage(void) __attribute__((weak));
 extern long IPC_APP_get_sd_status(void) __attribute__((weak));
 extern long IPC_APP_ptz_stop_move(void) __attribute__((weak));
 extern long IPC_APP_get_sd_format_status(void) __attribute__((weak));
@@ -127,7 +129,7 @@ static const struct dp_entry dp_table[] = {
   {105, "sleep_mode", DP_BOOL, "IPC_APP_set_sleep_mode", "IPC_APP_get_sleep_mode", ABI_INT, ABI_INT, 0, 1, IPC_APP_set_sleep_mode, IPC_APP_get_sleep_mode},
   {106, "alarm_sensitivity", DP_ENUM, "IPC_APP_set_alarm_sensitivity", "IPC_APP_get_alarm_sensitivity", ABI_STR, ABI_STR, "0|1|2", 1, IPC_APP_set_alarm_sensitivity, IPC_APP_get_alarm_sensitivity},
   {108, "night_mode", DP_ENUM, "IPC_APP_set_night_mode", "IPC_APP_get_night_mode", ABI_STR, ABI_STR, "0|1|2", 1, IPC_APP_set_night_mode, IPC_APP_get_night_mode},
-  {109, "sd_storage", DP_SENSOR, 0, "IPC_APP_get_sd_storage", ABI_NONE, ABI_NONE, 0, 0, 0, 0},
+  {109, "sd_storage", DP_SENSOR, 0, "IPC_APP_get_sd_storage", ABI_NONE, ABI_OUT3, 0, 1, 0, IPC_APP_get_sd_storage},
   {110, "sd_status", DP_SENSOR, 0, "IPC_APP_get_sd_status", ABI_NONE, ABI_INT, 0, 1, 0, IPC_APP_get_sd_status},
   {111, "format_sd_card", DP_ACTION, "IPC_APP_format_sd_card", 0, ABI_NONE, ABI_NONE, 0, 0, 0, 0},
   {112, "unmount_sd_card", DP_ACTION, "IPC_APP_unmount_sd_card", 0, ABI_NONE, ABI_NONE, 0, 0, 0, 0},
@@ -185,6 +187,6 @@ static const struct dp_entry dp_table[] = {
 };
 
 #define DP_TABLE_LEN 61
-#define DP_EXPOSED_LEN 56
+#define DP_EXPOSED_LEN 57
 
 #endif

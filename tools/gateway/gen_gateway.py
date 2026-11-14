@@ -11,7 +11,7 @@ hdr = sys.argv[2] if len(sys.argv) > 2 else "tools/gateway/dp_table.h"
 doc = sys.argv[3] if len(sys.argv) > 3 else "docs/TOPICS.md"
 val = sys.argv[4] if len(sys.argv) > 4 else "docs/firmware/DP_VALUES.md"
 KINDS = ("bool", "enum", "int", "action", "sensor", "json")
-ABIS = {"int": "ABI_INT", "str": "ABI_STR", "out": "ABI_OUT", "aucun": "ABI_NONE", "—": "ABI_NONE", "-": "ABI_NONE"}
+ABIS = {"int": "ABI_INT", "str": "ABI_STR", "out": "ABI_OUT", "out3": "ABI_OUT3", "aucun": "ABI_NONE", "—": "ABI_NONE", "-": "ABI_NONE"}
 
 ACTIONS = ("reboot", "format_sd_card", "unmount_sd_card", "ptz_start_move", "ptz_stop_move", "ptz_check")
 ISSUES = {  # DP -> issue de lot
@@ -99,8 +99,8 @@ with open(hdr, "w", encoding="utf-8") as f:
     f.write("/* Généré par tools/gateway/gen_gateway.py : ne pas éditer. */\n"
             "#ifndef DP_TABLE_H\n#define DP_TABLE_H\n\n"
             "enum dp_kind { DP_BOOL, DP_ENUM, DP_INT, DP_ACTION, DP_SENSOR, DP_JSON };\n"
-            "/* Passage de la valeur (r0) : ABI_INT entier, ABI_STR chaîne, ABI_NONE sans argument / sans lecture ;\n   lecture seulement : ABI_OUT = la fonction écrit un entier via un pointeur (r0). */\n"
-            "enum dp_abi { ABI_NONE, ABI_INT, ABI_STR, ABI_OUT };\n\n"
+            "/* Passage de la valeur (r0) : ABI_INT entier, ABI_STR chaîne, ABI_NONE sans argument / sans lecture ;\n   lecture seulement : ABI_OUT = la fonction écrit un entier via un pointeur (r0),\n   ABI_OUT3 = trois entiers non signés via trois pointeurs (r0, r1, r2), publiés en JSON. */\n"
+            "enum dp_abi { ABI_NONE, ABI_INT, ABI_STR, ABI_OUT, ABI_OUT3 };\n\n"
             "/* Type générique : l'appel réel est casté selon set_abi/get_abi (gateway.c). */\n"
             "typedef long (*dp_fn)(void);\n\n"
             "struct dp_entry {\n  int dp;\n  const char *name;      /* topic : <base>/<name>[/set] */\n"
@@ -156,6 +156,12 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 - Fonction sans `set_` : lecture seule (`sensor`), pas de topic `/set`.
 - Le même ordre peut venir d'ONVIF : les deux canaux écrivent dans `/tmp/md_cmd`.
 - **Alias historiques conservés** : `<base>/night` (= `night_mode`, DP 108) et `<base>/privacy` (preset privé).
+- **Alias PTZ et haut-parleur** (hors table des DP, scripts du toolkit ; arguments validés avant le shell) :
+  `ptz_absolute/set` = `x,y` de -1 à 1 ; `ptz_preset_goto/set` = n° ; `ptz_preset_save/set` = nom (`A-Za-z0-9_`, publie `ptz_preset_saved` = n°) ;
+  `ptz_preset_delete/set` = n° ; `ptz_home/set` = recalage sur les butées ; `ptz_calibrate/set` = `ON` (séquence de test, longue) ;
+  `speaker_siren/set` = `ON`/`OFF` (boucle `sirene.ulaw`, 30 s max) ; `speaker_play/set` = nom d'un fichier `<nom>.ulaw` du dossier audio ou `stop`.
+  États retained : `ptz_position` (`pan,tilt,zoom`, position suivie par calcul), `ptz_presets` (`n=nom,pan,tilt,zoom;…`), `speaker_siren`.
+- `sd_storage` (DP 109) est publié en JSON `{"total":…,"used":…,"free":…}` en **Kio** ; si le firmware renvoie 0 (stockage Tuya non initialisé sans cloud), la valeur vient de `df -k /tmp/sd`.
 - Les **types sont une heuristique** sur le nom tant qu'un lot de décompilation (issues #54 à #58) ne les a pas confirmés dans `docs/firmware/DP_VALUES.md`.
 - **Seuls les DP « exposé = oui »** sont pilotés par la passerelle (`tools/gateway/gateway.c`) ; les autres sont ignorés (journal `gateway: unknown or unexposed`).
 - Le canal fichier `/tmp/md_cmd` accepte une ligne `<fonction> <valeur>` (ex. `night day`, `flip_onoff ON`).

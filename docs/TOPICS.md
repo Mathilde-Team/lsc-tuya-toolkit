@@ -11,6 +11,12 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 - Fonction sans `set_` : lecture seule (`sensor`), pas de topic `/set`.
 - Le même ordre peut venir d'ONVIF : les deux canaux écrivent dans `/tmp/md_cmd`.
 - **Alias historiques conservés** : `<base>/night` (= `night_mode`, DP 108) et `<base>/privacy` (preset privé).
+- **Alias PTZ et haut-parleur** (hors table des DP, scripts du toolkit ; arguments validés avant le shell) :
+  `ptz_absolute/set` = `x,y` de -1 à 1 ; `ptz_preset_goto/set` = n° ; `ptz_preset_save/set` = nom (`A-Za-z0-9_`, publie `ptz_preset_saved` = n°) ;
+  `ptz_preset_delete/set` = n° ; `ptz_home/set` = recalage sur les butées ; `ptz_calibrate/set` = `ON` (séquence de test, longue) ;
+  `speaker_siren/set` = `ON`/`OFF` (boucle `sirene.ulaw`, 30 s max) ; `speaker_play/set` = nom d'un fichier `<nom>.ulaw` du dossier audio ou `stop`.
+  États retained : `ptz_position` (`pan,tilt,zoom`, position suivie par calcul), `ptz_presets` (`n=nom,pan,tilt,zoom;…`), `speaker_siren`.
+- `sd_storage` (DP 109) est publié en JSON `{"total":…,"used":…,"free":…}` en **Kio** ; si le firmware renvoie 0 (stockage Tuya non initialisé sans cloud), la valeur vient de `df -k /tmp/sd`.
 - Les **types sont une heuristique** sur le nom tant qu'un lot de décompilation (issues #54 à #58) ne les a pas confirmés dans `docs/firmware/DP_VALUES.md`.
 - **Seuls les DP « exposé = oui »** sont pilotés par la passerelle (`tools/gateway/gateway.c`) ; les autres sont ignorés (journal `gateway: unknown or unexposed`).
 - Le canal fichier `/tmp/md_cmd` accepte une ligne `<fonction> <valeur>` (ex. `night day`, `flip_onoff ON`).
@@ -25,7 +31,7 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 | 105 | `sleep_mode` | bool | ON / OFF | `set_sleep_mode` | `get_sleep_mode` | #58 | oui |
 | 106 | `alarm_sensitivity` | enum | `0` `1` `2` | `set_alarm_sensitivity` | `get_alarm_sensitivity` | #55 | oui |
 | 108 | `night_mode` | enum | `0` `1` `2` | `set_night_mode` | `get_night_mode` | #58 | oui |
-| 109 | `sd_storage` | sensor | capacité de la carte SD | — | `get_sd_storage` | #56 | non |
+| 109 | `sd_storage` | sensor | capacité de la carte SD | — | `get_sd_storage` | #56 | oui |
 | 110 | `sd_status` | sensor | code d'état (entier) | — | `get_sd_status` | #56 | oui |
 | 111 | `format_sd_card` | action | aucun | `format_sd_card` | — | #56 | non |
 | 112 | `unmount_sd_card` | action | aucun | `unmount_sd_card` | — | #56 | non |

@@ -97,6 +97,26 @@ static int parse_int(const char *s, long *out)
     return 0;
 }
 
+static void fmt_uint(unsigned long u, char *o)
+{
+    static const unsigned long pw[] = {1000000000UL, 100000000UL, 10000000UL, 1000000UL, 100000UL, 10000UL, 1000UL, 100UL, 10UL, 1UL};
+    int i, k, n = 0, started = 0;
+
+    /* 32 bits : jusqu'à 4 294 967 295, soit un chiffre de milliard de plus que fmt_int */
+    for (i = 0; i < 10; i++) {
+        k = 0;
+        while (u >= pw[i]) {
+            u -= pw[i];
+            k++;
+        }
+        if (k || started || i == 9) {
+            o[n++] = '0' + k;
+            started = 1;
+        }
+    }
+    o[n] = 0;
+}
+
 static void fmt_int(long v, char *o)
 {
     static const long pw[] = {1000000000L, 100000000L, 10000000L, 1000000L, 100000L, 10000L, 1000L, 100L, 10L, 1L};
@@ -202,6 +222,239 @@ static int apply_privacy(const char *v)
     return 0;
 }
 
+/* ---- PTZ (scripts du toolkit) et haut-parleur ---- */
+
+#define SCRIPTS "/tmp/sd/custom/scripts/"
+#ifndef GW_AUDIO_DIR
+#define GW_AUDIO_DIR "/tmp/sd/custom/audio/"
+#endif
+#define GW_OUT "/tmp/gw_out"
+
+extern int ht_audio_codec_talk_open(void) __attribute__((weak));
+extern int ht_audio_codec_talk_close(void) __attribute__((weak));
+extern int ht_audio_codec_play_talk_data(unsigned char *buf, int len) __attribute__((weak));
+extern int open(const char *p, int flags, ...);
+extern int close(int fd);
+extern long read(int fd, void *b, unsigned long n);
+extern int usleep(unsigned int us);
+extern int pthread_create(unsigned long *t, const void *a, void *(*f)(void *), void *arg);
+
+/* Caractères autorisés dans les arguments passés au shell : jamais autre chose. */
+static int has(const char *set, char c)
+{
+    for (; *set; set++)
+        if (*set == c)
+            return 1;
+    return 0;
+}
+
+static int only(const char *s, const char *ok, int max)
+{
+    int n = 0;
+
+    for (; *s; s++, n++)
+        if (n >= max || !has(ok, *s))
+            return 0;
+    return n > 0;
+}
+
+/* Lance « cmd », lit sa sortie (une ligne par ligne, « ; » à la place des retours à la ligne). */
+static int run_out(const char *cmd, char *o, int max)
+{
+    char c[200];
+    int fd, n, i;
+
+    if (strlen(cmd) + sizeof " > " GW_OUT " 2>&1" >= sizeof c)
+        return -1;
+    strcpy(c, cmd);
+    strcat(c, " > " GW_OUT " 2>&1");
+    system(c);
+    o[0] = 0;
+    fd = open(GW_OUT, 0);
+    if (fd < 0)
+        return -1;
+    n = read(fd, o, max - 1);
+    close(fd);
+    if (n < 0)
+        n = 0;
+    o[n] = 0;
+    for (i = n - 1; i >= 0 && (o[i] == '\n' || o[i] == '\r'); i--)
+        o[i] = 0;
+    for (i = 0; o[i]; i++)
+        if (o[i] == '\n' || o[i] == '\r')
+            o[i] = ';';
+    return 0;
+}
+
+static void publish_position(void)
+{
+    char o[GW_MAX];
+
+    if (!run_out(SCRIPTS "get_position", o, sizeof o) && only(o, "0123456789,-", 40))
+        state("ptz_position", o);
+}
+
+static void publish_presets(void)
+{
+    char o[GW_MAX];
+
+    if (!run_out(SCRIPTS "ptz_presets.sh -a get_presets", o, sizeof o))
+        state("ptz_presets", o);
+}
+
+static volatile int sp_stop, sp_run, sp_loop;
+static char sp_file[96], sp_state[24];
+
+/* Joue un fichier G.711 µ-law 8 kHz par ht_audio_codec_play_talk_data, au rythme réel (160 octets / 20 ms). */
+static void *sp_worker(void *arg)
+{
+    unsigned char b[160];
+    int fd, n, ticks = 0;
+
+    (void)arg;
+    ht_audio_codec_talk_open();
+    while (!sp_stop && ticks < 1500) {
+        fd = open(sp_file, 0);
+        if (fd < 0)
+            break;
+        while (!sp_stop && ticks < 1500 && (n = read(fd, b, sizeof b)) > 0) {
+            ht_audio_codec_play_talk_data(b, n);
+            usleep(20000);
+            ticks++;
+        }
+        close(fd);
+        if (!sp_loop)
+            break;
+    }
+    ht_audio_codec_talk_close();
+    sp_run = 0;
+    if (sp_state[0])
+        state(sp_state, "OFF");
+    return 0;
+}
+
+static int speaker_start(const char *name, int loop, const char *st)
+{
+    unsigned long t;
+    int w, fd;
+
+    if (!ht_audio_codec_talk_open || !ht_audio_codec_play_talk_data || !ht_audio_codec_talk_close || !only(name, "abcdefghijklmnopqrstuvwxyz0123456789_", 24))
+        return -1;
+    sp_stop = 1;
+    for (w = 0; sp_run && w < 100; w++)
+        usleep(20000);
+    if (sp_run)
+        return -1;
+    strcpy(sp_file, GW_AUDIO_DIR);
+    strcat(sp_file, name);
+    strcat(sp_file, ".ulaw");
+    fd = open(sp_file, 0);
+    if (fd < 0)
+        return -1;
+    close(fd);
+    sp_stop = 0;
+    sp_loop = loop;
+    strcpy(sp_state, st);
+    sp_run = 1;
+    if (pthread_create(&t, 0, sp_worker, 0)) {
+        sp_run = 0;
+        return -1;
+    }
+    return 0;
+}
+
+static void speaker_stop(void)
+{
+    sp_stop = 1;
+}
+
+/* Alias PTZ et haut-parleur ; renvoie 1 si le nom est un alias (résultat dans *rc). */
+static int apply_alias(const char *name, const char *v, int *rc)
+{
+    char c[160], o[GW_MAX];
+    const char *w;
+    int n;
+
+    *rc = -1;
+    if (!strcmp(name, "ptz_absolute")) {
+        /* « x,y » normalisés -1..1 (ptz_move -j x,y,0) */
+        if (!only(v, "0123456789.,-", 24))
+            return 1;
+        strcpy(c, SCRIPTS "ptz_move -j ");
+        strcat(c, v);
+        for (n = 0, w = v; *w; w++)
+            n += *w == ',';
+        if (n == 1)
+            strcat(c, ",0");
+        say("ptz_absolute", v, 0);
+        system(c);
+        publish_position();
+        *rc = 0;
+    } else if (!strcmp(name, "ptz_preset_goto")) {
+        if (!only(v, "0123456789", 3))
+            return 1;
+        strcpy(c, SCRIPTS "ptz_move -p ");
+        strcat(c, v);
+        say("ptz_preset_goto", v, 0);
+        system(c);
+        publish_position();
+        *rc = 0;
+    } else if (!strcmp(name, "ptz_preset_save")) {
+        if (!only(v, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_", 24))
+            return 1;
+        strcpy(c, SCRIPTS "ptz_presets.sh -a add_preset -m ");
+        strcat(c, v);
+        if (run_out(c, o, sizeof o) || !only(o, "0123456789", 6))
+            return 1;
+        state("ptz_preset_saved", o);
+        publish_presets();
+        *rc = 0;
+    } else if (!strcmp(name, "ptz_preset_delete")) {
+        if (!only(v, "0123456789", 3))
+            return 1;
+        strcpy(c, SCRIPTS "ptz_presets.sh -a del_preset -n ");
+        strcat(c, v);
+        system(c);
+        publish_presets();
+        *rc = 0;
+    } else if (!strcmp(name, "ptz_home")) {
+        /* recalage sur les butées (ptz_move -h), comme PTZ_HOME_ON_BOOT ; long : en arrière-plan */
+        say("ptz_home", 0, 0);
+        system(SCRIPTS "ptz_move -h >/dev/null 2>&1 &");
+        *rc = 0;
+    } else if (!strcmp(name, "ptz_calibrate")) {
+        /* séquence de test des deux axes (ptz_calibrate.sh), très longue : en arrière-plan */
+        if (!is_on(v))
+            return 1;
+        say("ptz_calibrate", 0, 0);
+        system(SCRIPTS "ptz_calibrate.sh >/tmp/gw_calibrate.log 2>&1 &");
+        *rc = 0;
+    } else if (!strcmp(name, "speaker_siren")) {
+        if (is_on(v)) {
+            if (speaker_start("sirene", 1, "speaker_siren"))
+                return 1;
+            state("speaker_siren", "ON");
+            *rc = 0;
+        } else if (is_off(v)) {
+            speaker_stop();
+            state("speaker_siren", "OFF");
+            *rc = 0;
+        }
+    } else if (!strcmp(name, "speaker_play")) {
+        /* nom d'un fichier <nom>.ulaw du dossier audio ; « stop » interrompt la lecture */
+        if (!strcmp(v, "stop")) {
+            speaker_stop();
+            *rc = 0;
+        } else if (!speaker_start(v, 0, "")) {
+            say("speaker_play", v, 0);
+            *rc = 0;
+        }
+    } else {
+        return 0;
+    }
+    return 1;
+}
+
 /* ---- table ---- */
 
 static const struct dp_entry *find(const char *name)
@@ -212,6 +465,39 @@ static const struct dp_entry *find(const char *name)
         if (!strcmp(dp_table[i].name, name))
             return &dp_table[i];
     return 0;
+}
+
+/* « df -k /tmp/sd » : total, utilisé, libre en Kio (les 5e, 4e et 3e colonnes avant la fin, le nom du volume pouvant passer à la ligne). */
+static void df_kib(unsigned long *t, unsigned long *u, unsigned long *f)
+{
+    char o[GW_MAX], tok[8][16];
+    const char *p;
+    long x[3];
+    int n, k = 0, i;
+
+    if (run_out("df -k /tmp/sd", o, sizeof o))
+        return;
+    p = o;
+    for (n = 0; o[n]; n++)
+        if (o[n] == ';')
+            p = o + n + 1;
+    while (*p && k < 8) {
+        while (*p == ' ')
+            p++;
+        for (n = 0; *p && *p != ' ' && n < 15; n++)
+            tok[k][n] = *p++;
+        tok[k][n] = 0;
+        if (n)
+            k++;
+    }
+    if (k < 5)
+        return;
+    for (i = 0; i < 3; i++)
+        if (parse_int(tok[k - 5 + i], &x[i]))
+            return;
+    *t = x[0];
+    *u = x[1];
+    *f = x[2];
 }
 
 static void publish_entry(const struct dp_entry *e)
@@ -226,6 +512,29 @@ static void publish_entry(const struct dp_entry *e)
 
         ((void (*)(int *))e->get_fn)(&v);
         fmt_int(v, out);
+        state(e->name, out);
+        return;
+    }
+    if (e->get_abi == ABI_OUT3) {
+        unsigned long a = 0, b = 0, c = 0;
+        char n1[16], n2[16], n3[16];
+
+        ((void (*)(unsigned long *, unsigned long *, unsigned long *))e->get_fn)(&a, &b, &c);
+        a >>= 10; /* le firmware donne des octets (32 bits) : on publie en Kio, comme df */
+        b >>= 10;
+        c >>= 10;
+        if (!a)
+            df_kib(&a, &b, &c); /* sans cloud le service de stockage Tuya n'est pas initialisé : tout vaut 0 */
+        fmt_uint(a, n1);
+        fmt_uint(b, n2);
+        fmt_uint(c, n3);
+        strcpy(out, "{\"total\":");
+        strcat(out, n1);
+        strcat(out, ",\"used\":");
+        strcat(out, n2);
+        strcat(out, ",\"free\":");
+        strcat(out, n3);
+        strcat(out, "}");
         state(e->name, out);
         return;
     }
@@ -335,6 +644,15 @@ int gw_command(const char *name, const char *val)
         return apply_night(val);
     if (!strcmp(name, "privacy"))
         return apply_privacy(val);
+    {
+        int rc;
+
+        if (apply_alias(name, val, &rc)) {
+            if (rc < 0)
+                say("gateway: refused", name, val);
+            return rc;
+        }
+    }
     if (!strcmp(name, "sleep_mode")) {
         /* DP 105 natif met en pause le service média Tuya et fait planter anyka_ipc sans cloud */
         if (apply_privacy(val) < 0)
@@ -388,6 +706,9 @@ void gw_publish_all(void)
 {
     int i;
 
+    publish_position();
+    publish_presets();
+    state("speaker_siren", "OFF");
     for (i = 0; i < DP_TABLE_LEN; i++)
         publish_entry(&dp_table[i]);
 }
@@ -396,6 +717,7 @@ void gw_publish_sensors(void)
 {
     int i;
 
+    publish_position();
     for (i = 0; i < DP_TABLE_LEN; i++)
         if (dp_table[i].kind == DP_SENSOR)
             publish_entry(&dp_table[i]);

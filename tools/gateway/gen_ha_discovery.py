@@ -7,7 +7,7 @@
       affiche « topic<TAB>charge » après substitution (même résultat que la caméra), par ex. pour
       publier à la main : mosquitto_pub -r -t <topic> -m '<charge>'.
 
-Entités : toujours motion (binary_sensor), night (select), privacy (switch) ; puis un composant par DP
+Entités : toujours motion (binary_sensor), night (select), privacy (switch), PTZ (position, préréglages, absolu, recalage, calibrage) et haut-parleur ; puis un composant par DP
 exposé (bool -> switch, enum -> select, int -> number, action sans argument -> button,
 action avec argument -> text, json -> text, sensor -> sensor). Les DP non exposés ne sont jamais annoncés.
 Marqueurs remplacés à l'exécution : %B = base, %N = identifiant de nœud, %M = topic de mouvement.
@@ -34,6 +34,27 @@ def entities(hdr):
         ("switch", "privacy", {"name": "Mode privé", "unique_id": "%N_privacy", "state_topic": "%B/privacy",
                                "command_topic": "%B/privacy/set", "payload_on": "ON", "payload_off": "OFF",
                                "state_on": "ON", "state_off": "OFF", "icon": "mdi:eye-off"}),
+        ("sensor", "ptz_position", {"name": "Position PTZ", "unique_id": "%N_ptz_position", "state_topic": "%B/ptz_position",
+                                    "icon": "mdi:cctv"}),
+        ("sensor", "ptz_presets", {"name": "Préréglages PTZ", "unique_id": "%N_ptz_presets", "state_topic": "%B/ptz_presets"}),
+        ("text", "ptz_absolute", {"name": "PTZ position absolue (x,y de -1 à 1)", "unique_id": "%N_ptz_absolute",
+                                  "command_topic": "%B/ptz_absolute/set", "max": 24}),
+        ("number", "ptz_preset_goto", {"name": "PTZ aller au préréglage", "unique_id": "%N_ptz_preset_goto",
+                                       "command_topic": "%B/ptz_preset_goto/set", "min": 1, "max": 99, "step": 1, "mode": "box"}),
+        ("text", "ptz_preset_save", {"name": "PTZ enregistrer le préréglage (nom)", "unique_id": "%N_ptz_preset_save",
+                                     "command_topic": "%B/ptz_preset_save/set", "max": 24}),
+        ("number", "ptz_preset_delete", {"name": "PTZ supprimer le préréglage", "unique_id": "%N_ptz_preset_delete",
+                                         "command_topic": "%B/ptz_preset_delete/set", "min": 1, "max": 99, "step": 1, "mode": "box"}),
+        ("button", "ptz_home", {"name": "PTZ recalage (home)", "unique_id": "%N_ptz_home",
+                                "command_topic": "%B/ptz_home/set", "payload_press": "ON"}),
+        ("button", "ptz_calibrate", {"name": "PTZ calibrage (long)", "unique_id": "%N_ptz_calibrate",
+                                     "command_topic": "%B/ptz_calibrate/set", "payload_press": "ON"}),
+        ("switch", "speaker_siren", {"name": "Sirène du haut-parleur (30 s max)", "unique_id": "%N_speaker_siren",
+                                     "state_topic": "%B/speaker_siren", "command_topic": "%B/speaker_siren/set",
+                                     "payload_on": "ON", "payload_off": "OFF", "state_on": "ON", "state_off": "OFF",
+                                     "icon": "mdi:bullhorn"}),
+        ("text", "speaker_play", {"name": "Haut-parleur : jouer un son (nom ou stop)", "unique_id": "%N_speaker_play",
+                                  "command_topic": "%B/speaker_play/set", "max": 24}),
     ]
     for l in open(hdr, encoding="utf-8"):
         m = ENTRY.search(l)

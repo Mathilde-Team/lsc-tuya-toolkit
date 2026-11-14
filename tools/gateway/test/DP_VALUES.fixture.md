@@ -10,6 +10,7 @@ Valeurs inventées pour exercer `gateway.c` sur PC. Les adresses `0x0` ne sont p
 | 151 | sd_record_mode | enum | `event` `always` | str | str | test | 0x0 fixture | oui |
 | 106 | alarm_sensitivity | int | `0` `2` | int | int | test | 0x0 fixture | oui |
 | 111 | format_sd_card | action | — | aucun | aucun | test | 0x0 fixture | oui |
+| 109 | sd_storage | sensor | — | aucun | out3 | test | 0x0 fixture | oui |
 | 110 | sd_status | sensor | — | aucun | int | test | 0x0 fixture | oui |
 | 188 | basic_anti_flicker | int | `0` `2` | int | int | test | 0x0 fixture | non |
 | 169 | alarm_zone_draw | json | JSON | str | str | test | 0x0 fixture | oui |

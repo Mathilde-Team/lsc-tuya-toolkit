@@ -16,6 +16,26 @@ static const struct ha_entry ha_table[] = {
    "{\"name\":\"Jour/nuit\",\"unique_id\":\"%N_night\",\"state_topic\":\"%B/night\",\"command_topic\":\"%B/night/set\",\"options\":[\"auto\",\"day\",\"night\"],\"icon\":\"mdi:weather-night\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"switch", "privacy",
    "{\"name\":\"Mode privé\",\"unique_id\":\"%N_privacy\",\"state_topic\":\"%B/privacy\",\"command_topic\":\"%B/privacy/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"icon\":\"mdi:eye-off\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"sensor", "ptz_position",
+   "{\"name\":\"Position PTZ\",\"unique_id\":\"%N_ptz_position\",\"state_topic\":\"%B/ptz_position\",\"icon\":\"mdi:cctv\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"sensor", "ptz_presets",
+   "{\"name\":\"Préréglages PTZ\",\"unique_id\":\"%N_ptz_presets\",\"state_topic\":\"%B/ptz_presets\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"text", "ptz_absolute",
+   "{\"name\":\"PTZ position absolue (x,y de -1 à 1)\",\"unique_id\":\"%N_ptz_absolute\",\"command_topic\":\"%B/ptz_absolute/set\",\"max\":24,\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"number", "ptz_preset_goto",
+   "{\"name\":\"PTZ aller au préréglage\",\"unique_id\":\"%N_ptz_preset_goto\",\"command_topic\":\"%B/ptz_preset_goto/set\",\"min\":1,\"max\":99,\"step\":1,\"mode\":\"box\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"text", "ptz_preset_save",
+   "{\"name\":\"PTZ enregistrer le préréglage (nom)\",\"unique_id\":\"%N_ptz_preset_save\",\"command_topic\":\"%B/ptz_preset_save/set\",\"max\":24,\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"number", "ptz_preset_delete",
+   "{\"name\":\"PTZ supprimer le préréglage\",\"unique_id\":\"%N_ptz_preset_delete\",\"command_topic\":\"%B/ptz_preset_delete/set\",\"min\":1,\"max\":99,\"step\":1,\"mode\":\"box\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"button", "ptz_home",
+   "{\"name\":\"PTZ recalage (home)\",\"unique_id\":\"%N_ptz_home\",\"command_topic\":\"%B/ptz_home/set\",\"payload_press\":\"ON\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"button", "ptz_calibrate",
+   "{\"name\":\"PTZ calibrage (long)\",\"unique_id\":\"%N_ptz_calibrate\",\"command_topic\":\"%B/ptz_calibrate/set\",\"payload_press\":\"ON\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"switch", "speaker_siren",
+   "{\"name\":\"Sirène du haut-parleur (30 s max)\",\"unique_id\":\"%N_speaker_siren\",\"state_topic\":\"%B/speaker_siren\",\"command_topic\":\"%B/speaker_siren/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"icon\":\"mdi:bullhorn\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"text", "speaker_play",
+   "{\"name\":\"Haut-parleur : jouer un son (nom ou stop)\",\"unique_id\":\"%N_speaker_play\",\"command_topic\":\"%B/speaker_play/set\",\"max\":24,\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"switch", "light_onoff",
    "{\"name\":\"Light onoff\",\"unique_id\":\"%N_light_onoff\",\"command_topic\":\"%B/light_onoff/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"state_topic\":\"%B/light_onoff\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"switch", "flip_onoff",
@@ -28,6 +48,8 @@ static const struct ha_entry ha_table[] = {
    "{\"name\":\"Alarm sensitivity\",\"unique_id\":\"%N_alarm_sensitivity\",\"command_topic\":\"%B/alarm_sensitivity/set\",\"options\":[\"0\",\"1\",\"2\"],\"state_topic\":\"%B/alarm_sensitivity\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"select", "night_mode",
    "{\"name\":\"Night mode\",\"unique_id\":\"%N_night_mode\",\"command_topic\":\"%B/night_mode/set\",\"options\":[\"0\",\"1\",\"2\"],\"state_topic\":\"%B/night_mode\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"sensor", "sd_storage",
+   "{\"name\":\"Sd storage\",\"unique_id\":\"%N_sd_storage\",\"state_topic\":\"%B/sd_storage\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"sensor", "sd_status",
    "{\"name\":\"Sd status\",\"unique_id\":\"%N_sd_status\",\"state_topic\":\"%B/sd_status\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"button", "ptz_stop_move",
@@ -130,6 +152,6 @@ static const struct ha_entry ha_table[] = {
    "{\"name\":\"Door control\",\"unique_id\":\"%N_door_control\",\"command_topic\":\"%B/door_control/set\",\"options\":[\"0\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\"],\"state_topic\":\"%B/door_control\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"%N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
 };
 
-#define HA_TABLE_LEN 59
+#define HA_TABLE_LEN 70
 
 #endif

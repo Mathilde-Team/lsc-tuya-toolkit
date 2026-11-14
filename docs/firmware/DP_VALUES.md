@@ -72,7 +72,7 @@ Lu dans le pseudo-C. Ces DP agissent sur la **détection du firmware**, qui n'es
 
 | DP | Fonction | Type | Valeurs | Écriture | Lecture | Effets de bord / persistance | Preuve | Exposé |
 |---|---|---|---|---|---|---|---|---|
-| 109 | sd_storage | sensor | capacité de la carte SD | aucun | aucun | `IPC_APP_get_sd_storage` écrit trois pointeurs de sortie : hors modèle | 0x75e00 IPC_APP_get_sd_storage ; reste à exposer (3 sorties)| non |
+| 109 | sd_storage | sensor | capacité de la carte SD | aucun | out3 | lecture : `IPC_APP_get_sd_storage(total, used, free)` publiée en JSON `{"total":…,"used":…,"free":…}` | 0x75e00 IPC_APP_get_sd_storage : `capacity(&a,&b)` puis `total=a<<10`, `free=b<<10`, `used=total-free` | oui |
 | 112 | unmount_sd_card | action | aucun | aucun | aucun | démontage de la carte SD | 0x76038 IPC_APP_unmount_sd_card | non |
 | 117 | sd_format_status | sensor | progression du formatage | aucun | int | lecture du statut de formatage de la SD | 0x76514 IPC_APP_get_sd_format_status | oui |
 | 150 | sd_record_onoff | bool | ON / OFF | int | int | config `bool_sd_record_enable` puis `ht_tuya_stream_storage_set_record_onoff(v)` | 0x75e80 IPC_APP_set_sd_record_onoff; 0x75f08 IPC_APP_get_sd_record_onoff : enregistrement du stockage Tuya, pas celui du NVR (#5) ; non exposé : active l'enregistrement sur la SD système | non |

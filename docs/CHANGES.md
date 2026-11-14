@@ -350,3 +350,11 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - Non exposés : 105 `sleep_mode` (redémarre `anyka_ipc`, utiliser `privacy`), 109 `sd_storage` (3 sorties, à faire), 111/112 (actions SD), 150/151 (activent l'enregistrement sur la SD système).
 - Non testés volontairement : `system_reboot`, `ptz_check`, `preset`, `door_control`, `blub_onoff`, `patrol_switch`.
 
+
+## 30. PTZ, haut-parleur et `sd_storage` par MQTT
+
+- **PTZ** : `ptz_absolute`, `ptz_preset_goto|save|delete`, `ptz_home`, `ptz_calibrate` (alias de la passerelle, scripts `ptz_move`/`ptz_presets.sh`/`ptz_calibrate.sh`), états `ptz_position` et `ptz_presets`.
+- **Haut-parleur** : `speaker_siren` et `speaker_play` lisent un `.ulaw` de `custom/audio` (`sirene.ulaw` livrée) directement par `ht_audio_codec_*` dans `anyka_ipc`, sans Python ni PC.
+- **DP 109 `sd_storage`** : lecture à trois sorties (`out3`) publiée en JSON (Kio), repli sur `df`.
+- Découverte Home Assistant : 24 entités sur la fixture. Tests PC : `sh tools/gateway/test/run.sh`.
+- Essai sur la .188 : `ptz_absolute`, `ptz_preset_save`, `sd_storage` OK ; la caméra a ensuite quitté le réseau pendant l'essai de `ptz_home`/`preset_goto` (à élucider).
