@@ -20,8 +20,35 @@ DEVICE = {"identifiers": ["%N"], "name": "Caméra LSC %N", "manufacturer": "LSC 
 ENTRY = re.compile(r'\{(\d+), "(\w+)", DP_(\w+), (0|"\w+"), (0|"\w+"), (ABI_\w+), (ABI_\w+), (0|"[^"]*"), ([01]),')
 
 
+FR = {
+    "light_onoff": "Lumière", "flip_onoff": "Image retournée (vertical)", "watermark_onoff": "Filigrane (date/logo)",
+    "sleep_mode": "Mode veille", "alarm_sensitivity": "Sensibilité d'alarme", "sd_storage": "Stockage carte SD",
+    "sd_status": "État carte SD", "sd_format_status": "Progression formatage SD", "ptz_stop_move": "PTZ arrêt (DP)",
+    "night_vision_mode": "Mode vision nocturne", "basic_anti_flicker": "Anti-scintillement",
+    "object_outline_onoff": "Contour des objets détectés", "system_reboot": "Redémarrer la caméra",
+    "alarm_zone_onoff": "Zone d'alarme active", "alarm_zone_draw": "Zone d'alarme (JSON)",
+    "siren_onoff": "Sirène", "audible_alarm_onoff": "Alarme sonore", "flight_warn_onoff": "Avertissement lumineux",
+    "flight_warn_time": "Durée avertissement lumineux (s)", "alarm_function_onoff": "Alarme activée",
+    "human_filter": "Filtre détection humaine", "alarm_siren_onoff": "Sirène sur alarme",
+    "sound_detect_onoff": "Détection de bruit", "sound_sensitivity": "Sensibilité bruit",
+    "cry_detect_onoff": "Détection de pleurs", "patrol_tmode": "Patrouille : mode horaire",
+    "patrol_time": "Patrouille : durée (s)", "preset": "Préréglage (JSON)", "patrol_state": "État de patrouille",
+    "link_move": "Liaison mouvement", "link_pos": "Liaison position", "ptz_start_move": "PTZ démarrer (DP)",
+    "ptz_check": "PTZ auto-test", "track_enable": "Suivi automatique", "patrol_mode": "Patrouille : type",
+    "patrol_switch": "Patrouille", "blub_onoff": "Ampoule", "floodlight_lightness": "Luminosité projecteur",
+    "pir_detect_switch": "Détecteur PIR", "door_control": "Contrôle de porte", "ipc_lullaby_command": "Berceuse : commande",
+    "battery_percent": "Niveau de batterie", "power_mode": "Mode d'alimentation", "temp_report_c": "Température (°C)",
+    "temp_report_f": "Température (°F)", "temp_unit_select": "Unité de température",
+    "temp_max_onoff": "Alerte température max", "temp_min_onoff": "Alerte température min",
+    "temp_max_cvalue": "Température max (°C)", "temp_min_cvalue": "Température min (°C)",
+    "temp_max_fvalue": "Température max (°F)", "temp_min_fvalue": "Température min (°F)",
+    "ipc_lullaby_mode": "Berceuse : mode", "ipc_lullaby_volume": "Berceuse : volume",
+    "ipc_lullaby_control": "Berceuse : lecture/pause", "ipc_lullaby_list": "Berceuse : morceau",
+}
+
+
 def label(name):
-    return name.replace("_", " ").capitalize()
+    return FR.get(name) or name.replace("_", " ").capitalize()
 
 
 def entities(hdr):
@@ -88,7 +115,7 @@ def entities(hdr):
             comp, e = "text", dict(command_topic=cmd, max=160)
         else:
             comp, e = "sensor", {}
-        if has_get and (comp not in ("button", "text") or kind == "JSON"):
+        if (has_get or kind in ("BOOL", "ENUM", "INT")) and (comp not in ("button", "text") or kind == "JSON"):
             e["state_topic"] = st
         if comp == "sensor" and "state_topic" not in e:
             continue

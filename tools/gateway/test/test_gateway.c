@@ -86,8 +86,8 @@ int main(void)
     CHECK(!strcmp(last_log, "night mode set"));
     CHECK(gw_topic("camera/night/set", "auto") == 0 && night == 0 && PUB("camera/night", "auto"));
     CHECK(gw_topic("camera/night/set", "Night") < 0 && night == 0);
-    CHECK(gw_topic("camera/privacy/set", "ON") == 0 && strstr(last_sys, "privacy.sh on") && PUB("camera/privacy", "ON"));
-    CHECK(gw_topic("camera/privacy/set", "off") == 0 && strstr(last_sys, "privacy.sh off") && PUB("camera/privacy", "OFF"));
+    CHECK(gw_topic("camera/privacy/set", "ON") == 0 && strstr(sys_all, "privacy.sh on") && PUB("camera/privacy", "ON"));
+    CHECK(gw_topic("camera/privacy/set", "off") == 0 && strstr(sys_all, "privacy.sh off") && PUB("camera/privacy", "OFF"));
     strcpy(line, "night night\n");
     CHECK(gw_line(line) == 0 && night == 2 && PUB("camera/night", "night"));
     strcpy(line, "privacy on \r\n");
@@ -103,7 +103,7 @@ int main(void)
 
     /* enum */
     /* sleep_mode est routé vers privacy : le natif n'est jamais appelé */
-    CHECK(gw_topic("camera/sleep_mode/set", "ON") == 0 && sleepm == 0 && strstr(last_sys, "privacy.sh on") && PUB("camera/sleep_mode", "ON"));
+    CHECK(gw_topic("camera/sleep_mode/set", "ON") == 0 && sleepm == 0 && strstr(sys_all, "privacy.sh on") && PUB("camera/sleep_mode", "ON"));
     CHECK(gw_topic("camera/sleep_mode/set", "3") < 0 && sleepm == 0);
     CHECK(gw_topic("camera/sd_record_mode/set", "always") == 0 && !strcmp(recmode, "always") && PUB("camera/sd_record_mode", "always"));
     CHECK(gw_topic("camera/sd_record_mode/set", "alway") < 0);

@@ -210,6 +210,8 @@ static int apply_night(const char *v)
     return 0;
 }
 
+static void publish_position(void);
+
 static int apply_privacy(const char *v)
 {
     int on = is_on(v);
@@ -218,6 +220,7 @@ static int apply_privacy(const char *v)
         return -1;
     say(on ? "privacy on" : "privacy off", 0, 0);
     system(on ? "/tmp/sd/custom/scripts/privacy.sh on" : "/tmp/sd/custom/scripts/privacy.sh off");
+    publish_position();
     state("privacy", on ? "ON" : "OFF");
     return 0;
 }
@@ -667,8 +670,12 @@ static int apply_entry(const struct dp_entry *e, const char *v)
     else
         e->set_fn();
     say("gateway:", e->name, v);
-    if (e->kind != DP_ACTION)
-        publish_entry(e);
+    if (e->kind != DP_ACTION) {
+        if (!e->get_fn || e->get_abi == ABI_NONE)
+            state(e->name, e->kind == DP_BOOL ? (iv ? "ON" : "OFF") : v); /* pas de lecture : on republie la valeur commandée */
+        else
+            publish_entry(e);
+    }
     return 0;
 }
 
