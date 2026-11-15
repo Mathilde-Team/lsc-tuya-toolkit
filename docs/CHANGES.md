@@ -374,3 +374,14 @@ Une coupure de courant pendant une écriture abîme la FAT ; le noyau remonte al
 - **Alerte** : `<base>/sd_health` (`ON` = SD absente ou en lecture seule), entité HA binary_sensor « Problème carte SD » (catégorie diagnostic).
 - `anyka_ipc.sh` lit les réglages (`MOTION`, `MOTION_TOPIC`, `TALK`, `TALK_ALLOW`, `CLOCKFIX`…) dans `hack.conf` : une ligne `LD_PRELOAD` écrite à la main dans ce script serait perdue lors d'une mise à jour, il faut la reporter dans `hack.conf`.
 - Mode privé : essai sur la .188 (ON → tilt bas, OFF → position d'origine).
+
+## 33. Tests MQTT, déplacement manuel, libellés HA, fuseau
+
+- **Tests** : 32 réglages MQTT testés sur la .188 (envoi, relecture, restauration) : voir « MQTT et Home Assistant » dans `README.md`. Sirène, berceuses, `ptz_check`, reboot et actions SD exclus.
+- **`ptz_move/set`** (`up` `down` `left` `right` `stop`, arrêt automatique après 1 s) et 5 boutons HA ; 30 entités HA.
+- **Réglages sans lecture** (`patrol_switch`, `patrol_tmode`, `patrol_time`, `link_move`, `link_pos`) : la passerelle republie la valeur commandée comme état, d'où un vrai interrupteur dans HA au lieu des éclairs « état supposé ».
+- **Libellés français** des entités HA (table `FR` de `gen_ha_discovery.py`).
+- **Mode privé** : `ptz_position` publié après le déplacement. Le topic de commande est `<base>/privacy/set`.
+- **Fuseau** : `TZ_STRING` Europe/Paris (CET/CEST) appliqué après le démarrage d'`anyka_ipc` ; heure vérifiée identique au PC.
+- **ONVIF** : l'erreur `AbsoluteMove.Speed.PanTilt.x` est une validation `zeep` côté client HA, pas un défaut du serveur.
+- **Température** : `ht_tuya_get_temperature` (0x6c5e8) renvoie un champ de structure globale sans accès matériel ; aucun pilote de capteur de température n'est chargé.

@@ -211,9 +211,48 @@ Notes:
 - `WIFI_MODE=none` leaves networking unchanged (stock firmware manages it).
 - The scripts use `wpa_supplicant` + `wpa_cli` via `/usr/sbin/station_connect.sh`.
 
+## MQTT et Home Assistant (passerelle locale)
+
+`md_inject.so` (chargé dans `anyka_ipc` via `LD_PRELOAD`) pilote la caméra sans cloud. Réglages dans `hack.conf` : `MOTION`, `MOTION_TOPIC`, `HA_DISCOVERY`, `HA_PREFIX`.
+
+- **Commande** : `<base>/<fonction>/set` (le `/set` est obligatoire). **État** : `<base>/<fonction>`, retained. `<base>` = nom de la caméra.
+- Les entités Home Assistant (30) sont créées automatiquement par la découverte MQTT à chaque connexion de la caméra au broker (`HA_DISCOVERY=0` pour désactiver).
+- Les commandes sont exécutées l'une après l'autre : un déplacement PTZ ou le mode privé bloque les suivantes quelques secondes.
+- Tableau complet des topics : [docs/TOPICS.md](docs/TOPICS.md). DP exposés ou non : [docs/EXPOSITION.md](docs/EXPOSITION.md).
+
+Alias principaux :
+
+| Topic `/set` | Valeurs | Effet |
+|---|---|---|
+| `night` | `auto` `day` `night` | mode jour/nuit |
+| `privacy` | `ON` `OFF` | pose privée (mémorise puis restaure la position) |
+| `ptz_move` | `up` `down` `left` `right` `stop` | déplacement manuel (1 s puis arrêt) |
+| `ptz_absolute` | `x,y` de -1 à 1 | position absolue |
+| `ptz_preset_goto` / `ptz_preset_delete` | n° | rappeler / supprimer un préréglage |
+| `ptz_preset_save` | nom (`A-Za-z0-9_`) | enregistrer la position courante |
+| `ptz_home` / `ptz_calibrate` | `ON` | recalage sur les butées / séquence de test (long) |
+| `speaker_play` / `speaker_siren` | nom de fichier `.ulaw` ou `stop` / `ON` `OFF` | haut-parleur (attention au volume) |
+
+États : `ptz_position`, `ptz_presets`, `sd_storage` (JSON en Kio), `sd_health` (`ON` = carte absente ou en lecture seule).
+
+Résultats de test sur une caméra réelle (valeur envoyée, relue, puis restaurée) :
+
+- **Fonctionnent** : `flip_onoff`, `watermark_onoff`, `night_vision_mode`, `basic_anti_flicker`, `object_outline_onoff`, `alarm_zone_onoff`, `alarm_sensitivity`, `alarm_function_onoff`, `human_filter`, `sound_detect_onoff`, `sound_sensitivity`, `cry_detect_onoff`, `track_enable`, `patrol_mode`, `blub_onoff`, `floodlight_lightness`, `pir_detect_switch`, `door_control`, `flight_warn_time`, `privacy`, `ptz_absolute`, `ptz_preset_*`.
+- **Acceptées sans effet visible** : `light_onoff`, `flight_warn_onoff`, réglages `temp_*` (pas de capteur de température dans le firmware).
+- **Sans lecture du firmware** (`patrol_switch`, `patrol_tmode`, `patrol_time`, `link_move`, `link_pos`) : la passerelle republie la dernière valeur commandée. Ce n'est pas une confirmation du firmware.
+- **Notes issues du désassemblage** : `flip_onoff` est une rotation de 180° (`bool_rotate180`), il n'existe pas de miroir ni de rotation à 90° séparés ; `link_move` ne fait qu'un `printf` ; `door_control` appelle `ht_cardoor_ctrl` (porte probablement absente) ; les berceuses sont configurées mais le lecteur n'est pas vérifié.
+
+## Protection de la carte SD
+
+Les journaux et la position PTZ sont écrits en RAM (`/tmp/hacklogs`, `/tmp/ptzstate`), avec instantané périodique sur la SD (`LOG_TO_SD=1` pour revenir aux journaux sur la SD). `SD_SYNC=1` monte la SD en écriture synchrone. L'entité `sd_health` signale une carte en lecture seule. Voir [docs/CHANGES.md](docs/CHANGES.md) §32.
+
+## Fuseau horaire
+
+`TZ_STRING` (par défaut `CET-1CEST,M3.5.0,M10.5.0/3`, France, heure d'été automatique) est appliqué après le démarrage de `anyka_ipc`, qui décale sinon l'horloge de +8 h.
+
 ## Logs
 
-All custom logs are written to the SD card under `SD_DIR/logs/` (where `SD_DIR` is `/tmp/sd` on-device).
+By default, custom logs are written to RAM under `/tmp/hacklogs` (see "Protection de la carte SD"); set `LOG_TO_SD=1` to write them to the SD card under `SD_DIR/logs/` (where `SD_DIR` is `/tmp/sd` on-device).
 
 # Tested with the following cameras:
 <img width="1080" height="1080" alt="image" src="https://github.com/user-attachments/assets/d4881226-0206-43f8-b0c3-6c31529379e6" />
