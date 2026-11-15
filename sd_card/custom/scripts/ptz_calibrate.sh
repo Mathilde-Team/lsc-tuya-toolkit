@@ -5,7 +5,8 @@ set -eu
 PTZ_TEST="${PTZ_TEST:-/tmp/sd/custom/scripts/ptz_test.sh}"
 PTZCTL="${PTZCTL:-/tmp/sd/custom/bin/ptzctl}"
 CONF="${CONF:-/tmp/sd/custom/configs/onvif.conf}"
-LOG_FILE="${LOG_FILE:-/tmp/sd/logs/ptz.log}"
+. /tmp/sd/custom/scripts/logdir.sh
+LOG_FILE="${LOG_FILE:-${LOGS}/ptz.log}"
 
 LOW_SPEED="${LOW_SPEED:-0.35}"
 HIGH_SPEED="${HIGH_SPEED:-0.85}"

@@ -4,7 +4,8 @@ set -eu
 
 PTZCTL="${PTZCTL:-/tmp/sd/custom/bin/ptzctl}"
 CONF="${CONF:-/tmp/sd/custom/configs/onvif.conf}"
-LOG_FILE="${LOG_FILE:-/tmp/sd/logs/ptz.log}"
+. /tmp/sd/custom/scripts/logdir.sh
+LOG_FILE="${LOG_FILE:-${LOGS}/ptz.log}"
 
 DEFAULT_SPEED="${DEFAULT_SPEED:-0.60}"
 MOVE_SECONDS="${MOVE_SECONDS:-1}"

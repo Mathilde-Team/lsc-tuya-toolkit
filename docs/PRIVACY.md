@@ -58,3 +58,7 @@ Pour couper *aussi* le flux dans HA pendant le mode privé (arrêt de
 l'enregistrement NVR, masquage de la carte caméra), ajouter une automatisation
 sur l'appel du script `camera_prive` — cela n'empêche pas un autre client du
 LAN de lire le RTSP (voir limites ci-dessus).
+
+## Sans préréglage
+
+Si `PRIVACY_PRESET=0`, `privacy.sh on` mémorise la position puis va à `PRIVACY_POS` (`x,y` de -1 à 1, défaut `0,-1` : tête vers le bas) ; `off` revient à la position mémorisée. Les mouvements durent plusieurs secondes : les commandes MQTT suivantes attendent la fin.

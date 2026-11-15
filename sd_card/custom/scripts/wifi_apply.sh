@@ -1,10 +1,11 @@
 #!/bin/sh
 
 SD_DIR="/tmp/sd"
+. /tmp/sd/custom/scripts/logdir.sh
 CUSTOM_DIR="${SD_DIR}/custom"
 CFG_FILE="${CUSTOM_DIR}/configs/wifi.conf"
 DATETIME="$(date +%Y%m%d_%H%M%S)"
-LOG_FILE="${SD_DIR}/logs/wifi.${DATETIME}.log"
+LOG_FILE="${LOGS}/wifi.${DATETIME}.log"
 
 log() {
     echo "[$(date +%Y-%m-%dT%H:%M:%S)] $*" >> "${LOG_FILE}"

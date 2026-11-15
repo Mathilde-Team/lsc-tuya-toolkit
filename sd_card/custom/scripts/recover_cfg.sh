@@ -1,10 +1,11 @@
 #!/bin/sh
 
 SD_DIR="/tmp/sd"
+. /tmp/sd/custom/scripts/logdir.sh
 DATETIME="$(date +%Y%m%d_%H%M%S)"
-LOG_FILE="${SD_DIR}/logs/recover.${DATETIME}.log"
+LOG_FILE="${LOGS}/recover.${DATETIME}.log"
 
-mkdir -p "${SD_DIR}/logs"
+mkdir -p "${LOGS}"
 exec >>"${LOG_FILE}" 2>&1
 #recover factory config ini
 echo "========= system reset start ==========="

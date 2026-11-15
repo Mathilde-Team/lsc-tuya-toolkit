@@ -53,6 +53,9 @@ def entities(hdr):
                                      "state_topic": "%B/speaker_siren", "command_topic": "%B/speaker_siren/set",
                                      "payload_on": "ON", "payload_off": "OFF", "state_on": "ON", "state_off": "OFF",
                                      "icon": "mdi:bullhorn"}),
+        ("binary_sensor", "sd_health", {"name": "Problème carte SD (lecture seule)", "unique_id": "%N_sd_health",
+                                       "state_topic": "%B/sd_health", "payload_on": "ON", "payload_off": "OFF",
+                                       "device_class": "problem", "entity_category": "diagnostic"}),
         ("text", "speaker_play", {"name": "Haut-parleur : jouer un son (nom ou stop)", "unique_id": "%N_speaker_play",
                                   "command_topic": "%B/speaker_play/set", "max": 24}),
     ]

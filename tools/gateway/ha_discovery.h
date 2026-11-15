@@ -34,6 +34,8 @@ static const struct ha_entry ha_table[] = {
    "{\"name\":\"PTZ calibrage (long)\",\"unique_id\":\"%N_ptz_calibrate\",\"command_topic\":\"%B/ptz_calibrate/set\",\"payload_press\":\"ON\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"switch", "speaker_siren",
    "{\"name\":\"Sirène du haut-parleur (30 s max)\",\"unique_id\":\"%N_speaker_siren\",\"state_topic\":\"%B/speaker_siren\",\"command_topic\":\"%B/speaker_siren/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"icon\":\"mdi:bullhorn\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"binary_sensor", "sd_health",
+   "{\"name\":\"Problème carte SD (lecture seule)\",\"unique_id\":\"%N_sd_health\",\"state_topic\":\"%B/sd_health\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"device_class\":\"problem\",\"entity_category\":\"diagnostic\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"text", "speaker_play",
    "{\"name\":\"Haut-parleur : jouer un son (nom ou stop)\",\"unique_id\":\"%N_speaker_play\",\"command_topic\":\"%B/speaker_play/set\",\"max\":24,\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"switch", "light_onoff",
@@ -152,6 +154,6 @@ static const struct ha_entry ha_table[] = {
    "{\"name\":\"Door control\",\"unique_id\":\"%N_door_control\",\"command_topic\":\"%B/door_control/set\",\"options\":[\"0\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\"],\"state_topic\":\"%B/door_control\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
 };
 
-#define HA_TABLE_LEN 70
+#define HA_TABLE_LEN 71
 
 #endif

@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
 python3 ../gen_gateway.py ../../../docs/firmware/DP_TABLE.md "$T/dp_table.h" "$T/TOPICS.md" DP_VALUES.fixture.md
-cc -Wall -Wextra -Werror -Wno-unused-parameter -Wno-cast-function-type -I.. -DGW_TABLE="\"$T/dp_table.h\"" -DGW_AUDIO_DIR="\"/tmp/\"" -o "$T/t" test_gateway.c ../gateway.c -lpthread
+cc -Wall -Wextra -Werror -Wno-unused-parameter -Wno-cast-function-type -I.. -DGW_TABLE="\"$T/dp_table.h\"" -DGW_AUDIO_DIR="\"/tmp/\"" -DGW_MOUNTS="\"/tmp/gw_mounts_test\"" -o "$T/t" test_gateway.c ../gateway.c -lpthread
 "$T/t"
 # Découverte HA (#59) : en-tête généré depuis la table de la fixture, sortie C == sortie Python, JSON valide
 python3 ../gen_ha_discovery.py "$T/dp_table.h" "$T/ha.h"

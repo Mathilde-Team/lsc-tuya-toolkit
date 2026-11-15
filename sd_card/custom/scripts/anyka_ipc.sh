@@ -1,10 +1,11 @@
 #! /bin/sh
 
 SD_DIR="/tmp/sd"
+. /tmp/sd/custom/scripts/logdir.sh
 CUSTOM_DIR="${SD_DIR}/custom"
 SCRIPTS_DIR="${CUSTOM_DIR}/scripts"
 DATETIME="$(date +%Y%m%d_%H%M%S)"
-LOG_FILE="${SD_DIR}/logs/anyka.${DATETIME}.log"
+LOG_FILE="${LOGS}/anyka.${DATETIME}.log"
 ENTRYPOINT="${SCRIPTS_DIR}/entrypoint.sh"
 
 MODE="$1"
@@ -28,7 +29,7 @@ log() {
     echo "[$(date +%Y-%m-%dT%H:%M:%S)] $*"
 }
 
-mkdir -p "${SD_DIR}/logs" >/dev/null 2>&1 || true
+mkdir -p "${LOGS}" >/dev/null 2>&1 || true
 touch "${LOG_FILE}"
 exec >>"${LOG_FILE}" 2>&1
 

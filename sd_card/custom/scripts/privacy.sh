@@ -6,19 +6,18 @@
 # ATTENTION : une position PTZ ne coupe ni le flux RTSP ni le micro.
 
 SD_DIR="/tmp/sd"
+. /tmp/sd/custom/scripts/logdir.sh
 CUSTOM_DIR="${SD_DIR}/custom"
 SCRIPTS_DIR="${CUSTOM_DIR}/scripts"
 CFG_FILE="${CUSTOM_DIR}/configs/hack.conf"
 DATETIME="$(date +%Y%m%d_%H%M%S)"
-LOG_FILE="${SD_DIR}/logs/privacy.${DATETIME}.log"
+LOG_FILE="${LOGS}/privacy.${DATETIME}.log"
 
 log() {
     echo "[$(date +%Y-%m-%dT%H:%M:%S)] $*" >> "${LOG_FILE}"
 }
 
-mkdir -p "${SD_DIR}/logs" >/dev/null 2>&1 || true
-# SD en lecture seule (FAT corrompue) : journal dans /tmp pour que les moteurs restent commandables
-( : >> "${LOG_FILE}" ) 2>/dev/null || LOG_FILE="/tmp/privacy.${DATETIME}.log"
+mkdir -p "${LOGS}" >/dev/null 2>&1 || true
 exec >> "${LOG_FILE}" 2>&1
 
 load_cfg() {

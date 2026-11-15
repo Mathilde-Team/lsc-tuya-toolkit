@@ -1,15 +1,16 @@
 #!/bin/sh
 SD_DIR="/tmp/sd"
+. /tmp/sd/custom/scripts/logdir.sh
 CUSTOM_DIR="${SD_DIR}/custom"
 DATETIME="$(date +%Y%m%d_%H%M%S)"
-LOG_FILE="${SD_DIR}/logs/ftp.${DATETIME}.log"
+LOG_FILE="${LOGS}/ftp.${DATETIME}.log"
 CFG_FILE="${CUSTOM_DIR}/configs/hack.conf"
 
 log() {
     echo "[$(date +%Y-%m-%dT%H:%M:%S)] $*" >> "${LOG_FILE}"
 }
 
-mkdir -p "${SD_DIR}/logs" >/dev/null 2>&1 || true
+mkdir -p "${LOGS}" >/dev/null 2>&1 || true
 touch "${LOG_FILE}"
 exec >>"${LOG_FILE}" 2>&1
 

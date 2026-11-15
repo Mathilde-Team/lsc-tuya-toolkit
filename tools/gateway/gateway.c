@@ -286,6 +286,49 @@ static int run_out(const char *cmd, char *o, int max)
     return 0;
 }
 
+/* Santé de la SD : ON = problème (absente ou montée en lecture seule après une FAT corrompue). */
+#ifndef GW_MOUNTS
+#define GW_MOUNTS "/proc/mounts"
+#endif
+static void publish_sd_health(void)
+{
+    static const char sd[] = "/tmp/sd";
+    char b[4096];
+    int fd, n, i, j, k, s, q, field, ms, me, os, oe, found = 0, ro = 0;
+
+    fd = open(GW_MOUNTS, 0);
+    n = fd >= 0 ? read(fd, b, sizeof b - 1) : 0;
+    if (fd >= 0)
+        close(fd);
+    if (n < 0)
+        n = 0;
+    b[n] = 0;
+    for (i = 0; i < n; i = j + 1) {
+        for (j = i; j < n && b[j] != '\n'; j++)
+            ;
+        /* champs : périphérique, point de montage, type, options */
+        field = 0; ms = me = os = oe = -1;
+        for (k = i; k < j; k++) {
+            for (s = k; k < j && b[k] != ' '; k++)
+                ;
+            if (field == 1) { ms = s; me = k; }
+            if (field == 3) { os = s; oe = k; }
+            field++;
+        }
+        if (ms < 0 || os < 0 || me - ms != 7)
+            continue;
+        for (q = 0; q < 7 && b[ms + q] == sd[q]; q++)
+            ;
+        if (q < 7)
+            continue;
+        found = 1;
+        for (q = os; q + 1 < oe; q++)
+            if (b[q] == 'r' && b[q + 1] == 'o' && (q == os || b[q - 1] == ',') && (q + 2 == oe || b[q + 2] == ','))
+                ro = 1;
+    }
+    state("sd_health", (!found || ro) ? "ON" : "OFF");
+}
+
 static void publish_position(void)
 {
     char o[GW_MAX];
@@ -708,6 +751,7 @@ void gw_publish_all(void)
 
     publish_position();
     publish_presets();
+    publish_sd_health();
     state("speaker_siren", "OFF");
     for (i = 0; i < DP_TABLE_LEN; i++)
         publish_entry(&dp_table[i]);
@@ -718,6 +762,7 @@ void gw_publish_sensors(void)
     int i;
 
     publish_position();
+    publish_sd_health();
     for (i = 0; i < DP_TABLE_LEN; i++)
         if (dp_table[i].kind == DP_SENSOR)
             publish_entry(&dp_table[i]);

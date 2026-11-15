@@ -1,19 +1,20 @@
 #!/bin/sh
 
 SD_DIR="/tmp/sd"
+. /tmp/sd/custom/scripts/logdir.sh
 CUSTOM_DIR="${SD_DIR}/custom"
 SCRIPTS_DIR="${CUSTOM_DIR}/scripts"
 CONFIG_DIR="${CUSTOM_DIR}/configs"
 STATE_DIR="${CUSTOM_DIR}/state"
 CFG_FILE="${CONFIG_DIR}/hack.conf"
 DATETIME="$(date +%Y%m%d_%H%M%S)"
-LOG_FILE="${SD_DIR}/logs/entrypoint.${DATETIME}.log"
+LOG_FILE="${LOGS}/entrypoint.${DATETIME}.log"
 
 log() {
     echo "[$(date +%Y-%m-%dT%H:%M:%S)] $*"
 }
 
-mkdir -p "${SD_DIR}/logs" >/dev/null 2>&1 || true
+mkdir -p "${LOGS}" >/dev/null 2>&1 || true
 mkdir -p "${STATE_DIR}" >/dev/null 2>&1 || true
 
 exec >>"${LOG_FILE}" 2>&1
@@ -21,6 +22,9 @@ exec >>"${LOG_FILE}" 2>&1
 load_cfg() {
     # Defaults
     SAVE_SYSLOG=1
+    SD_SYNC=1
+    LOG_RAM_MAX_KB=256
+    LOG_SNAPSHOT_MIN=60
 
     if [ -f "${CFG_FILE}" ]; then
         # shellcheck disable=SC1090
@@ -36,7 +40,7 @@ purge_logs() {
   case "${keep}" in ''|*[!0-9]*) return 0 ;; esac
   [ "${keep}" -ge 1 ] || return 0
   for pat in run entrypoint anyka_debug; do
-    ls -1t "${SD_DIR}/logs/${pat}".*.log 2>/dev/null | tail -n "+$((keep + 1))" | while IFS= read -r f; do
+    ls -1t "${LOGS}/${pat}".*.log 2>/dev/null | tail -n "+$((keep + 1))" | while IFS= read -r f; do
       rm -f "${f}"
     done
   done
@@ -54,9 +58,9 @@ save_syslog_tail() {
     if [ -e /tmp/.ht_syslog_saved ]; then
         return 0
     fi
-    tail -n 400 /var/log/messages > "${SD_DIR}/logs/messages_tail.txt" 2>/dev/null || true
+    tail -n 400 /var/log/messages > "${LOGS}/messages_tail.txt" 2>/dev/null || true
     touch /tmp/.ht_syslog_saved 2>/dev/null || true
-    log "Saved /var/log/messages tail to ${SD_DIR}/logs/messages_tail.txt"
+    log "Saved /var/log/messages tail to ${LOGS}/messages_tail.txt"
 }
 
 set_cpus() {
@@ -99,10 +103,47 @@ wait_anyka() {
   log "anyka_ipc running"
   sleep 30
 }
+# --- Protection de la SD (FAT corrompue par les coupures de courant) ---
+sd_protect() {
+  # 1. ecritures synchrones : chaque ecriture part tout de suite sur la carte
+  if [ "${SD_SYNC}" = "1" ]; then
+    mount -o remount,sync "${SD_DIR}" >/dev/null 2>&1 && log "SD montee en sync" || log "SD sync impossible"
+  fi
+  # 2. etat PTZ en RAM, prereglages recopies depuis la SD
+  mkdir -p /tmp/ptzstate >/dev/null 2>&1
+  cp "${STATE_DIR}"/ptz_presets.db "${STATE_DIR}"/ptz_home /tmp/ptzstate/ 2>/dev/null || true
+}
+
+log_keeper() {
+  # Les journaux RAM sont bornes (tmpfs) ; un instantane (fin des journaux) est
+  # copie sur la SD toutes les LOG_SNAPSHOT_MIN minutes pour les analyses post-redemarrage.
+  [ "${LOGS}" = "${SD_DIR}/logs" ] && return 0
+  max=$(( ${LOG_RAM_MAX_KB:-256} * 1024 ))
+  snap=0
+  while true; do
+    sleep 300
+    for f in "${LOGS}"/*.log; do
+      [ -f "${f}" ] || continue
+      sz=$(wc -c < "${f}" 2>/dev/null || echo 0)
+      if [ "${sz}" -gt "${max}" ]; then
+        tail -n 300 "${f}" > "${f}.cut" 2>/dev/null && cat "${f}.cut" > "${f}"; rm -f "${f}.cut"
+      fi
+    done
+    snap=$(( snap + 5 ))
+    if [ "${LOG_SNAPSHOT_MIN:-60}" -gt 0 ] && [ "${snap}" -ge "${LOG_SNAPSHOT_MIN:-60}" ]; then
+      snap=0
+      mkdir -p "${SD_DIR}/logs" 2>/dev/null
+      { for f in "${LOGS}"/anyka.*.log "${LOGS}"/entrypoint.*.log; do [ -f "${f}" ] && { echo "== ${f}"; tail -n 80 "${f}"; }; done; } > "${SD_DIR}/logs/ram_snapshot.txt" 2>/dev/null && sync
+    fi
+  done
+}
+
 log "entrypoint starting"
 
 load_cfg
+sd_protect
 purge_logs
+log_keeper &
 save_syslog_tail
 
 set_time() {

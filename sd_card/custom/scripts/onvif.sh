@@ -1,16 +1,17 @@
 #!/bin/sh
 
 SD_DIR="/tmp/sd"
+. /tmp/sd/custom/scripts/logdir.sh
 CUSTOM_DIR="${SD_DIR}/custom"
 DATETIME="$(date +%Y%m%d_%H%M%S)"
 CFG_FILE="${CUSTOM_DIR}/configs/hack.conf"
-LOG_FILE="${SD_DIR}/logs/onvif.${DATETIME}.log"
+LOG_FILE="${LOGS}/onvif.${DATETIME}.log"
 
 log() {
     echo "[$(date +%Y-%m-%dT%H:%M:%S)] $*"
 }
 
-mkdir -p "${SD_DIR}/logs" >/dev/null 2>&1 || true
+mkdir -p "${LOGS}" >/dev/null 2>&1 || true
 exec >>"${LOG_FILE}" 2>&1
 
 load_cfg() {
@@ -99,10 +100,10 @@ log_onvif_status() {
             wget -qO- http://127.0.0.1:8080/onvif/device_service 2>/dev/null | head -c 200 || true
             echo ""
         fi
-    } > "${SD_DIR}/logs/onvif_status.txt" 2>&1
+    } > "${LOGS}/onvif_status.txt" 2>&1
 
     touch /tmp/.ht_onvif_status_logged 2>/dev/null || true
-    log "Wrote ${SD_DIR}/logs/onvif_status.txt"
+    log "Wrote ${LOGS}/onvif_status.txt"
 }
 
 load_cfg

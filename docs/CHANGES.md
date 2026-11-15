@@ -364,3 +364,13 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - `privacy.sh` : sans `PRIVACY_PRESET`, `on` mémorise la position puis va à `PRIVACY_POS` (x,y de -1 à 1, défaut `0,-1` = tête vers le bas) ; `off` revient à la position mémorisée. Avant, rien ne bougeait (« preset absent ou nul »). Le journal bascule sur `/tmp` si la SD est en lecture seule.
 - Appareil Home Assistant nommé « Caméra LSC <nœud> » (plus le seul identifiant technique).
 - Constat : après une coupure de courant, la FAT de la SD peut passer en lecture seule (`FAT-fs … Filesystem has been set read-only`). `ptzctl` y écrit sa position (`custom/state/ptz_position`) : les moteurs semblent alors bloqués. Remède : éteindre, `fsck.vfat -a` sur le PC, remettre la SD.
+
+## 32. Protection de la SD contre la corruption
+
+Une coupure de courant pendant une écriture abîme la FAT ; le noyau remonte alors la SD en lecture seule et `ptzctl` (position PTZ) cesse de fonctionner.
+
+- **Moins d'écritures** : `scripts/logdir.sh` (source commune) place les journaux dans `/tmp/hacklogs` (RAM) et la position PTZ dans `/tmp/ptzstate` (`STATE_DIR`/`LOG_FILE` de `ptz.conf`). `anyka_ipc` écrivait sa sortie en continu sur la SD. Seuls les préréglages PTZ sont copiés sur la SD (puis `sync`) quand on les modifie. Les journaux RAM sont bornés (`LOG_RAM_MAX_KB`) et un instantané de leur fin est copié sur la SD toutes les `LOG_SNAPSHOT_MIN` minutes (`logs/ram_snapshot.txt`). `LOG_TO_SD=1` rétablit les journaux sur la SD.
+- **Écritures synchrones** : `SD_SYNC=1` → `mount -o remount,sync /tmp/sd` à chaque démarrage (`entrypoint.sh`).
+- **Alerte** : `<base>/sd_health` (`ON` = SD absente ou en lecture seule), entité HA binary_sensor « Problème carte SD » (catégorie diagnostic).
+- `anyka_ipc.sh` lit les réglages (`MOTION`, `MOTION_TOPIC`, `TALK`, `TALK_ALLOW`, `CLOCKFIX`…) dans `hack.conf` : une ligne `LD_PRELOAD` écrite à la main dans ce script serait perdue lors d'une mise à jour, il faut la reporter dans `hack.conf`.
+- Mode privé : essai sur la .188 (ON → tilt bas, OFF → position d'origine).

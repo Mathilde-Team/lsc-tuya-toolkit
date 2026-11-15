@@ -1,11 +1,19 @@
 #!/bin/sh
 
-STATE_DIR="/tmp/sd/custom/state"
+# La position (ecrite a chaque mouvement) reste en RAM ; seuls les prereglages,
+# rarement modifies, sont copies sur la SD (SD_STATE) puis synchronises.
+STATE_DIR="/tmp/ptzstate"
+SD_STATE="/tmp/sd/custom/state"
 PRESETS_DB="${STATE_DIR}/ptz_presets.db"
 POS_FILE="${STATE_DIR}/ptz_position"
 
 mkdir -p "${STATE_DIR}" >/dev/null 2>&1 || true
-[ -f "${PRESETS_DB}" ] || : > "${PRESETS_DB}"
+[ -f "${PRESETS_DB}" ] || cp "${SD_STATE}/ptz_presets.db" "${PRESETS_DB}" 2>/dev/null || : > "${PRESETS_DB}"
+
+persist() {
+    mkdir -p "${SD_STATE}" 2>/dev/null
+    cp "${PRESETS_DB}" "${SD_STATE}/ptz_presets.db" 2>/dev/null && sync
+}
 [ -f "${POS_FILE}" ] || echo "180,98,0" > "${POS_FILE}"
 
 ACTION=""
@@ -38,12 +46,14 @@ case "$ACTION" in
         Z="$(echo "${CUR}" | awk -F, '{print $3}')"
         NID="$(next_id)"
         echo "${NID},${NAME},${X},${Y},${Z}" >> "${PRESETS_DB}"
+        persist
         echo "${NID}"
         ;;
     del_preset)
         if [ -n "${ID}" ]; then
             grep -Ev "^${ID}," "${PRESETS_DB}" > "${PRESETS_DB}.tmp" 2>/dev/null || true
             mv "${PRESETS_DB}.tmp" "${PRESETS_DB}"
+            persist
         fi
         echo "OK"
         ;;

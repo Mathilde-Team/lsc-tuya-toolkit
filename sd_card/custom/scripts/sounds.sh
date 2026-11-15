@@ -1,8 +1,9 @@
 #!/bin/sh
 
 SD_DIR="/tmp/sd"
+. /tmp/sd/custom/scripts/logdir.sh
 DATETIME="$(date +%Y%m%d_%H%M%S)"
-LOG_FILE="${SD_DIR}/logs/sounds.${DATETIME}.log"
+LOG_FILE="${LOGS}/sounds.${DATETIME}.log"
 CUSTOM_DIR="${SD_DIR}/custom"
 AUDIO_DIR="${CUSTOM_DIR}/audio"
 CFG_FILE="${CUSTOM_DIR}/configs/hack.conf"

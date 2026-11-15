@@ -58,8 +58,11 @@ int ht_audio_codec_talk_open(void) { talk_open++; return 0; }
 int ht_audio_codec_talk_close(void) { return 0; }
 int ht_audio_codec_play_talk_data(unsigned char *b, int n) { (void)b; talk_bytes += n; return 0; }
 
+static char sdh[8];
 static int pub(const char *t, const char *p)
 {
+    if (!strcmp(t, "camera/sd_health"))
+        strcpy(sdh, p);
     strcpy(last_topic, t);
     strcpy(last_payload, p);
     npub++;
@@ -119,7 +122,7 @@ int main(void)
     CHECK(gw_topic("camera/sd_status/set", "1") < 0);
     npub = 0;
     gw_publish_sensors();
-    CHECK(npub == 4 && PUB("camera/patrol_state", "2")); /* position, sd_storage, sd_status, patrol_state */
+    CHECK(npub == 5 && PUB("camera/patrol_state", "2")); /* position, santé SD, sd_storage, sd_status, patrol_state */
 
     /* json : texte libre transmis tel quel ; sensor « out » ; action à valeurs limitées */
     CHECK(gw_topic("camera/alarm_zone_draw/set", "{\"num\":1}") == 0 && !strcmp(zone, "{\"num\":1}") && PUB("camera/alarm_zone_draw", "{\"num\":1}"));
@@ -174,7 +177,27 @@ int main(void)
     /* état initial : tous les exposés lisibles */
     npub = 0;
     gw_publish_all();
-    CHECK(npub == 12); /* position, préréglages, sirène + 9 DP lisibles */
+    CHECK(npub == 13); /* position, préréglages, santé SD, sirène + 9 DP lisibles */
+
+    /* santé SD : lecture seule (ou absente) = ON, lecture-écriture = OFF ; les montages « bind » ne comptent pas */
+    {
+        FILE *m = fopen("/tmp/gw_mounts_test", "w");
+        fputs("/dev/mmcblk0p1 /tmp/sd vfat rw,sync,relatime 0 0\n/dev/mmcblk0p1 /mnt vfat ro,relatime 0 0\n", m);
+        fclose(m);
+        gw_publish_sensors();
+        CHECK(!strcmp(sdh, "OFF"));
+        m = fopen("/tmp/gw_mounts_test", "w");
+        fputs("/dev/mmcblk0p1 /tmp/sd vfat ro,relatime,errors=remount-ro 0 0\n", m);
+        fclose(m);
+        gw_publish_sensors();
+        CHECK(!strcmp(sdh, "ON"));
+        m = fopen("/tmp/gw_mounts_test", "w");
+        fputs("tmpfs /tmp tmpfs rw 0 0\n", m);
+        fclose(m);
+        gw_publish_sensors();
+        CHECK(!strcmp(sdh, "ON"));
+        unlink("/tmp/gw_mounts_test");
+    }
 
     /* sans MQTT : aucun plantage */
     gw_init("camera", 0, 0);
