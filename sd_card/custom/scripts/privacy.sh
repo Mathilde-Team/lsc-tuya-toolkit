@@ -62,9 +62,9 @@ if [ "${TARGET}" = "0" ] || [ -z "${TARGET}" ]; then
     log "privacy.sh ${ACTION} -> position ${DEST}"
     EXTRA_FILE="/tmp/privacy_extra"
     if [ "${ACTION}" = "off" ] && [ -f "${EXTRA_FILE}" ]; then
-        # la butee mecanique est la reference : le centre est ~3,5 unites (x90 deg) plus haut
+        # la butee mecanique est la reference : le centre est ~3,7 unites (x90 deg) plus haut
         Y="${DEST#*,}"
-        REST="$(awk -v y="${Y}" 'BEGIN{printf "%.3f", 3.5+y}')"
+        REST="$(awk -v y="${Y}" 'BEGIN{printf "%.3f", 3.7+y}')"
         while awk -v r="${REST}" 'BEGIN{exit !(r>0.01)}'; do
             STEP="$(awk -v r="${REST}" 'BEGIN{printf "%.3f", (r>1)?1:r}')"
             "${SCRIPTS_DIR}/ptz_move" -J "0,${STEP},0"
@@ -79,6 +79,8 @@ if [ "${TARGET}" = "0" ] || [ -z "${TARGET}" ]; then
     if [ "${ACTION}" = "on" ] && [ "${DEST}" = "0,-1" ]; then
         # le suivi de position s'arrete a 0 alors que la mecanique va plus loin :
         # 2 deplacements relatifs vers le bas amenent l'objectif contre la butee (image noire)
+        # 3 deplacements : la butee est atteinte meme si le depart etait plus haut que prevu
+        "${SCRIPTS_DIR}/ptz_move" -J 0,-1,0
         "${SCRIPTS_DIR}/ptz_move" -J 0,-1,0
         "${SCRIPTS_DIR}/ptz_move" -J 0,-1,0
         : > "${EXTRA_FILE}"

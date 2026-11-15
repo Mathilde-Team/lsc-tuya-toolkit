@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")"
 arm-linux-gnueabi-gcc -march=armv5te -mfloat-abi=soft -Os -fPIC -shared -nostdlib \
   -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 \
-  -o clockfix.so clockfix.c
+  -o clockfix.so clockfix.c -lgcc
 arm-linux-gnueabi-strip clockfix.so
 arm-linux-gnueabi-readelf -d clockfix.so | grep -E "NEEDED|SONAME" || true
 arm-linux-gnueabi-nm -D clockfix.so

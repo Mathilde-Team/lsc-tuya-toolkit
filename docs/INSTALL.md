@@ -106,7 +106,7 @@ port ailleurs). Envoi d'un son : `tools/talk/send_audio.py <ip> sirene.wav --max
 
 Section `motion:` du YAML (`enabled`, `topic`, `hold`, `sensitivity`, `broker_host`, `broker_port`, `broker_user`, `broker_password`).
 La caméra publie `ON` au premier mouvement et `OFF` après `hold` secondes sans mouvement (MQTT 3.1.1, QoS 1, retain, sans TLS).
-Le mot de passe du broker est écrit uniquement sur la SD (`custom/configs/mqtt.cred`, mode 600). `CLOCKFIX=1` (par défaut) empêche le saut de +8 h de l'horloge.
+Le mot de passe du broker est écrit uniquement sur la SD (`custom/configs/mqtt.cred`, mode 600). `CLOCKFIX=1` (par défaut) empêche le saut de +8 h et fait afficher l'heure locale (`TZ_STRING`, heure d'été comprise) dans l'OSD.
 Côté Home Assistant : `binary_sensor` MQTT avec `payload_on: "ON"` et `payload_off: "OFF"` sur le topic choisi.
 La détection est validée sur une caméra réelle ; le filtre humain (`MOTION_HUMAN`) n'est pas encore fiable. Détails : `tools/motion/README.md`.
 

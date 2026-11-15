@@ -152,7 +152,7 @@ set_time() {
   [ -n "${NTP_SERVER}" ] || return 0
   i=0
   while [ "$i" -lt 5 ]; do
-    ntpd -n -q -p "${NTP_SERVER}" >/dev/null 2>&1 && { log "NTP ok: $(date)"; return 0; }
+    ntpd -n -q -p "${NTP_SERVER}" >/dev/null 2>&1 && { touch /tmp/ntp_ok; log "NTP ok: $(date)"; return 0; }
     sleep 5
     i=$((i+1))
   done
@@ -173,6 +173,51 @@ remote_syslog() {
 remote_syslog
 # anyka_ipc remet son propre fuseau apres le demarrage : on le reapplique.
 keep_tz() {
+  if [ "${CLOCKFIX}" = "1" ]; then
+    # L'OSD d'anyka_ipc affiche l'horloge systeme brute : on la maintient a « heure locale
+    # lue comme UTC » (heure d'ete comprise). Le shell lit donc l'horloge avec TZ=UTC0.
+    # L'horloge est d'abord remise a l'heure vraie par NTP (la RTC garde l'heure de Chine).
+    applied=0
+    base=""
+    synced=0
+    [ -f /tmp/ntp_ok ] && synced=1
+    [ -n "${NTP_SERVER}" ] || synced=1
+    while true; do
+      [ "$(cat /tmp/TZ 2>/dev/null)" = "UTC0" ] || echo "UTC0" > /tmp/TZ
+      if [ "${synced}" = "0" ]; then
+        if ntpd -n -q -p "${NTP_SERVER}" >/dev/null 2>&1; then
+          synced=1
+          applied=0
+          base=""
+          log "NTP ok (keep_tz)"
+        fi
+      fi
+      if [ "${synced}" = "1" ]; then
+        z=$(TZ="${TZ_STRING}" date +%z)
+        h=${z#?}; m=${h#??}; h=${h%??}
+        off=$(( $h * 3600 + $m * 60 ))
+        [ "${z%${z#?}}" = "-" ] && off=$(( -off ))
+        if [ "${off}" != "${applied}" ]; then
+          now=$(date +%s)
+          date -s "@$(( now - applied + off ))" >/dev/null 2>&1
+          log "horloge OSD decalee de ${off}s (fuseau local)"
+          applied=${off}
+          base=""
+        fi
+        # anyka_ipc fait aussi decaler l'horloge de +8 h par un processus externe : tout saut
+        # (ecart heure - uptime) est annule.
+        up=$(cut -d. -f1 /proc/uptime)
+        [ -n "${base}" ] || base=$(( $(date +%s) - up ))
+        now=$(date +%s)
+        jump=$(( now - up - base ))
+        if [ "${jump}" -gt 30 ] || [ "${jump}" -lt -30 ]; then
+          date -s "@$(( now - jump ))" >/dev/null 2>&1
+          log "saut d'horloge de ${jump}s corrige"
+        fi
+      fi
+      sleep 5
+    done
+  fi
   # anyka_ipc decale l'horloge de +8 h (fuseau Chine) ~20 s apres son demarrage :
   # l'ecart (heure - uptime) est constant, tout saut est annule.
   ref=$(( $(date +%s) - $(cut -d. -f1 /proc/uptime) ))
