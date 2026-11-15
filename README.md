@@ -238,7 +238,7 @@ Alias principaux :
 Résultats de test sur une caméra réelle (valeur envoyée, relue, puis restaurée) :
 
 - **Fonctionnent** : `flip_onoff`, `watermark_onoff`, `night_vision_mode`, `basic_anti_flicker`, `object_outline_onoff`, `alarm_zone_onoff`, `alarm_sensitivity`, `alarm_function_onoff`, `human_filter`, `sound_detect_onoff`, `sound_sensitivity`, `cry_detect_onoff`, `track_enable`, `patrol_mode`, `blub_onoff`, `floodlight_lightness`, `pir_detect_switch`, `door_control`, `flight_warn_time`, `privacy`, `ptz_absolute`, `ptz_preset_*`.
-- **Acceptées sans effet visible** : `light_onoff`, `flight_warn_onoff`, réglages `temp_*` (pas de capteur de température dans le firmware).
+- **Acceptées sans effet visible** : `light_onoff`, `flight_warn_onoff`. Les réglages `temp_*` (aucun capteur) et `door_control` (aucune porte) restent sur MQTT mais n'ont pas d'entité Home Assistant.
 - **Sans lecture du firmware** (`patrol_switch`, `patrol_tmode`, `patrol_time`, `link_move`, `link_pos`) : la passerelle republie la dernière valeur commandée. Ce n'est pas une confirmation du firmware.
 - **Notes issues du désassemblage** : `flip_onoff` est une rotation de 180° (`bool_rotate180`), il n'existe pas de miroir ni de rotation à 90° séparés ; `link_move` ne fait qu'un `printf` ; `door_control` appelle `ht_cardoor_ctrl` (porte probablement absente) ; les berceuses sont configurées mais le lecteur n'est pas vérifié.
 

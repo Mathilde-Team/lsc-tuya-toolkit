@@ -385,3 +385,6 @@ Une coupure de courant pendant une écriture abîme la FAT ; le noyau remonte al
 - **Fuseau** : `TZ_STRING` Europe/Paris (CET/CEST) appliqué après le démarrage d'`anyka_ipc` ; heure vérifiée identique au PC.
 - **ONVIF** : l'erreur `AbsoluteMove.Speed.PanTilt.x` est une validation `zeep` côté client HA, pas un défaut du serveur.
 - **Température** : `ht_tuya_get_temperature` (0x6c5e8) renvoie un champ de structure globale sans accès matériel ; aucun pilote de capteur de température n'est chargé.
+- **Entités HA retirées** : `temp_*` (aucun capteur de température) et `door_control` (aucune porte) n'ont plus d'entité HA (`HIDDEN` dans `gen_ha_discovery.py`). Leurs topics MQTT restent actifs ; les anciennes découvertes retained se purgent en publiant une charge vide sur `homeassistant/<composant>/<base>/<objet>/config`.
+- **Berceuses** : le firmware (`anyka_ipc`) ne contient aucun chemin de fichier de berceuse ; les DP `ipc_lullaby_*` ne lisent donc pas la SD. Cinq morceaux libres de droits (domaine public ou CC BY, crédits notés à part) ont été convertis en `berceuse1..5.ulaw` (8 kHz, µ-law) pour `speaker_play` ; ils ne sont pas versionnés dans le dépôt.
+- **Tableau de bord HA** : les boutons `onvif.ptz` `AbsoluteMove` à un seul axe provoquent l'erreur `Speed.PanTilt.x` ; remplacés par `mqtt.publish` sur `<base>/ptz_absolute/set`.
