@@ -14,7 +14,7 @@ Marqueurs remplacés à l'exécution : %B = base, %N = identifiant de nœud, %M 
 """
 import json, re, sys
 
-DEVICE = {"identifiers": ["%N"], "name": "%N", "manufacturer": "LSC Smart Connect",
+DEVICE = {"identifiers": ["%N"], "name": "Caméra LSC %N", "manufacturer": "LSC Smart Connect",
           "model": "Anyka AK3918 (anyka_ipc 3.10.78)", "sw_version": "lsc-tuya-toolkit"}
 
 ENTRY = re.compile(r'\{(\d+), "(\w+)", DP_(\w+), (0|"\w+"), (0|"\w+"), (ABI_\w+), (ABI_\w+), (0|"[^"]*"), ([01]),')

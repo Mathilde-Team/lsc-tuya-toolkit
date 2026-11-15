@@ -17,6 +17,8 @@ log() {
 }
 
 mkdir -p "${SD_DIR}/logs" >/dev/null 2>&1 || true
+# SD en lecture seule (FAT corrompue) : journal dans /tmp pour que les moteurs restent commandables
+( : >> "${LOG_FILE}" ) 2>/dev/null || LOG_FILE="/tmp/privacy.${DATETIME}.log"
 exec >> "${LOG_FILE}" 2>&1
 
 load_cfg() {
@@ -40,9 +42,33 @@ else
     TARGET="${PRIVACY_PRESET}"
 fi
 
+POS_FILE="/tmp/privacy_prev_pos"
+
+# Sans preset : pose privee PRIVACY_POS (x,y de -1 a 1, defaut 0,-1 = tete vers le bas),
+# la position courante est memorisee puis restauree par "off".
+if [ "${TARGET}" = "0" ] || [ -z "${TARGET}" ]; then
+    PRIVACY_POS="${PRIVACY_POS:-0,-1}"
+    if [ "${ACTION}" = "off" ]; then
+        [ -f "${POS_FILE}" ] || { log "off : aucune position memorisee"; exit 0; }
+        DEST="$(cat "${POS_FILE}")"
+        rm -f "${POS_FILE}"
+    else
+        [ -f "${POS_FILE}" ] && { log "on : deja en position privee"; exit 0; }
+        "${SCRIPTS_DIR}/get_position" | awk -F, '{printf "%.3f,%.3f\n", ($1-180)/180, ($2-90)/90}' > "${POS_FILE}"
+        DEST="${PRIVACY_POS}"
+    fi
+    case "${DEST}" in
+        *[!0-9.,-]*|'') log "position invalide : ${DEST}"; exit 1 ;;
+    esac
+    log "privacy.sh ${ACTION} -> position ${DEST}"
+    "${SCRIPTS_DIR}/ptz_move" -j "${DEST},0"
+    log "privacy.sh fait"
+    exit 0
+fi
+
 case "${TARGET}" in
-    ''|*[!0-9]*|0)
-        log "preset ${ACTION} absent ou nul : rien a faire"
+    *[!0-9]*)
+        log "preset ${TARGET} invalide"
         exit 0
         ;;
 esac

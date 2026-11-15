@@ -358,3 +358,9 @@ Le firmware n'a pas `lighttpd`, `wsd_simple_server` ni `onvif_notify_server`. So
 - **DP 109 `sd_storage`** : lecture à trois sorties (`out3`) publiée en JSON (Kio), repli sur `df`.
 - Découverte Home Assistant : 24 entités sur la fixture. Tests PC : `sh tools/gateway/test/run.sh`.
 - Essai sur la .188 : `ptz_absolute`, `ptz_preset_save`, `sd_storage` OK ; la caméra a ensuite quitté le réseau pendant l'essai de `ptz_home`/`preset_goto` (à élucider).
+
+## 31. Mode privé autonome et nom de l'appareil HA
+
+- `privacy.sh` : sans `PRIVACY_PRESET`, `on` mémorise la position puis va à `PRIVACY_POS` (x,y de -1 à 1, défaut `0,-1` = tête vers le bas) ; `off` revient à la position mémorisée. Avant, rien ne bougeait (« preset absent ou nul »). Le journal bascule sur `/tmp` si la SD est en lecture seule.
+- Appareil Home Assistant nommé « Caméra LSC <nœud> » (plus le seul identifiant technique).
+- Constat : après une coupure de courant, la FAT de la SD peut passer en lecture seule (`FAT-fs … Filesystem has been set read-only`). `ptzctl` y écrit sa position (`custom/state/ptz_position`) : les moteurs semblent alors bloqués. Remède : éteindre, `fsck.vfat -a` sur le PC, remettre la SD.
