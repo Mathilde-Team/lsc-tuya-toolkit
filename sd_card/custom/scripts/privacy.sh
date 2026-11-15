@@ -60,7 +60,29 @@ if [ "${TARGET}" = "0" ] || [ -z "${TARGET}" ]; then
         *[!0-9.,-]*|'') log "position invalide : ${DEST}"; exit 1 ;;
     esac
     log "privacy.sh ${ACTION} -> position ${DEST}"
+    EXTRA_FILE="/tmp/privacy_extra"
+    if [ "${ACTION}" = "off" ] && [ -f "${EXTRA_FILE}" ]; then
+        # la butee mecanique est la reference : le centre est ~3,5 unites (x90 deg) plus haut
+        Y="${DEST#*,}"
+        REST="$(awk -v y="${Y}" 'BEGIN{printf "%.3f", 3.5+y}')"
+        while awk -v r="${REST}" 'BEGIN{exit !(r>0.01)}'; do
+            STEP="$(awk -v r="${REST}" 'BEGIN{printf "%.3f", (r>1)?1:r}')"
+            "${SCRIPTS_DIR}/ptz_move" -J "0,${STEP},0"
+            REST="$(awk -v r="${REST}" -v s="${STEP}" 'BEGIN{printf "%.3f", r-s}')"
+        done
+        rm -f "${EXTRA_FILE}"
+        # le suivi de position est recale sur la position memorisee
+        PAN="$(cat "${STATE_DIR:-/tmp/ptzstate}/ptz_position" | awk -F, '{print $1}')"
+        echo "${PAN},$(awk -v y="${Y}" 'BEGIN{printf "%d", 98+y*90}'),50" > "${STATE_DIR:-/tmp/ptzstate}/ptz_position"
+    fi
     "${SCRIPTS_DIR}/ptz_move" -j "${DEST},0"
+    if [ "${ACTION}" = "on" ] && [ "${DEST}" = "0,-1" ]; then
+        # le suivi de position s'arrete a 0 alors que la mecanique va plus loin :
+        # 2 deplacements relatifs vers le bas amenent l'objectif contre la butee (image noire)
+        "${SCRIPTS_DIR}/ptz_move" -J 0,-1,0
+        "${SCRIPTS_DIR}/ptz_move" -J 0,-1,0
+        : > "${EXTRA_FILE}"
+    fi
     log "privacy.sh fait"
     exit 0
 fi
