@@ -43,7 +43,7 @@ fi
 
 POS_FILE="/tmp/privacy_prev_pos"
 
-# Sans preset : pose privee PRIVACY_POS (x,y de -1 a 1, defaut 0,-1 = tete vers le bas),
+# Sans preset : pose privee PRIVACY_POS (x,y de -1 a 1, defaut 0,-1 = tete en bas, tilt au maximum),
 # la position courante est memorisee puis restauree par "off".
 if [ "${TARGET}" = "0" ] || [ -z "${TARGET}" ]; then
     PRIVACY_POS="${PRIVACY_POS:-0,-1}"
