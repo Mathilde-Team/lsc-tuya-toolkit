@@ -17,7 +17,7 @@ for line in open(path, encoding="utf-8"):
         assert k in d, (topic, k)
     for k in ("state_topic", "command_topic"):
         if k in d and obj != "motion":
-            assert d[k].startswith(base + "/" + obj), (topic, d[k])
+            assert d[k].startswith(base + "/" + obj.split("_move_")[0]), (topic, d[k])
     assert d["unique_id"] not in seen
     seen.add(d["unique_id"])
     assert len(payload.encode()) <= 900

@@ -13,7 +13,7 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 - **Alias historiques conservés** : `<base>/night` (= `night_mode`, DP 108) et `<base>/privacy` (preset privé).
 - **Alias PTZ et haut-parleur** (hors table des DP, scripts du toolkit ; arguments validés avant le shell) :
   `ptz_absolute/set` = `x,y` de -1 à 1 ; `ptz_preset_goto/set` = n° ; `ptz_preset_save/set` = nom (`A-Za-z0-9_`, publie `ptz_preset_saved` = n°) ;
-  `ptz_preset_delete/set` = n° ; `ptz_home/set` = recalage sur les butées ; `ptz_calibrate/set` = `ON` (séquence de test, longue) ;
+  `ptz_preset_delete/set` = n° ; `ptz_move/set` = `up`/`down`/`left`/`right` (1 s puis arrêt) ou `stop` ; `ptz_home/set` = recalage sur les butées ; `ptz_calibrate/set` = `ON` (séquence de test, longue) ;
   `speaker_siren/set` = `ON`/`OFF` (boucle `sirene.ulaw`, 30 s max) ; `speaker_play/set` = nom d'un fichier `<nom>.ulaw` du dossier audio ou `stop`.
   États retained : `ptz_position` (`pan,tilt,zoom`, position suivie par calcul), `ptz_presets` (`n=nom,pan,tilt,zoom;…`), `speaker_siren`.
 - `sd_health` : `ON` = problème (SD absente ou montée en lecture seule après une FAT corrompue), `OFF` = saine ; lu dans `/proc/mounts`, entité HA « Problème carte SD ».

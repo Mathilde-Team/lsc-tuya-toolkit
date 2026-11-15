@@ -460,6 +460,20 @@ static int apply_alias(const char *name, const char *v, int *rc)
         system(c);
         publish_presets();
         *rc = 0;
+    } else if (!strcmp(name, "ptz_move")) {
+        /* déplacement manuel : 1 s puis arrêt automatique (en arrière-plan, ne bloque pas le thread MQTT) */
+        if (!strcmp(v, "stop")) {
+            say("ptz_move", v, 0);
+            system(SCRIPTS "ptz_move -m stop >/dev/null 2>&1 &");
+            *rc = 0;
+        } else if (!strcmp(v, "up") || !strcmp(v, "down") || !strcmp(v, "left") || !strcmp(v, "right")) {
+            say("ptz_move", v, 0);
+            strcpy(c, "(" SCRIPTS "ptz_move -m ");
+            strcat(c, v);
+            strcat(c, "; sleep 1; " SCRIPTS "ptz_move -m stop) >/dev/null 2>&1 &");
+            system(c);
+            *rc = 0;
+        }
     } else if (!strcmp(name, "ptz_home")) {
         /* recalage sur les butées (ptz_move -h), comme PTZ_HOME_ON_BOOT ; long : en arrière-plan */
         say("ptz_home", 0, 0);

@@ -28,6 +28,16 @@ static const struct ha_entry ha_table[] = {
    "{\"name\":\"PTZ enregistrer le préréglage (nom)\",\"unique_id\":\"%N_ptz_preset_save\",\"command_topic\":\"%B/ptz_preset_save/set\",\"max\":24,\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"number", "ptz_preset_delete",
    "{\"name\":\"PTZ supprimer le préréglage\",\"unique_id\":\"%N_ptz_preset_delete\",\"command_topic\":\"%B/ptz_preset_delete/set\",\"min\":1,\"max\":99,\"step\":1,\"mode\":\"box\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"button", "ptz_move_up",
+   "{\"name\":\"PTZ haut\",\"unique_id\":\"%N_ptz_move_up\",\"command_topic\":\"%B/ptz_move/set\",\"payload_press\":\"up\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"button", "ptz_move_down",
+   "{\"name\":\"PTZ bas\",\"unique_id\":\"%N_ptz_move_down\",\"command_topic\":\"%B/ptz_move/set\",\"payload_press\":\"down\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"button", "ptz_move_left",
+   "{\"name\":\"PTZ gauche\",\"unique_id\":\"%N_ptz_move_left\",\"command_topic\":\"%B/ptz_move/set\",\"payload_press\":\"left\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"button", "ptz_move_right",
+   "{\"name\":\"PTZ droite\",\"unique_id\":\"%N_ptz_move_right\",\"command_topic\":\"%B/ptz_move/set\",\"payload_press\":\"right\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"button", "ptz_move_stop",
+   "{\"name\":\"PTZ arrêt\",\"unique_id\":\"%N_ptz_move_stop\",\"command_topic\":\"%B/ptz_move/set\",\"payload_press\":\"stop\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"button", "ptz_home",
    "{\"name\":\"PTZ recalage (home)\",\"unique_id\":\"%N_ptz_home\",\"command_topic\":\"%B/ptz_home/set\",\"payload_press\":\"ON\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"button", "ptz_calibrate",
@@ -154,6 +164,6 @@ static const struct ha_entry ha_table[] = {
    "{\"name\":\"Door control\",\"unique_id\":\"%N_door_control\",\"command_topic\":\"%B/door_control/set\",\"options\":[\"0\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\"],\"state_topic\":\"%B/door_control\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
 };
 
-#define HA_TABLE_LEN 71
+#define HA_TABLE_LEN 76
 
 #endif

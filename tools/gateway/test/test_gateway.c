@@ -146,6 +146,8 @@ int main(void)
     CHECK(gw_topic("camera/ptz_preset_save/set", "salon") == 0 && strstr(sys_all, "add_preset -m salon") && !strcmp(last_topic, "camera/ptz_presets") && !strcmp(last_payload, "1=a,10,20,0;2=b,30,40,0"));
     CHECK(gw_topic("camera/ptz_preset_save/set", "a b") < 0);
     CHECK(gw_topic("camera/ptz_preset_delete/set", "3") == 0 && strstr(sys_all, "del_preset -n 3"));
+    CHECK(gw_topic("camera/ptz_move/set", "left") == 0 && strstr(sys_all, "ptz_move -m left") && strstr(sys_all, "ptz_move -m stop"));
+    CHECK(gw_topic("camera/ptz_move/set", "left;reboot") < 0);
     CHECK(gw_topic("camera/ptz_home/set", "ON") == 0 && strstr(sys_all, "ptz_move -h"));
     CHECK(gw_topic("camera/ptz_calibrate/set", "ON") == 0 && strstr(sys_all, "ptz_calibrate.sh"));
     CHECK(gw_topic("camera/ptz_calibrate/set", "x") < 0);
