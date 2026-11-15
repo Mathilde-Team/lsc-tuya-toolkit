@@ -140,30 +140,10 @@ static const struct ha_entry ha_table[] = {
    "{\"name\":\"Berceuse : morceau\",\"unique_id\":\"%N_ipc_lullaby_list\",\"command_topic\":\"%B/ipc_lullaby_list/set\",\"options\":[\"0\",\"1\",\"2\",\"3\",\"4\"],\"state_topic\":\"%B/ipc_lullaby_list\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"select", "ipc_lullaby_command",
    "{\"name\":\"Berceuse : commande\",\"unique_id\":\"%N_ipc_lullaby_command\",\"command_topic\":\"%B/ipc_lullaby_command/set\",\"options\":[\"0\",\"1\"],\"state_topic\":\"%B/ipc_lullaby_command\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
-  {"sensor", "temp_report_c",
-   "{\"name\":\"Température (°C)\",\"unique_id\":\"%N_temp_report_c\",\"state_topic\":\"%B/temp_report_c\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
-  {"sensor", "temp_report_f",
-   "{\"name\":\"Température (°F)\",\"unique_id\":\"%N_temp_report_f\",\"state_topic\":\"%B/temp_report_f\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
-  {"select", "temp_unit_select",
-   "{\"name\":\"Unité de température\",\"unique_id\":\"%N_temp_unit_select\",\"command_topic\":\"%B/temp_unit_select/set\",\"options\":[\"0\",\"1\"],\"state_topic\":\"%B/temp_unit_select\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
-  {"switch", "temp_max_onoff",
-   "{\"name\":\"Alerte température max\",\"unique_id\":\"%N_temp_max_onoff\",\"command_topic\":\"%B/temp_max_onoff/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"state_topic\":\"%B/temp_max_onoff\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
-  {"switch", "temp_min_onoff",
-   "{\"name\":\"Alerte température min\",\"unique_id\":\"%N_temp_min_onoff\",\"command_topic\":\"%B/temp_min_onoff/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"state_topic\":\"%B/temp_min_onoff\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
-  {"number", "temp_max_cvalue",
-   "{\"name\":\"Température max (°C)\",\"unique_id\":\"%N_temp_max_cvalue\",\"command_topic\":\"%B/temp_max_cvalue/set\",\"min\":0,\"max\":500,\"step\":1,\"mode\":\"box\",\"state_topic\":\"%B/temp_max_cvalue\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
-  {"number", "temp_min_cvalue",
-   "{\"name\":\"Température min (°C)\",\"unique_id\":\"%N_temp_min_cvalue\",\"command_topic\":\"%B/temp_min_cvalue/set\",\"min\":0,\"max\":500,\"step\":1,\"mode\":\"box\",\"state_topic\":\"%B/temp_min_cvalue\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
-  {"number", "temp_max_fvalue",
-   "{\"name\":\"Température max (°F)\",\"unique_id\":\"%N_temp_max_fvalue\",\"command_topic\":\"%B/temp_max_fvalue/set\",\"min\":320,\"max\":1220,\"step\":1,\"mode\":\"box\",\"state_topic\":\"%B/temp_max_fvalue\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
-  {"number", "temp_min_fvalue",
-   "{\"name\":\"Température min (°F)\",\"unique_id\":\"%N_temp_min_fvalue\",\"command_topic\":\"%B/temp_min_fvalue/set\",\"min\":320,\"max\":1220,\"step\":1,\"mode\":\"box\",\"state_topic\":\"%B/temp_min_fvalue\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"switch", "audible_alarm_onoff",
    "{\"name\":\"Alarme sonore\",\"unique_id\":\"%N_audible_alarm_onoff\",\"command_topic\":\"%B/audible_alarm_onoff/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"state_topic\":\"%B/audible_alarm_onoff\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
-  {"select", "door_control",
-   "{\"name\":\"Contrôle de porte\",\"unique_id\":\"%N_door_control\",\"command_topic\":\"%B/door_control/set\",\"options\":[\"0\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\"],\"state_topic\":\"%B/door_control\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
 };
 
-#define HA_TABLE_LEN 76
+#define HA_TABLE_LEN 66
 
 #endif

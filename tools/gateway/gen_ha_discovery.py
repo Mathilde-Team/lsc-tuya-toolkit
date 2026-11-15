@@ -47,6 +47,11 @@ FR = {
 }
 
 
+# Fonctions sans matériel (aucun capteur de température, aucune porte) : pas d'entité HA, topics MQTT conservés.
+HIDDEN = {"temp_report_c", "temp_report_f", "temp_unit_select", "temp_max_onoff", "temp_min_onoff",
+          "temp_max_cvalue", "temp_min_cvalue", "temp_max_fvalue", "temp_min_fvalue", "door_control"}
+
+
 def label(name):
     return FR.get(name) or name.replace("_", " ").capitalize()
 
@@ -93,7 +98,7 @@ def entities(hdr):
     ]
     for l in open(hdr, encoding="utf-8"):
         m = ENTRY.search(l)
-        if not m or m[9] != "1":
+        if not m or m[9] != "1" or m[2] in HIDDEN:
             continue
         dp, name, kind, set_abi, values = int(m[1]), m[2], m[3], m[6], m[8].strip('"') if m[8] != "0" else None
         base = {"name": label(name), "unique_id": "%%N_%s" % name}
