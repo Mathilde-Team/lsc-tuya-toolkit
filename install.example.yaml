@@ -35,7 +35,7 @@ onvif:
   ptz: true
 
 services:
-  telnet: "open"                     # open = shell root SANS mot de passe (pour régler) ; login = root + security.root_password ; off = coupé
+  telnet: "off"                      # défaut : off (port 24 fermé, accès par le port 23 + mot de passe) ; open = shell root SANS mot de passe (pour régler) ; login = root + security.root_password ; off = coupé
   ftp: false
   offline: true                      # coupe les connexions vers le cloud Tuya
 
