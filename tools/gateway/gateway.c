@@ -199,6 +199,8 @@ static int is_off(const char *v)
 
 static const char *night_name[] = {"auto", "day", "night"};
 
+static void persist(const char *name, const char *v);
+
 static int apply_night(const char *v)
 {
     int m = !strcmp(v, "auto") ? 0 : !strcmp(v, "day") ? 1 : !strcmp(v, "night") ? 2 : -1;
@@ -207,6 +209,7 @@ static int apply_night(const char *v)
         return -1;
     say(ht_night_mode_set_irled_mode(m) == 0 ? "night mode set" : "night mode refused", 0, 0);
     state("night", night_name[m]);
+    persist("night", night_name[m]);
     return 0;
 }
 
@@ -222,6 +225,7 @@ static int apply_privacy(const char *v)
     system(on ? "/tmp/sd/custom/scripts/privacy.sh on" : "/tmp/sd/custom/scripts/privacy.sh off");
     publish_position();
     state("privacy", on ? "ON" : "OFF");
+    persist("privacy", on ? "ON" : "OFF");
     return 0;
 }
 
@@ -259,6 +263,21 @@ static int only(const char *s, const char *ok, int max)
         if (n >= max || !has(ok, *s))
             return 0;
     return n > 0;
+}
+
+/* Mémorise un réglage sur la SD (scripts/persist.sh, écrit seulement si la valeur change) ; rejoué au démarrage. */
+static void persist(const char *name, const char *v)
+{
+    char c[160];
+
+    if (!only(name, "abcdefghijklmnopqrstuvwxyz0123456789_", 32) || !only(v, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.,-", 40))
+        return;
+    strcpy(c, SCRIPTS "persist.sh save ");
+    strcat(c, name);
+    strcat(c, " ");
+    strcat(c, v);
+    strcat(c, " >/dev/null 2>&1 &");
+    system(c);
 }
 
 /* Lance « cmd », lit sa sortie (une ligne par ligne, « ; » à la place des retours à la ligne). */
@@ -349,7 +368,8 @@ static void publish_presets(void)
 }
 
 static volatile int sp_stop, sp_run, sp_loop;
-static char sp_file[96], sp_state[24];
+static int sp_max;
+static char sp_file[96], sp_state[24], sp_end[8];
 
 /* Joue un fichier G.711 µ-law 8 kHz par ht_audio_codec_play_talk_data, au rythme réel (160 octets / 20 ms). */
 static void *sp_worker(void *arg)
@@ -359,11 +379,11 @@ static void *sp_worker(void *arg)
 
     (void)arg;
     ht_audio_codec_talk_open();
-    while (!sp_stop && ticks < 1500) {
+    while (!sp_stop && ticks < sp_max) {
         fd = open(sp_file, 0);
         if (fd < 0)
             break;
-        while (!sp_stop && ticks < 1500 && (n = read(fd, b, sizeof b)) > 0) {
+        while (!sp_stop && ticks < sp_max && (n = read(fd, b, sizeof b)) > 0) {
             ht_audio_codec_play_talk_data(b, n);
             usleep(20000);
             ticks++;
@@ -375,11 +395,11 @@ static void *sp_worker(void *arg)
     ht_audio_codec_talk_close();
     sp_run = 0;
     if (sp_state[0])
-        state(sp_state, "OFF");
+        state(sp_state, sp_end);
     return 0;
 }
 
-static int speaker_start(const char *name, int loop, const char *st)
+static int speaker_start(const char *name, int loop, const char *st, const char *end, int max)
 {
     unsigned long t;
     int w, fd;
@@ -401,6 +421,8 @@ static int speaker_start(const char *name, int loop, const char *st)
     sp_stop = 0;
     sp_loop = loop;
     strcpy(sp_state, st);
+    strcpy(sp_end, end);
+    sp_max = max;
     sp_run = 1;
     if (pthread_create(&t, 0, sp_worker, 0)) {
         sp_run = 0;
@@ -491,7 +513,7 @@ static int apply_alias(const char *name, const char *v, int *rc)
         *rc = 0;
     } else if (!strcmp(name, "speaker_siren")) {
         if (is_on(v)) {
-            if (speaker_start("sirene", 1, "speaker_siren"))
+            if (speaker_start("sirene", 1, "speaker_siren", "OFF", 1500))
                 return 1;
             state("speaker_siren", "ON");
             *rc = 0;
@@ -500,12 +522,36 @@ static int apply_alias(const char *name, const char *v, int *rc)
             state("speaker_siren", "OFF");
             *rc = 0;
         }
+    } else if (!strcmp(name, "reboot")) {
+        /* redémarrage propre (sync) ; « reboot -f » si le premier échoue */
+        say("reboot", 0, 0);
+        system("(sync; sleep 1; reboot; sleep 20; reboot -f) >/dev/null 2>&1 &");
+        *rc = 0;
+    } else if (!strcmp(name, "lullaby")) {
+        /* berceuse 1..5 en boucle (15 min max) depuis audio/berceuse<N>.ulaw ; « stop » l'arrête.
+           Les DP ipc_lullaby_* du firmware ne sont pas utilisés : sans cloud ils font planter anyka_ipc. */
+        if (!strcmp(v, "stop")) {
+            speaker_stop();
+            state("lullaby", "stop");
+            *rc = 0;
+        } else if (v[0] >= '1' && v[0] <= '5' && !v[1]) {
+            char f[12];
+
+            strcpy(f, "berceuse");
+            f[8] = v[0];
+            f[9] = 0;
+            if (speaker_start(f, 1, "lullaby", "stop", 45000))
+                return 1;
+            state("lullaby", v);
+            say("lullaby", v, 0);
+            *rc = 0;
+        }
     } else if (!strcmp(name, "speaker_play")) {
         /* nom d'un fichier <nom>.ulaw du dossier audio ; « stop » interrompt la lecture */
         if (!strcmp(v, "stop")) {
             speaker_stop();
             *rc = 0;
-        } else if (!speaker_start(v, 0, "")) {
+        } else if (!speaker_start(v, 0, "", "", 1500)) {
             say("speaker_play", v, 0);
             *rc = 0;
         }
@@ -670,6 +716,8 @@ static int apply_entry(const struct dp_entry *e, const char *v)
     else
         e->set_fn();
     say("gateway:", e->name, v);
+    if (e->kind != DP_ACTION && e->kind != DP_SENSOR)
+        persist(e->name, v);
     if (e->kind != DP_ACTION) {
         if (!e->get_fn || e->get_abi == ABI_NONE)
             state(e->name, e->kind == DP_BOOL ? (iv ? "ON" : "OFF") : v); /* pas de lecture : on republie la valeur commandée */
@@ -774,6 +822,7 @@ void gw_publish_all(void)
     publish_presets();
     publish_sd_health();
     state("speaker_siren", "OFF");
+    state("lullaby", "stop");
     for (i = 0; i < DP_TABLE_LEN; i++)
         publish_entry(&dp_table[i]);
 }

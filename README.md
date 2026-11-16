@@ -233,6 +233,16 @@ Alias principaux :
 | `ptz_home` / `ptz_calibrate` | `ON` | recalage sur les butées / séquence de test (long) |
 | `speaker_play` / `speaker_siren` | nom de fichier `.ulaw` ou `stop` / `ON` `OFF` | haut-parleur (attention au volume) |
 
+Autres commandes : `reboot` (`ON`), `lullaby` (`1`..`5` ou `stop`). Les réglages posés par MQTT/ONVIF sont mémorisés dans `custom/state/settings.conf` et rejoués après un reboot (`scripts/persist.sh clear` pour les oublier).
+
+### Enregistrer la position actuelle en préréglage
+
+1. Placer la caméra (boutons PTZ, `ptz_absolute` ou client ONVIF).
+2. **MQTT / Home Assistant** : publier le nom sur `<base>/ptz_preset_save/set` (ex. `salon`, caractères `A-Za-z0-9_`) ou remplir l'entité « PTZ enregistrer le préréglage (nom) ». Le n° attribué est publié sur `<base>/ptz_preset_saved`, la liste sur `<base>/ptz_presets`.
+3. **ONVIF** : appeler `SetPreset` (`ProfileToken`, `PresetName`) : par exemple `onvif.ptz` / un client comme ONVIF Device Manager (bouton « Set preset »).
+4. Rappeler : `<base>/ptz_preset_goto/set` = n°, ou `GotoPreset` ; supprimer : `ptz_preset_delete/set` = n°, ou `RemovePreset`.
+5. Le mode privé ONVIF : `SetRelayOutputState` relais 0 (`closed` = privé, `open` = normal).
+
 États : `ptz_position`, `ptz_presets`, `sd_storage` (JSON en Kio), `sd_health` (`ON` = carte absente ou en lecture seule).
 
 Résultats de test sur une caméra réelle (valeur envoyée, relue, puis restaurée) :

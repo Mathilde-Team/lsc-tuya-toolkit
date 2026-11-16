@@ -392,3 +392,11 @@ Une coupure de courant pendant une écriture abîme la FAT ; le noyau remonte al
 **Mode privé** : ON mémorise la position, descend jusqu'à la butée (image noire) ; OFF remonte depuis la butée de la distance mémorisée (constante 3,7 unités de 90°, écart mesuré ≈ 10 px sur 480).
 
 **Heure incrustée (OSD)** : le désassemblage montre que `ht_set_timezone(28800)` règle l'horloge système à « heure + 28800 s » et que l'OSD affiche l'horloge brute. Le +8 h vient aussi d'un processus externe (`SystemCall_msg`), hors `LD_PRELOAD`. `keep_tz` (`CLOCKFIX=1`) : NTP d'abord (retenté jusqu'au succès), puis horloge = heure locale lue comme UTC (décalage calculé avec `TZ_STRING`, heure d'été comprise, recalculé toutes les 5 s), annulation des sauts d'horloge, `/tmp/TZ` = `UTC0` pour le shell. `clockfix.so` ignore les `settimeofday` d'`anyka_ipc`. Vérifié sur capture RTSP : OSD = heure locale. L'horloge système est donc en heure locale (journaux, ONVIF `SystemDateAndTime`).
+
+## 34. Berceuse, reboot MQTT, mémoire des réglages, privé ONVIF, préréglages
+
+- **Berceuse** : les DP `ipc_lullaby_*` (160, 232, 234, 235, 236) sont retirés (`Exposé = non`) : leurs setters passent par `ht_tuya_set_ipc_lullaby_*` (service Tuya absent sans cloud) et la caméra redémarrait. Remplacés par `<base>/lullaby/set` (`1`..`5` ou `stop`) qui joue `audio/berceuse<N>.ulaw` en boucle (15 min max) comme `speaker_play`.
+- **Reboot** : bouton HA « Redémarrer la caméra » = `<base>/reboot/set` `ON` (`sync` puis `reboot`, `reboot -f` en secours). L'ancienne entité texte du DP 162 est masquée.
+- **Mémoire des réglages** : `scripts/persist.sh` (`save`/`restore`/`clear`), fichier `custom/state/settings.conf`. Vérifié sur la .188 : `night day` posé, reboot, réglage rejoué. Le mode privé n'est rejoué que s'il était `ON`. Pour oublier : `persist.sh clear`.
+- **Privé en ONVIF** : relais 0 (`SetRelayOutputState`, `close` = privé, `open` = normal) passe par `scripts/privacy_relay.sh` → `/tmp/md_cmd` : `<base>/privacy` et la mémoire suivent ; sans MQTT le script appelle `privacy.sh` directement.
+- **Préréglages** : enregistrement de la position courante en ONVIF (`SetPreset`) et en MQTT (`ptz_preset_save/set`) : procédure dans `README.md` (« Enregistrer la position actuelle en préréglage »).

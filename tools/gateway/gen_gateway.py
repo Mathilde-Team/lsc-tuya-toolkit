@@ -159,7 +159,9 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 - **Alias PTZ et haut-parleur** (hors table des DP, scripts du toolkit ; arguments validés avant le shell) :
   `ptz_absolute/set` = `x,y` de -1 à 1 ; `ptz_preset_goto/set` = n° ; `ptz_preset_save/set` = nom (`A-Za-z0-9_`, publie `ptz_preset_saved` = n°) ;
   `ptz_preset_delete/set` = n° ; `ptz_move/set` = `up`/`down`/`left`/`right` (1 s puis arrêt) ou `stop` ; `ptz_home/set` = recalage sur les butées ; `ptz_calibrate/set` = `ON` (séquence de test, longue) ;
-  `speaker_siren/set` = `ON`/`OFF` (boucle `sirene.ulaw`, 30 s max) ; `speaker_play/set` = nom d'un fichier `<nom>.ulaw` du dossier audio ou `stop`.
+  `speaker_siren/set` = `ON`/`OFF` (boucle `sirene.ulaw`, 30 s max) ; `speaker_play/set` = nom d'un fichier `<nom>.ulaw` du dossier audio ou `stop` ;
+  `lullaby/set` = `1`..`5` (boucle `berceuse<N>.ulaw`, 15 min max) ou `stop` (état retained `lullaby`) ; `reboot/set` = `ON` (redémarrage propre : `sync` puis `reboot`).
+  **Mémoire des réglages** : chaque réglage réussi (`night`, `privacy`, DP hors actions/capteurs/SD) est inscrit dans `custom/state/settings.conf` (écrit seulement si la valeur change) et rejoué par `persist.sh restore` au démarrage.
   États retained : `ptz_position` (`pan,tilt,zoom`, position suivie par calcul), `ptz_presets` (`n=nom,pan,tilt,zoom;…`), `speaker_siren`.
 - `sd_health` : `ON` = problème (SD absente ou montée en lecture seule après une FAT corrompue), `OFF` = saine ; lu dans `/proc/mounts`, entité HA « Problème carte SD ».
 - `sd_storage` (DP 109) est publié en JSON `{"total":…,"used":…,"free":…}` en **Kio** ; si le firmware renvoie 0 (stockage Tuya non initialisé sans cloud), la valeur vient de `df -k /tmp/sd`.

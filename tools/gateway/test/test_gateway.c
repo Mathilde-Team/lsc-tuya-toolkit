@@ -31,12 +31,16 @@ long IPC_APP_ptz_start_move(const char *v) { strcpy(moved, v); return 0; }
 long IPC_APP_format_sd_card(void) { formats++; return 0; }
 long IPC_APP_get_sd_status(void) { return sdst; }
 int ht_night_mode_set_irled_mode(int m) { night = m; return m == 2 ? 0 : 0; }
-static char sys_all[1024];
+static char sys_all[1024], persisted[160];
 int system(const char *c)
 {
     FILE *f;
     const char *o = 0;
 
+    if (strstr(c, "persist.sh save ")) {
+        strcpy(persisted, c);
+        return 0;
+    }
     strcpy(last_sys, c);
     strcat(sys_all, c);
     strcat(sys_all, "\n");
@@ -136,6 +140,10 @@ int main(void)
     CHECK(npub >= 12);
 
     /* alias PTZ : arguments validés avant tout passage au shell */
+    CHECK(gw_topic("camera/privacy/set", "ON") == 0 && strstr(persisted, "persist.sh save privacy ON"));
+    CHECK(gw_topic("camera/night/set", "day") == 0 && strstr(persisted, "persist.sh save night day"));
+    CHECK(gw_topic("camera/reboot/set", "ON") == 0 && strstr(last_sys, "reboot"));
+    CHECK(gw_topic("camera/lullaby/set", "9") < 0);
     sys_all[0] = 0;
     CHECK(gw_topic("camera/ptz_absolute/set", "0.5,-0.2") == 0 && strstr(sys_all, "ptz_move -j 0.5,-0.2,0\n") && PUB("camera/ptz_position", "180,98,0"));
     CHECK(gw_topic("camera/ptz_absolute/set", "0.5,-0.2,0") == 0 && strstr(sys_all, "ptz_move -j 0.5,-0.2,0\n"));
@@ -179,7 +187,7 @@ int main(void)
     /* état initial : tous les exposés lisibles */
     npub = 0;
     gw_publish_all();
-    CHECK(npub == 13); /* position, préréglages, santé SD, sirène + 9 DP lisibles */
+    CHECK(npub == 14); /* position, préréglages, santé SD, sirène + 9 DP lisibles */
 
     /* santé SD : lecture seule (ou absente) = ON, lecture-écriture = OFF ; les montages « bind » ne comptent pas */
     {

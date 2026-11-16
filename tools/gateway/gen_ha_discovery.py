@@ -49,7 +49,7 @@ FR = {
 
 # Fonctions sans matériel (aucun capteur de température, aucune porte) : pas d'entité HA, topics MQTT conservés.
 HIDDEN = {"temp_report_c", "temp_report_f", "temp_unit_select", "temp_max_onoff", "temp_min_onoff",
-          "temp_max_cvalue", "temp_min_cvalue", "temp_max_fvalue", "temp_min_fvalue", "door_control"}
+          "temp_max_cvalue", "temp_min_cvalue", "temp_max_fvalue", "temp_min_fvalue", "door_control", "system_reboot"}
 
 
 def label(name):
@@ -93,6 +93,10 @@ def entities(hdr):
         ("binary_sensor", "sd_health", {"name": "Problème carte SD (lecture seule)", "unique_id": "%N_sd_health",
                                        "state_topic": "%B/sd_health", "payload_on": "ON", "payload_off": "OFF",
                                        "device_class": "problem", "entity_category": "diagnostic"}),
+        ("button", "reboot", {"name": "Redémarrer la caméra", "unique_id": "%N_reboot", "command_topic": "%B/reboot/set",
+                              "payload_press": "ON", "device_class": "restart"}),
+        ("select", "lullaby", {"name": "Berceuse (morceau, boucle 15 min max)", "unique_id": "%N_lullaby", "state_topic": "%B/lullaby",
+                               "command_topic": "%B/lullaby/set", "options": ["stop", "1", "2", "3", "4", "5"], "icon": "mdi:music"}),
         ("text", "speaker_play", {"name": "Haut-parleur : jouer un son (nom ou stop)", "unique_id": "%N_speaker_play",
                                   "command_topic": "%B/speaker_play/set", "max": 24}),
     ]

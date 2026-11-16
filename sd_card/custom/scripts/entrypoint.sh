@@ -249,4 +249,7 @@ if [ "${PTZ_HOME_ON_BOOT:-0}" = "1" ]; then
   log "PTZ recale (home)"
 fi
 
+# rejoue les reglages memorises (jour/nuit, DP, mode prive) apres un reboot
+/bin/sh "${SCRIPTS_DIR}/persist.sh" restore >/dev/null 2>&1 &
+
 log "entrypoint done"

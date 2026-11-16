@@ -14,7 +14,9 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 - **Alias PTZ et haut-parleur** (hors table des DP, scripts du toolkit ; arguments validés avant le shell) :
   `ptz_absolute/set` = `x,y` de -1 à 1 ; `ptz_preset_goto/set` = n° ; `ptz_preset_save/set` = nom (`A-Za-z0-9_`, publie `ptz_preset_saved` = n°) ;
   `ptz_preset_delete/set` = n° ; `ptz_move/set` = `up`/`down`/`left`/`right` (1 s puis arrêt) ou `stop` ; `ptz_home/set` = recalage sur les butées ; `ptz_calibrate/set` = `ON` (séquence de test, longue) ;
-  `speaker_siren/set` = `ON`/`OFF` (boucle `sirene.ulaw`, 30 s max) ; `speaker_play/set` = nom d'un fichier `<nom>.ulaw` du dossier audio ou `stop`.
+  `speaker_siren/set` = `ON`/`OFF` (boucle `sirene.ulaw`, 30 s max) ; `speaker_play/set` = nom d'un fichier `<nom>.ulaw` du dossier audio ou `stop` ;
+  `lullaby/set` = `1`..`5` (boucle `berceuse<N>.ulaw`, 15 min max) ou `stop` (état retained `lullaby`) ; `reboot/set` = `ON` (redémarrage propre : `sync` puis `reboot`).
+  **Mémoire des réglages** : chaque réglage réussi (`night`, `privacy`, DP hors actions/capteurs/SD) est inscrit dans `custom/state/settings.conf` (écrit seulement si la valeur change) et rejoué par `persist.sh restore` au démarrage.
   États retained : `ptz_position` (`pan,tilt,zoom`, position suivie par calcul), `ptz_presets` (`n=nom,pan,tilt,zoom;…`), `speaker_siren`.
 - `sd_health` : `ON` = problème (SD absente ou montée en lecture seule après une FAT corrompue), `OFF` = saine ; lu dans `/proc/mounts`, entité HA « Problème carte SD ».
 - `sd_storage` (DP 109) est publié en JSON `{"total":…,"used":…,"free":…}` en **Kio** ; si le firmware renvoie 0 (stockage Tuya non initialisé sans cloud), la valeur vient de `df -k /tmp/sd`.
@@ -53,7 +55,7 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 | 152 | `pir_detect_switch` | enum | `0` `1` `2` `3` | `set_pir_detect_switch` | `get_pir_detect_switch` | #58 | oui |
 | 158 | `floodlight_lightness` | int | `1` `100` | `set_floodlight_lightness` | `get_floodlight_lightness` | #58 | oui |
 | 159 | `siren_onoff` | bool | ON / OFF | `set_siren_onoff` | `get_siren_onoff` | #55 | oui |
-| 160 | `ipc_lullaby_volume` | int | `0` `10` | `set_ipc_lullaby_volume` | `get_ipc_lullaby_volume` | #58 | oui |
+| 160 | `ipc_lullaby_volume` | int | `0` `10` | `set_ipc_lullaby_volume` | `get_ipc_lullaby_volume` | #58 | non |
 | 161 | `track_enable` | bool | ON / OFF | `track_enable` | `get_track_enable` | #57 | oui |
 | 162 | `system_reboot` | action | charge utile ignorée (envoyer `1`) | `set_system_reboot` | — | #54 | oui |
 | 167 | `cry_detect_onoff` | bool | ON / OFF | `set_cry_detect_onoff` | `get_cry_detect_onoff` | #55 | oui |
@@ -72,10 +74,10 @@ Généré par `tools/gateway/gen_gateway.py` depuis `docs/firmware/DP_TABLE.md`.
 | 190 | `link_move` | int | `0` `255` | `set_link_move` | — | #57 | oui |
 | 198 | `object_outline_onoff` | bool | ON / OFF | `set_object_outline_onoff` | `get_object_outline_onoff` | #54 | oui |
 | 199 | `link_pos` | int | `0` `255` | `set_link_pos` | — | #57 | oui |
-| 232 | `ipc_lullaby_mode` | enum | `0` `1` `2` | `set_ipc_lullaby_mode` | `get_ipc_lullaby_mode` | #58 | oui |
-| 234 | `ipc_lullaby_control` | enum | `0` `1` | `set_ipc_lullaby_control` | `get_ipc_lullaby_control` | #58 | oui |
-| 235 | `ipc_lullaby_list` | enum | `0` `1` `2` `3` `4` | `set_ipc_lullaby_list` | `get_ipc_lullaby_list` | #58 | oui |
-| 236 | `ipc_lullaby_command` | enum | `0` `1` | `set_ipc_lullaby_command` | — | #58 | oui |
+| 232 | `ipc_lullaby_mode` | enum | `0` `1` `2` | `set_ipc_lullaby_mode` | `get_ipc_lullaby_mode` | #58 | non |
+| 234 | `ipc_lullaby_control` | enum | `0` `1` | `set_ipc_lullaby_control` | `get_ipc_lullaby_control` | #58 | non |
+| 235 | `ipc_lullaby_list` | enum | `0` `1` `2` `3` `4` | `set_ipc_lullaby_list` | `get_ipc_lullaby_list` | #58 | non |
+| 236 | `ipc_lullaby_command` | enum | `0` `1` | `set_ipc_lullaby_command` | — | #58 | non |
 | 238 | `temp_report_c` | sensor | °C × 10 ? (0 si pas de capteur) | — | `get_temp_report_c` | #58 | oui |
 | 239 | `temp_report_f` | sensor | °F (320 si pas de capteur) | — | `get_temp_report_f` | #58 | oui |
 | 240 | `temp_unit_select` | enum | `0` `1` | `set_temp_unit_select` | `get_temp_unit_select` | #58 | oui |

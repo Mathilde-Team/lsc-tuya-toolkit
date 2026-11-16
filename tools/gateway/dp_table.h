@@ -64,8 +64,6 @@ extern long IPC_APP_set_floodlight_lightness(void) __attribute__((weak));
 extern long IPC_APP_get_floodlight_lightness(void) __attribute__((weak));
 extern long IPC_APP_set_siren_onoff(void) __attribute__((weak));
 extern long IPC_APP_get_siren_onoff(void) __attribute__((weak));
-extern long IPC_APP_set_ipc_lullaby_volume(void) __attribute__((weak));
-extern long IPC_APP_get_ipc_lullaby_volume(void) __attribute__((weak));
 extern long IPC_APP_track_enable(void) __attribute__((weak));
 extern long IPC_APP_get_track_enable(void) __attribute__((weak));
 extern long IPC_APP_set_system_reboot(void) __attribute__((weak));
@@ -94,13 +92,6 @@ extern long IPC_APP_set_link_move(void) __attribute__((weak));
 extern long IPC_APP_set_object_outline_onoff(void) __attribute__((weak));
 extern long IPC_APP_get_object_outline_onoff(void) __attribute__((weak));
 extern long IPC_APP_set_link_pos(void) __attribute__((weak));
-extern long IPC_APP_set_ipc_lullaby_mode(void) __attribute__((weak));
-extern long IPC_APP_get_ipc_lullaby_mode(void) __attribute__((weak));
-extern long IPC_APP_set_ipc_lullaby_control(void) __attribute__((weak));
-extern long IPC_APP_get_ipc_lullaby_control(void) __attribute__((weak));
-extern long IPC_APP_set_ipc_lullaby_list(void) __attribute__((weak));
-extern long IPC_APP_get_ipc_lullaby_list(void) __attribute__((weak));
-extern long IPC_APP_set_ipc_lullaby_command(void) __attribute__((weak));
 extern long IPC_APP_get_temp_report_c(void) __attribute__((weak));
 extern long IPC_APP_get_temp_report_f(void) __attribute__((weak));
 extern long IPC_APP_set_temp_unit_select(void) __attribute__((weak));
@@ -150,7 +141,7 @@ static const struct dp_entry dp_table[] = {
   {152, "pir_detect_switch", DP_ENUM, "IPC_APP_set_pir_detect_switch", "IPC_APP_get_pir_detect_switch", ABI_STR, ABI_STR, "0|1|2|3", 1, IPC_APP_set_pir_detect_switch, IPC_APP_get_pir_detect_switch},
   {158, "floodlight_lightness", DP_INT, "IPC_APP_set_floodlight_lightness", "IPC_APP_get_floodlight_lightness", ABI_INT, ABI_INT, "1..100", 1, IPC_APP_set_floodlight_lightness, IPC_APP_get_floodlight_lightness},
   {159, "siren_onoff", DP_BOOL, "IPC_APP_set_siren_onoff", "IPC_APP_get_siren_onoff", ABI_INT, ABI_INT, 0, 1, IPC_APP_set_siren_onoff, IPC_APP_get_siren_onoff},
-  {160, "ipc_lullaby_volume", DP_INT, "IPC_APP_set_ipc_lullaby_volume", "IPC_APP_get_ipc_lullaby_volume", ABI_INT, ABI_INT, "0..10", 1, IPC_APP_set_ipc_lullaby_volume, IPC_APP_get_ipc_lullaby_volume},
+  {160, "ipc_lullaby_volume", DP_INT, "IPC_APP_set_ipc_lullaby_volume", "IPC_APP_get_ipc_lullaby_volume", ABI_INT, ABI_INT, "0..10", 0, 0, 0},
   {161, "track_enable", DP_BOOL, "IPC_APP_track_enable", "IPC_APP_get_track_enable", ABI_INT, ABI_INT, 0, 1, IPC_APP_track_enable, IPC_APP_get_track_enable},
   {162, "system_reboot", DP_ACTION, "IPC_APP_set_system_reboot", 0, ABI_INT, ABI_NONE, "1", 1, IPC_APP_set_system_reboot, 0},
   {167, "cry_detect_onoff", DP_BOOL, "IPC_APP_set_cry_detect_onoff", "IPC_APP_get_cry_detect_onoff", ABI_INT, ABI_INT, 0, 1, IPC_APP_set_cry_detect_onoff, IPC_APP_get_cry_detect_onoff},
@@ -169,10 +160,10 @@ static const struct dp_entry dp_table[] = {
   {190, "link_move", DP_INT, "IPC_APP_set_link_move", 0, ABI_INT, ABI_NONE, "0..255", 1, IPC_APP_set_link_move, 0},
   {198, "object_outline_onoff", DP_BOOL, "IPC_APP_set_object_outline_onoff", "IPC_APP_get_object_outline_onoff", ABI_INT, ABI_INT, 0, 1, IPC_APP_set_object_outline_onoff, IPC_APP_get_object_outline_onoff},
   {199, "link_pos", DP_INT, "IPC_APP_set_link_pos", 0, ABI_INT, ABI_NONE, "0..255", 1, IPC_APP_set_link_pos, 0},
-  {232, "ipc_lullaby_mode", DP_ENUM, "IPC_APP_set_ipc_lullaby_mode", "IPC_APP_get_ipc_lullaby_mode", ABI_STR, ABI_STR, "0|1|2", 1, IPC_APP_set_ipc_lullaby_mode, IPC_APP_get_ipc_lullaby_mode},
-  {234, "ipc_lullaby_control", DP_ENUM, "IPC_APP_set_ipc_lullaby_control", "IPC_APP_get_ipc_lullaby_control", ABI_STR, ABI_STR, "0|1", 1, IPC_APP_set_ipc_lullaby_control, IPC_APP_get_ipc_lullaby_control},
-  {235, "ipc_lullaby_list", DP_ENUM, "IPC_APP_set_ipc_lullaby_list", "IPC_APP_get_ipc_lullaby_list", ABI_STR, ABI_STR, "0|1|2|3|4", 1, IPC_APP_set_ipc_lullaby_list, IPC_APP_get_ipc_lullaby_list},
-  {236, "ipc_lullaby_command", DP_ENUM, "IPC_APP_set_ipc_lullaby_command", 0, ABI_STR, ABI_NONE, "0|1", 1, IPC_APP_set_ipc_lullaby_command, 0},
+  {232, "ipc_lullaby_mode", DP_ENUM, "IPC_APP_set_ipc_lullaby_mode", "IPC_APP_get_ipc_lullaby_mode", ABI_STR, ABI_STR, "0|1|2", 0, 0, 0},
+  {234, "ipc_lullaby_control", DP_ENUM, "IPC_APP_set_ipc_lullaby_control", "IPC_APP_get_ipc_lullaby_control", ABI_STR, ABI_STR, "0|1", 0, 0, 0},
+  {235, "ipc_lullaby_list", DP_ENUM, "IPC_APP_set_ipc_lullaby_list", "IPC_APP_get_ipc_lullaby_list", ABI_STR, ABI_STR, "0|1|2|3|4", 0, 0, 0},
+  {236, "ipc_lullaby_command", DP_ENUM, "IPC_APP_set_ipc_lullaby_command", 0, ABI_STR, ABI_NONE, "0|1", 0, 0, 0},
   {238, "temp_report_c", DP_SENSOR, 0, "IPC_APP_get_temp_report_c", ABI_NONE, ABI_OUT, 0, 1, 0, IPC_APP_get_temp_report_c},
   {239, "temp_report_f", DP_SENSOR, 0, "IPC_APP_get_temp_report_f", ABI_NONE, ABI_OUT, 0, 1, 0, IPC_APP_get_temp_report_f},
   {240, "temp_unit_select", DP_ENUM, "IPC_APP_set_temp_unit_select", "IPC_APP_get_temp_unit_select", ABI_STR, ABI_STR, "0|1", 1, IPC_APP_set_temp_unit_select, IPC_APP_get_temp_unit_select},
@@ -187,6 +178,6 @@ static const struct dp_entry dp_table[] = {
 };
 
 #define DP_TABLE_LEN 61
-#define DP_EXPOSED_LEN 57
+#define DP_EXPOSED_LEN 52
 
 #endif
