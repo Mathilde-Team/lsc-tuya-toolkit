@@ -30,6 +30,9 @@ void IPC_APP_patrol_state(int *out) { *out = 2; }
 long IPC_APP_ptz_start_move(const char *v) { strcpy(moved, v); return 0; }
 long IPC_APP_format_sd_card(void) { formats++; return 0; }
 long IPC_APP_get_sd_status(void) { return sdst; }
+int fx_last = -1, fx_ptz;
+int ht_video_codec_set_effect(int id, int v) { (void)id; fx_last = v; return 0; }
+void ht_ptz_update_filp_mirror(void) { fx_ptz++; }
 int ht_night_mode_set_irled_mode(int m) { night = m; return m == 2 ? 0 : 0; }
 static char sys_all[1024], persisted[160];
 int system(const char *c)
@@ -144,6 +147,10 @@ int main(void)
     CHECK(gw_topic("camera/night/set", "day") == 0 && strstr(persisted, "persist.sh save night day"));
     CHECK(gw_topic("camera/reboot/set", "ON") == 0 && strstr(last_sys, "reboot"));
     CHECK(gw_topic("camera/lullaby/set", "9") < 0);
+    CHECK(gw_topic("camera/mirror/set", "ON") == 0 && fx_last == 1 && fx_ptz == 1);
+    CHECK(gw_topic("camera/flip_v/set", "ON") == 0 && fx_last == 3);
+    CHECK(gw_topic("camera/mirror/set", "OFF") == 0 && fx_last == 2);
+    CHECK(gw_topic("camera/flip_v/set", "x") < 0 && fx_last == 2);
     sys_all[0] = 0;
     CHECK(gw_topic("camera/ptz_absolute/set", "0.5,-0.2") == 0 && strstr(sys_all, "ptz_move -j 0.5,-0.2,0\n") && PUB("camera/ptz_position", "180,98,0"));
     CHECK(gw_topic("camera/ptz_absolute/set", "0.5,-0.2,0") == 0 && strstr(sys_all, "ptz_move -j 0.5,-0.2,0\n"));

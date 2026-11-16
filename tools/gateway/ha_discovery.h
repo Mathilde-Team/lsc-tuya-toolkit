@@ -46,6 +46,10 @@ static const struct ha_entry ha_table[] = {
    "{\"name\":\"Sirène du haut-parleur (30 s max)\",\"unique_id\":\"%N_speaker_siren\",\"state_topic\":\"%B/speaker_siren\",\"command_topic\":\"%B/speaker_siren/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"icon\":\"mdi:bullhorn\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"binary_sensor", "sd_health",
    "{\"name\":\"Problème carte SD (lecture seule)\",\"unique_id\":\"%N_sd_health\",\"state_topic\":\"%B/sd_health\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"device_class\":\"problem\",\"entity_category\":\"diagnostic\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"switch", "mirror",
+   "{\"name\":\"Image en miroir (horizontal)\",\"unique_id\":\"%N_mirror\",\"state_topic\":\"%B/mirror\",\"command_topic\":\"%B/mirror/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"icon\":\"mdi:flip-horizontal\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
+  {"switch", "flip_v",
+   "{\"name\":\"Image retournée (vertical seul)\",\"unique_id\":\"%N_flip_v\",\"state_topic\":\"%B/flip_v\",\"command_topic\":\"%B/flip_v/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"icon\":\"mdi:flip-vertical\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"button", "reboot",
    "{\"name\":\"Redémarrer la caméra\",\"unique_id\":\"%N_reboot\",\"command_topic\":\"%B/reboot/set\",\"payload_press\":\"ON\",\"device_class\":\"restart\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
   {"select", "lullaby",
@@ -136,6 +140,6 @@ static const struct ha_entry ha_table[] = {
    "{\"name\":\"Alarme sonore\",\"unique_id\":\"%N_audible_alarm_onoff\",\"command_topic\":\"%B/audible_alarm_onoff/set\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\",\"state_on\":\"ON\",\"state_off\":\"OFF\",\"state_topic\":\"%B/audible_alarm_onoff\",\"device\":{\"identifiers\":[\"%N\"],\"name\":\"Caméra LSC %N\",\"manufacturer\":\"LSC Smart Connect\",\"model\":\"Anyka AK3918 (anyka_ipc 3.10.78)\",\"sw_version\":\"lsc-tuya-toolkit\"}}"},
 };
 
-#define HA_TABLE_LEN 62
+#define HA_TABLE_LEN 64
 
 #endif

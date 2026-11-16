@@ -20,6 +20,8 @@
 #endif
 
 extern int ht_night_mode_set_irled_mode(int mode);
+extern int ht_video_codec_set_effect(int id, int val);
+extern void ht_ptz_update_filp_mirror(void);
 extern int system(const char *cmd);
 
 #define GW_MAX 160 /* charge utile maximale (md_inject.c : 160 octets) */
@@ -200,6 +202,18 @@ static int is_off(const char *v)
 static const char *night_name[] = {"auto", "day", "night"};
 
 static void persist(const char *name, const char *v);
+
+/* Miroir horizontal (bit 0) et retournement vertical (bit 1) : effet 8 de ak_vpss_effect_set, 3 = rotation 180°.
+   Les alias mirror et flip_v les commandent séparément ; flip_onoff (DP 103) fixe les deux. */
+static int fm_mirror, fm_flip;
+
+static void apply_flip_mirror(void)
+{
+    ht_video_codec_set_effect(8, fm_mirror | (fm_flip << 1));
+    ht_ptz_update_filp_mirror();
+    state("mirror", fm_mirror ? "ON" : "OFF");
+    state("flip_v", fm_flip ? "ON" : "OFF");
+}
 
 static int apply_night(const char *v)
 {
@@ -522,6 +536,17 @@ static int apply_alias(const char *name, const char *v, int *rc)
             state("speaker_siren", "OFF");
             *rc = 0;
         }
+    } else if (!strcmp(name, "mirror") || !strcmp(name, "flip_v")) {
+        if (!is_on(v) && !is_off(v))
+            return 1;
+        if (name[0] == 'm')
+            fm_mirror = is_on(v);
+        else
+            fm_flip = is_on(v);
+        apply_flip_mirror();
+        persist(name, is_on(v) ? "ON" : "OFF");
+        say(name, v, 0);
+        *rc = 0;
     } else if (!strcmp(name, "reboot")) {
         /* redémarrage propre (sync) ; « reboot -f » si le premier échoue */
         say("reboot", 0, 0);
@@ -718,6 +743,11 @@ static int apply_entry(const struct dp_entry *e, const char *v)
     say("gateway:", e->name, v);
     if (e->kind != DP_ACTION && e->kind != DP_SENSOR)
         persist(e->name, v);
+    if (!strcmp(e->name, "flip_onoff")) {
+        fm_mirror = fm_flip = iv ? 1 : 0;
+        state("mirror", iv ? "ON" : "OFF");
+        state("flip_v", iv ? "ON" : "OFF");
+    }
     if (e->kind != DP_ACTION) {
         if (!e->get_fn || e->get_abi == ABI_NONE)
             state(e->name, e->kind == DP_BOOL ? (iv ? "ON" : "OFF") : v); /* pas de lecture : on republie la valeur commandée */

@@ -248,7 +248,7 @@ Alias principaux :
 | `ptz_home` / `ptz_calibrate` | `ON` | recalage sur les butées / séquence de test (long) |
 | `speaker_play` / `speaker_siren` | nom de fichier `.ulaw` ou `stop` / `ON` `OFF` | haut-parleur (attention au volume) |
 
-Autres commandes : `reboot` (`ON`), `lullaby` (`1`..`5` ou `stop`). Les réglages posés par MQTT/ONVIF sont mémorisés dans `custom/state/settings.conf` et rejoués après un reboot (`scripts/persist.sh clear` pour les oublier).
+Autres commandes : `mirror` et `flip_v` (`ON`/`OFF`, miroir horizontal et retournement vertical séparés ; `flip_onoff` = les deux ; ONVIF : relais 1 et 2 ; hypothèse `bool_rotate180=0`), `reboot` (`ON`), `lullaby` (`1`..`5` ou `stop`). Les réglages posés par MQTT/ONVIF sont mémorisés dans `custom/state/settings.conf` et rejoués après un reboot (`scripts/persist.sh clear` pour les oublier).
 
 ### Tableaux de bord Home Assistant
 
@@ -269,7 +269,7 @@ Résultats de test sur une caméra réelle (valeur envoyée, relue, puis restaur
 - **Fonctionnent** : `flip_onoff`, `watermark_onoff`, `night_vision_mode`, `basic_anti_flicker`, `object_outline_onoff`, `alarm_zone_onoff`, `alarm_sensitivity`, `alarm_function_onoff`, `human_filter`, `sound_detect_onoff`, `sound_sensitivity`, `cry_detect_onoff`, `track_enable`, `patrol_mode`, `blub_onoff`, `floodlight_lightness`, `pir_detect_switch`, `door_control`, `flight_warn_time`, `privacy`, `ptz_absolute`, `ptz_preset_*`.
 - **Acceptées sans effet visible** : `light_onoff`, `flight_warn_onoff`. Les réglages `temp_*` (aucun capteur) et `door_control` (aucune porte) restent sur MQTT mais n'ont pas d'entité Home Assistant.
 - **Sans lecture du firmware** (`patrol_switch`, `patrol_tmode`, `patrol_time`, `link_move`, `link_pos`) : la passerelle republie la dernière valeur commandée. Ce n'est pas une confirmation du firmware.
-- **Notes issues du désassemblage** : `flip_onoff` est une rotation de 180° (`bool_rotate180`), il n'existe pas de miroir ni de rotation à 90° séparés ; `link_move` ne fait qu'un `printf` ; `door_control` appelle `ht_cardoor_ctrl` (porte probablement absente) ; les berceuses sont configurées mais le lecteur n'est pas vérifié.
+- **Notes issues du désassemblage** : `flip_onoff` est une rotation de 180° (`bool_rotate180`) ; le firmware sait faire miroir et retournement séparés (effet 8 = 1 / 2 / 3), exposés par `mirror` et `flip_v` ; aucune rotation à 90° n'existe (à faire côté lecteur, ex. `transpose` de ffmpeg) ; `link_move` ne fait qu'un `printf` ; `door_control` appelle `ht_cardoor_ctrl` (porte probablement absente) ; les berceuses sont configurées mais le lecteur n'est pas vérifié.
 
 ## Protection de la carte SD
 
