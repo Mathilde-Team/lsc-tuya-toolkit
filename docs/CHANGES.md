@@ -409,4 +409,4 @@ Une coupure de courant pendant une écriture abîme la FAT ; le noyau remonte al
 
 - Désassemblage : `ht_tuya_func_set_flip_mirror` / `set_flip` / `set_mirror` appellent `ht_video_codec_set_effect(8, v)` puis `ht_ptz_update_filp_mirror` ; `v` = 1 miroir horizontal, 2 retournement vertical, 3 les deux (180°). Aucune rotation à 90° dans le firmware (les `ak_mt_*` pilotent les moteurs).
 - Alias `mirror/set` et `flip_v/set` (`ON`/`OFF`, états retained `<base>/mirror` et `<base>/flip_v`, mémorisés par `persist.sh`) ; `flip_onoff` fixe les deux. Appel direct de l'effet 8 : suppose `bool_rotate180=0` (valeur livrée). ONVIF : relais 1 (miroir) et 2 (retournement) via `scripts/flip_relay.sh`.
-- Entités HA : 2 interrupteurs (34 entités). Tests PC OK. **Non testé sur caméra** (effet visuel et sens des directions PTZ à vérifier).
+- Entités HA : 2 interrupteurs (34 entités). Tests PC OK. Testé sur la .188 après redémarrage : entités HA découvertes, `mirror`, `flip_v` et le reboot MQTT fonctionnent (confirmé par Mathilde).
