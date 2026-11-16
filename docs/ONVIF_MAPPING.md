@@ -50,7 +50,7 @@ pris en charge par onvif_simple_server ne correspond. Aucun DP n'est exposé tan
 | DP | Topic | ONVIF | Ligne `/tmp/md_cmd` | Lot |
 |---|---|---|---|---|
 | 101 | `light_onoff` | DeviceIO relais (bool) si le matériel existe | `light_onoff ON` | #58 |
-| 103 | `flip_onoff` | MQTT seul (rotation Media non gérée) | — | #54 |
+| 103 | `flip_onoff` | MQTT seul ; `mirror` (relais ONVIF 1) et `flip_v` (relais 2) via `SetRelayOutputState` (`RelayOutputToken_1`, `_2`) | — | #54 |
 | 104 | `watermark_onoff` | MQTT seul (OSD Media non géré) | — | #54 |
 | 105 | `sleep_mode` | MQTT seul (enum ; distinct du mode privé, voir NIGHT_AND_PRIVACY.md) | — | #58 |
 | 106 | `alarm_sensitivity` | MQTT seul (Analytics non géré) | — | #55 |

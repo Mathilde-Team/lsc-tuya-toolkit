@@ -28,7 +28,7 @@ Légende : ✅ fonctionne ; `*` pourrait l'être (service ONVIF ou topic possibl
 | Fonction (DP) | Définition | ONVIF | MQTT |
 |---|---|---|---|
 | `light_onoff` (101) | Voyant (LED témoin) allumé/éteint | *  DeviceIO relais | ✅ |
-| `flip_onoff` (103) | Retourne l'image à 180° (flip et miroir inséparables) | — | ✅ |
+| `flip_onoff` (103) | Retourne l'image à 180° (flip et miroir ensemble ; séparés par les alias `mirror` et `flip_v`) | — | ✅ |
 | `watermark_onoff` (104) | Affiche/masque l'horodatage incrusté (OSD) | — | ✅ |
 | `sleep_mode` (105) | Mode veille (routé vers `privacy` : le natif plante sans cloud) | *  DeviceIO relais | ✅ |
 | `alarm_sensitivity` (106) | Sensibilité de l'alarme de mouvement (0 bas, 1 moyen, 2 haut) | — | ✅ |
