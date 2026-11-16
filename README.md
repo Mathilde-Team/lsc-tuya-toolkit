@@ -17,6 +17,21 @@
 >
 > Ne publiez jamais votre `wifi.conf`, votre `_ak39_factory.ini` renseigné ni le dossier `logs/` (SSID et mot de passe en clair).
 
+## What this fork adds (English summary)
+
+Goal: run the camera **100% on the LAN, cloud disabled**. On top of the original toolkit, this fork provides:
+
+- **Installer** (`install.py`, see [`docs/INSTALL.md`](docs/INSTALL.md)): copies and customizes the SD card (Wi-Fi, static IP, time, syslog, ONVIF, video stream).
+- **Boot-loop fix** and smooth **1920x1080 @ 20 fps** video, status LED off, timezone/OSD clock fix (`TZ_STRING`).
+- **Local MQTT gateway** (`md_inject.so`, preloaded into `anyka_ipc`) with automatic **Home Assistant discovery**: PTZ (relative, absolute, presets, save current position), day/night, privacy mode, lullabies (`lullaby/set` 1-5/stop), reboot button, SD health/usage. Topics: [`docs/TOPICS.md`](docs/TOPICS.md).
+- **ONVIF** (PTZ, presets incl. `SetPreset`, privacy mode through relay output `RelayOutputToken_0`), see [`docs/ONVIF_MAPPING.md`](docs/ONVIF_MAPPING.md).
+- **Persistence**: settings sent by MQTT/ONVIF are saved to `custom/state/settings.conf` and replayed after a reboot.
+- **SD protection**: logs and PTZ state live in RAM; no writes to the system SD.
+- **Home Assistant dashboards** generator: `tools/dashboards/gen_dashboards.py` (ONVIF and MQTT dashboards, examples in `docs/dashboards/`).
+- Firmware findings from disassembly: [`docs/firmware/`](docs/firmware/), [`docs/EXPOSITION.md`](docs/EXPOSITION.md).
+
+Never publish your `wifi.conf`, filled `_ak39_factory.ini`, `install.yaml` or the `logs/` folder.
+
 This file documents the current firmware findings and a practical SD-card flow to boot custom scripts and keep local
 services.
 
@@ -269,8 +284,10 @@ Les journaux et la position PTZ sont écrits en RAM (`/tmp/hacklogs`, `/tmp/ptzs
 By default, custom logs are written to RAM under `/tmp/hacklogs` (see "Protection de la carte SD"); set `LOG_TO_SD=1` to write them to the SD card under `SD_DIR/logs/` (where `SD_DIR` is `/tmp/sd` on-device).
 
 # Tested with the following cameras:
-<img width="1080" height="1080" alt="image" src="https://github.com/user-attachments/assets/d4881226-0206-43f8-b0c3-6c31529379e6" />
-<img width="640" height="640" alt="image" src="https://github.com/user-attachments/assets/50867618-3154-48a8-a86b-f27a90150e3d" />
+![Outdoor](https://github.com/guino/LSCOutdoor1080P/blob/main/1080outdoor.png?raw=true)
+![Rotating](https://github.com/guino/LSCOutdoor1080P/blob/main/1080ptz.jpg?raw=true)
+
+(Pictures from [guino/LSCOutdoor1080P](https://github.com/guino/LSCOutdoor1080P).) This fork was also tested on an `IPC-XC-C323` (AK3918EV330, firmware `3.10.78.1269`).
 
 Open an Issue or PR anytime.
 
