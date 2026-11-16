@@ -1,5 +1,5 @@
-# Tableau de bord MQTT de la caméra cam1, base camera (généré par tools/dashboards/gen_dashboards.py)
-# Chaque bouton publie sur camera/<fonction>/set (voir docs/TOPICS.md) : aucune entité à nommer.
+# Tableau de bord MQTT de la caméra cam1, base camera1 (généré par tools/dashboards/gen_dashboards.py)
+# Chaque bouton publie sur camera1/<fonction>/set (voir docs/TOPICS.md) : aucune entité à nommer.
 # Installation : Paramètres > Tableaux de bord > Ajouter > nouveau tableau, puis crayon > ⋮ > Éditeur de configuration brute > coller.
 # Les états (privé, jour/nuit, position, SD…) sont dans la page de l'appareil « Caméra LSC » (découverte MQTT).
 title: Caméra cam1 (MQTT)
@@ -27,7 +27,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_absolute/set
+                    topic: camera1/ptz_absolute/set
                     payload: "-0.6,0.6"
               - type: button
                 name: "Haut"
@@ -36,7 +36,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_absolute/set
+                    topic: camera1/ptz_absolute/set
                     payload: "0,0.6"
               - type: button
                 name: "Haut droite"
@@ -45,7 +45,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_absolute/set
+                    topic: camera1/ptz_absolute/set
                     payload: "0.6,0.6"
               - type: button
                 name: "Gauche"
@@ -54,7 +54,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_absolute/set
+                    topic: camera1/ptz_absolute/set
                     payload: "-0.6,0"
               - type: button
                 name: "Centre"
@@ -63,7 +63,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_absolute/set
+                    topic: camera1/ptz_absolute/set
                     payload: "0,0"
               - type: button
                 name: "Droite"
@@ -72,7 +72,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_absolute/set
+                    topic: camera1/ptz_absolute/set
                     payload: "0.6,0"
               - type: button
                 name: "Bas gauche"
@@ -81,7 +81,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_absolute/set
+                    topic: camera1/ptz_absolute/set
                     payload: "-0.6,-0.6"
               - type: button
                 name: "Bas"
@@ -90,7 +90,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_absolute/set
+                    topic: camera1/ptz_absolute/set
                     payload: "0,-0.6"
               - type: button
                 name: "Bas droite"
@@ -99,7 +99,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_absolute/set
+                    topic: camera1/ptz_absolute/set
                     payload: "0.6,-0.6"
           - type: grid
             columns: 3
@@ -112,7 +112,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_move/set
+                    topic: camera1/ptz_move/set
                     payload: "up"
               - type: button
                 name: "Arrêt"
@@ -121,7 +121,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_move/set
+                    topic: camera1/ptz_move/set
                     payload: "stop"
               - type: button
                 name: "Déplacer bas"
@@ -130,7 +130,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_move/set
+                    topic: camera1/ptz_move/set
                     payload: "down"
               - type: button
                 name: "Déplacer gauche"
@@ -139,7 +139,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_move/set
+                    topic: camera1/ptz_move/set
                     payload: "left"
               - type: button
                 name: "Recalage (home)"
@@ -150,7 +150,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_home/set
+                    topic: camera1/ptz_home/set
                     payload: "ON"
               - type: button
                 name: "Déplacer droite"
@@ -159,7 +159,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_move/set
+                    topic: camera1/ptz_move/set
                     payload: "right"
           - type: grid
             columns: 3
@@ -172,7 +172,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_preset_goto/set
+                    topic: camera1/ptz_preset_goto/set
                     payload: "1"
               - type: button
                 name: "Aller au préréglage 2"
@@ -181,7 +181,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_preset_goto/set
+                    topic: camera1/ptz_preset_goto/set
                     payload: "2"
               - type: button
                 name: "Aller au préréglage 3"
@@ -190,7 +190,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_preset_goto/set
+                    topic: camera1/ptz_preset_goto/set
                     payload: "3"
               - type: button
                 name: "Aller au préréglage 4"
@@ -199,7 +199,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_preset_goto/set
+                    topic: camera1/ptz_preset_goto/set
                     payload: "4"
               - type: button
                 name: "Aller au préréglage 5"
@@ -208,7 +208,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_preset_goto/set
+                    topic: camera1/ptz_preset_goto/set
                     payload: "5"
               - type: button
                 name: "Aller au préréglage 6"
@@ -217,7 +217,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_preset_goto/set
+                    topic: camera1/ptz_preset_goto/set
                     payload: "6"
           - type: grid
             columns: 3
@@ -230,7 +230,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_preset_save/set
+                    topic: camera1/ptz_preset_save/set
                     payload: "pos1"
               - type: button
                 name: "Enregistrer ici : pos2"
@@ -239,7 +239,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_preset_save/set
+                    topic: camera1/ptz_preset_save/set
                     payload: "pos2"
               - type: button
                 name: "Enregistrer ici : pos3"
@@ -248,7 +248,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_preset_save/set
+                    topic: camera1/ptz_preset_save/set
                     payload: "pos3"
               - type: button
                 name: "Enregistrer ici : pos4"
@@ -257,7 +257,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_preset_save/set
+                    topic: camera1/ptz_preset_save/set
                     payload: "pos4"
               - type: button
                 name: "Enregistrer ici : pos5"
@@ -266,7 +266,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_preset_save/set
+                    topic: camera1/ptz_preset_save/set
                     payload: "pos5"
               - type: button
                 name: "Enregistrer ici : pos6"
@@ -275,7 +275,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/ptz_preset_save/set
+                    topic: camera1/ptz_preset_save/set
                     payload: "pos6"
           - type: grid
             columns: 2
@@ -288,7 +288,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/privacy/set
+                    topic: camera1/privacy/set
                     payload: "ON"
               - type: button
                 name: "Mode privé OFF"
@@ -297,7 +297,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/privacy/set
+                    topic: camera1/privacy/set
                     payload: "OFF"
           - type: grid
             columns: 3
@@ -310,7 +310,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/night/set
+                    topic: camera1/night/set
                     payload: "auto"
               - type: button
                 name: "Jour"
@@ -319,7 +319,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/night/set
+                    topic: camera1/night/set
                     payload: "day"
               - type: button
                 name: "Nuit"
@@ -328,8 +328,48 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/night/set
+                    topic: camera1/night/set
                     payload: "night"
+          - type: grid
+            columns: 4
+            square: false
+            cards:
+              - type: button
+                name: "Miroir ON"
+                icon: mdi:flip-horizontal
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera1/mirror/set
+                    payload: "ON"
+              - type: button
+                name: "Miroir OFF"
+                icon: mdi:flip-horizontal
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera1/mirror/set
+                    payload: "OFF"
+              - type: button
+                name: "Retourné ON"
+                icon: mdi:flip-vertical
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera1/flip_v/set
+                    payload: "ON"
+              - type: button
+                name: "Retourné OFF"
+                icon: mdi:flip-vertical
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera1/flip_v/set
+                    payload: "OFF"
           - type: grid
             columns: 3
             square: false
@@ -341,7 +381,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/lullaby/set
+                    topic: camera1/lullaby/set
                     payload: "1"
               - type: button
                 name: "Berceuse 2"
@@ -350,7 +390,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/lullaby/set
+                    topic: camera1/lullaby/set
                     payload: "2"
               - type: button
                 name: "Berceuse 3"
@@ -359,7 +399,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/lullaby/set
+                    topic: camera1/lullaby/set
                     payload: "3"
               - type: button
                 name: "Berceuse 4"
@@ -368,7 +408,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/lullaby/set
+                    topic: camera1/lullaby/set
                     payload: "4"
               - type: button
                 name: "Berceuse 5"
@@ -377,7 +417,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/lullaby/set
+                    topic: camera1/lullaby/set
                     payload: "5"
               - type: button
                 name: "Berceuse stop"
@@ -386,7 +426,7 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/lullaby/set
+                    topic: camera1/lullaby/set
                     payload: "stop"
           - type: grid
             columns: 1
@@ -401,5 +441,5 @@ views:
                   action: perform-action
                   perform_action: mqtt.publish
                   data:
-                    topic: camera/reboot/set
+                    topic: camera1/reboot/set
                     payload: "ON"

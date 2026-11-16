@@ -252,7 +252,7 @@ Autres commandes : `mirror` et `flip_v` (`ON`/`OFF`, miroir horizontal et retour
 
 ### Tableaux de bord Home Assistant
 
-`python3 tools/dashboards/gen_dashboards.py <nom> <base_mqtt> [dossier]` génère deux tableaux (YAML à coller dans l'éditeur brut) : `ha_dashboard_onvif_<nom>.yaml` (vidéo, déplacements et préréglages via l'intégration ONVIF, entité `camera.<nom>_profile_0`) et `ha_dashboard_mqtt_<nom>.yaml` (PTZ absolu et manuel, préréglages aller/enregistrer, mode privé, jour/nuit, berceuse 1 à 5, redémarrage, le tout par `mqtt.publish`). Exemples dans `docs/dashboards/`.
+`python3 tools/dashboards/gen_dashboards.py <nom> <base_mqtt> [dossier]` génère deux tableaux (YAML à coller dans l'éditeur brut) : `ha_dashboard_onvif_<nom>.yaml` (vidéo, déplacements et préréglages via l'intégration ONVIF, entité `camera.<nom>_profile_0`) et `ha_dashboard_mqtt_<nom>.yaml` (PTZ absolu et manuel, préréglages aller/enregistrer, mode privé, jour/nuit, miroir et retournement, berceuse 1 à 5, redémarrage, le tout par `mqtt.publish`). Exemples dans `docs/dashboards/`.
 
 ### Enregistrer la position actuelle en préréglage
 

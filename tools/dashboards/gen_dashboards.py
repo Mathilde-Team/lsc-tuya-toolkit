@@ -7,7 +7,7 @@
 Produit :
   ha_dashboard_onvif_<nom>.yaml : vidéo + déplacements/préréglages par l'intégration ONVIF (onvif.ptz)
   ha_dashboard_mqtt_<nom>.yaml  : tout par MQTT (mqtt.publish vers <base>/<fonction>/set) : PTZ, préréglages,
-                                  mode privé, jour/nuit, berceuse, redémarrage
+                                  mode privé, jour/nuit, miroir/retournement, berceuse, redémarrage
 
 Entité caméra ONVIF supposée : camera.<nom>_profile_0 (HA 2024.8 ou plus récent pour « perform-action »).
 """
@@ -97,6 +97,10 @@ def dash_mqtt(cam, base):
     c.append(grid(3, [btn("Jour/nuit auto", "mdi:brightness-auto", mqtt(base, "night", "auto")),
                       btn("Jour", "mdi:weather-sunny", mqtt(base, "night", "day")),
                       btn("Nuit", "mdi:weather-night", mqtt(base, "night", "night"))]))
+    c.append(grid(4, [btn("Miroir ON", "mdi:flip-horizontal", mqtt(base, "mirror", "ON")),
+                      btn("Miroir OFF", "mdi:flip-horizontal", mqtt(base, "mirror", "OFF")),
+                      btn("Retourné ON", "mdi:flip-vertical", mqtt(base, "flip_v", "ON")),
+                      btn("Retourné OFF", "mdi:flip-vertical", mqtt(base, "flip_v", "OFF"))]))
     c.append(grid(3, [btn("Berceuse %d" % i, "mdi:music", mqtt(base, "lullaby", str(i))) for i in range(1, 6)]
                   + [btn("Berceuse stop", "mdi:music-off", mqtt(base, "lullaby", "stop"))]))
     c.append(grid(1, [btn("Redémarrer la caméra", "mdi:restart", mqtt(base, "reboot", "ON"), "Redémarrer la caméra ?")]))
