@@ -123,6 +123,23 @@ static int put_str(unsigned char *o, const char *s)
     return l + 2;
 }
 
+static char base[64];
+
+/* client id unique per camera: two cameras sharing an id kick each other off the broker */
+static int put_cid(unsigned char *o, const char *prefix)
+{
+    char id[96];
+    int i = 0, j;
+
+    for (; prefix[i]; i++)
+        id[i] = prefix[i];
+    id[i++] = '-';
+    for (j = 0; base[j] && i < 95; j++, i++)
+        id[i] = (base[j] == '/') ? '_' : base[j];
+    id[i] = 0;
+    return put_str(o, id);
+}
+
 /* Longueur restante MQTT (1 à 2 octets, < 16384) ; sans division : décalages. */
 static int put_len(unsigned char *o, int l)
 {
@@ -177,7 +194,7 @@ static int publish(const char *topic, const char *payload)
     pkt[n++] = user[0] ? 0xC2 : 0x02;
     pkt[n++] = 0;
     pkt[n++] = 30;
-    n += put_str(pkt + n, "anyka-md");
+    n += put_cid(pkt + n, "anyka-md");
     if (user[0]) {
         n += put_str(pkt + n, user);
         n += put_str(pkt + n, pass);
@@ -294,7 +311,7 @@ static int subscribe_loop(void)
     pkt[n++] = user[0] ? 0xC2 : 0x02;
     pkt[n++] = 0;
     pkt[n++] = 60;
-    n += put_str(pkt + n, "anyka-cmd");
+    n += put_cid(pkt + n, "anyka-cmd");
     if (user[0]) {
         n += put_str(pkt + n, user);
         n += put_str(pkt + n, pass);
