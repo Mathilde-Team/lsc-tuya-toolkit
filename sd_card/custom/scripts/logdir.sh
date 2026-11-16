@@ -5,7 +5,7 @@
 # remet les journaux sur la SD. Exporte LOGS (journaux) et RAM_STATE (position PTZ).
 
 _cfg="/tmp/sd/custom/configs/hack.conf"
-_v="$(sed -n 's/^LOG_TO_SD=//p' "${_cfg}" 2>/dev/null | tail -n 1 | tr -d '"' | tr -d "'")"
+_v="$(sed -n 's/^LOG_TO_SD=//p' "${_cfg}" 2>/dev/null | tail -n 1 | sed "s/[\"']//g")"
 if [ "${_v}" = "1" ]; then
     LOGS="/tmp/sd/logs"
 else
