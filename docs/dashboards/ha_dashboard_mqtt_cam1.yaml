@@ -1,0 +1,405 @@
+# Tableau de bord MQTT de la caméra cam1, base camera (généré par tools/dashboards/gen_dashboards.py)
+# Chaque bouton publie sur camera/<fonction>/set (voir docs/TOPICS.md) : aucune entité à nommer.
+# Installation : Paramètres > Tableaux de bord > Ajouter > nouveau tableau, puis crayon > ⋮ > Éditeur de configuration brute > coller.
+# Les états (privé, jour/nuit, position, SD…) sont dans la page de l'appareil « Caméra LSC » (découverte MQTT).
+title: Caméra cam1 (MQTT)
+views:
+  - title: Caméra cam1 (MQTT)
+    path: cam1-mqtt
+    icon: mdi:cctv
+    type: panel
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: picture-entity
+            entity: camera.cam1_profile_0
+            camera_view: live
+            show_name: false
+            show_state: false
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: button
+                name: "Haut gauche"
+                icon: mdi:arrow-top-left
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_absolute/set
+                    payload: "-0.6,0.6"
+              - type: button
+                name: "Haut"
+                icon: mdi:arrow-up
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_absolute/set
+                    payload: "0,0.6"
+              - type: button
+                name: "Haut droite"
+                icon: mdi:arrow-top-right
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_absolute/set
+                    payload: "0.6,0.6"
+              - type: button
+                name: "Gauche"
+                icon: mdi:arrow-left
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_absolute/set
+                    payload: "-0.6,0"
+              - type: button
+                name: "Centre"
+                icon: mdi:crosshairs
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_absolute/set
+                    payload: "0,0"
+              - type: button
+                name: "Droite"
+                icon: mdi:arrow-right
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_absolute/set
+                    payload: "0.6,0"
+              - type: button
+                name: "Bas gauche"
+                icon: mdi:arrow-bottom-left
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_absolute/set
+                    payload: "-0.6,-0.6"
+              - type: button
+                name: "Bas"
+                icon: mdi:arrow-down
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_absolute/set
+                    payload: "0,-0.6"
+              - type: button
+                name: "Bas droite"
+                icon: mdi:arrow-bottom-right
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_absolute/set
+                    payload: "0.6,-0.6"
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: button
+                name: "Déplacer haut"
+                icon: mdi:arrow-up-bold
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_move/set
+                    payload: "up"
+              - type: button
+                name: "Arrêt"
+                icon: mdi:stop-circle-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_move/set
+                    payload: "stop"
+              - type: button
+                name: "Déplacer bas"
+                icon: mdi:arrow-down-bold
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_move/set
+                    payload: "down"
+              - type: button
+                name: "Déplacer gauche"
+                icon: mdi:arrow-left-bold
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_move/set
+                    payload: "left"
+              - type: button
+                name: "Recalage (home)"
+                icon: mdi:home-import-outline
+                tap_action:
+                  confirmation:
+                    text: "Recaler la caméra sur les butées ?"
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_home/set
+                    payload: "ON"
+              - type: button
+                name: "Déplacer droite"
+                icon: mdi:arrow-right-bold
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_move/set
+                    payload: "right"
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: button
+                name: "Aller au préréglage 1"
+                icon: mdi:numeric-1-box-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_preset_goto/set
+                    payload: "1"
+              - type: button
+                name: "Aller au préréglage 2"
+                icon: mdi:numeric-2-box-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_preset_goto/set
+                    payload: "2"
+              - type: button
+                name: "Aller au préréglage 3"
+                icon: mdi:numeric-3-box-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_preset_goto/set
+                    payload: "3"
+              - type: button
+                name: "Aller au préréglage 4"
+                icon: mdi:numeric-4-box-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_preset_goto/set
+                    payload: "4"
+              - type: button
+                name: "Aller au préréglage 5"
+                icon: mdi:numeric-5-box-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_preset_goto/set
+                    payload: "5"
+              - type: button
+                name: "Aller au préréglage 6"
+                icon: mdi:numeric-6-box-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_preset_goto/set
+                    payload: "6"
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: button
+                name: "Enregistrer ici : pos1"
+                icon: mdi:content-save-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_preset_save/set
+                    payload: "pos1"
+              - type: button
+                name: "Enregistrer ici : pos2"
+                icon: mdi:content-save-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_preset_save/set
+                    payload: "pos2"
+              - type: button
+                name: "Enregistrer ici : pos3"
+                icon: mdi:content-save-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_preset_save/set
+                    payload: "pos3"
+              - type: button
+                name: "Enregistrer ici : pos4"
+                icon: mdi:content-save-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_preset_save/set
+                    payload: "pos4"
+              - type: button
+                name: "Enregistrer ici : pos5"
+                icon: mdi:content-save-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_preset_save/set
+                    payload: "pos5"
+              - type: button
+                name: "Enregistrer ici : pos6"
+                icon: mdi:content-save-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/ptz_preset_save/set
+                    payload: "pos6"
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: button
+                name: "Mode privé ON"
+                icon: mdi:eye-off
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/privacy/set
+                    payload: "ON"
+              - type: button
+                name: "Mode privé OFF"
+                icon: mdi:eye
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/privacy/set
+                    payload: "OFF"
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: button
+                name: "Jour/nuit auto"
+                icon: mdi:brightness-auto
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/night/set
+                    payload: "auto"
+              - type: button
+                name: "Jour"
+                icon: mdi:weather-sunny
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/night/set
+                    payload: "day"
+              - type: button
+                name: "Nuit"
+                icon: mdi:weather-night
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/night/set
+                    payload: "night"
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: button
+                name: "Berceuse 1"
+                icon: mdi:music
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/lullaby/set
+                    payload: "1"
+              - type: button
+                name: "Berceuse 2"
+                icon: mdi:music
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/lullaby/set
+                    payload: "2"
+              - type: button
+                name: "Berceuse 3"
+                icon: mdi:music
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/lullaby/set
+                    payload: "3"
+              - type: button
+                name: "Berceuse 4"
+                icon: mdi:music
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/lullaby/set
+                    payload: "4"
+              - type: button
+                name: "Berceuse 5"
+                icon: mdi:music
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/lullaby/set
+                    payload: "5"
+              - type: button
+                name: "Berceuse stop"
+                icon: mdi:music-off
+                tap_action:
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/lullaby/set
+                    payload: "stop"
+          - type: grid
+            columns: 1
+            square: false
+            cards:
+              - type: button
+                name: "Redémarrer la caméra"
+                icon: mdi:restart
+                tap_action:
+                  confirmation:
+                    text: "Redémarrer la caméra ?"
+                  action: perform-action
+                  perform_action: mqtt.publish
+                  data:
+                    topic: camera/reboot/set
+                    payload: "ON"

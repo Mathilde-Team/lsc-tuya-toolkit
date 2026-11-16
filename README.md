@@ -235,6 +235,10 @@ Alias principaux :
 
 Autres commandes : `reboot` (`ON`), `lullaby` (`1`..`5` ou `stop`). Les réglages posés par MQTT/ONVIF sont mémorisés dans `custom/state/settings.conf` et rejoués après un reboot (`scripts/persist.sh clear` pour les oublier).
 
+### Tableaux de bord Home Assistant
+
+`python3 tools/dashboards/gen_dashboards.py <nom> <base_mqtt> [dossier]` génère deux tableaux (YAML à coller dans l'éditeur brut) : `ha_dashboard_onvif_<nom>.yaml` (vidéo, déplacements et préréglages via l'intégration ONVIF, entité `camera.<nom>_profile_0`) et `ha_dashboard_mqtt_<nom>.yaml` (PTZ absolu et manuel, préréglages aller/enregistrer, mode privé, jour/nuit, berceuse 1 à 5, redémarrage, le tout par `mqtt.publish`). Exemples dans `docs/dashboards/`.
+
 ### Enregistrer la position actuelle en préréglage
 
 1. Placer la caméra (boutons PTZ, `ptz_absolute` ou client ONVIF).

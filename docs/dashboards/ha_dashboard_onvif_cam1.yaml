@@ -1,0 +1,168 @@
+# Tableau de bord ONVIF de la caméra cam1 (généré par tools/dashboards/gen_dashboards.py)
+# Installation : Paramètres > Tableaux de bord > Ajouter > nouveau tableau, puis crayon > ⋮ > Éditeur de configuration brute > coller.
+# Préréglages : à créer avant (MQTT ptz_preset_save ou SetPreset ONVIF) ; jeton = PresetToken_<n°>.
+# Mode privé, jour/nuit, berceuse et redémarrage ne passent pas par onvif.ptz : voir le tableau de bord MQTT.
+title: Caméra cam1 (ONVIF)
+views:
+  - title: Caméra cam1 (ONVIF)
+    path: cam1-onvif
+    icon: mdi:cctv
+    type: panel
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: picture-entity
+            entity: camera.cam1_profile_0
+            camera_view: live
+            show_name: false
+            show_state: false
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: button
+                name: " "
+                show_icon: false
+                tap_action:
+                  action: none
+              - type: button
+                name: "Haut"
+                icon: mdi:arrow-up-bold
+                tap_action:
+                  action: perform-action
+                  perform_action: onvif.ptz
+                  data:
+                    entity_id: camera.cam1_profile_0
+                    move_mode: ContinuousMove
+                    tilt: UP
+                    speed: 0.8
+                    continuous_duration: 0.5
+              - type: button
+                name: " "
+                show_icon: false
+                tap_action:
+                  action: none
+              - type: button
+                name: "Gauche"
+                icon: mdi:arrow-left-bold
+                tap_action:
+                  action: perform-action
+                  perform_action: onvif.ptz
+                  data:
+                    entity_id: camera.cam1_profile_0
+                    move_mode: ContinuousMove
+                    pan: LEFT
+                    speed: 0.8
+                    continuous_duration: 0.5
+              - type: button
+                name: "Stop"
+                icon: mdi:stop-circle-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: onvif.ptz
+                  data:
+                    entity_id: camera.cam1_profile_0
+                    move_mode: Stop
+              - type: button
+                name: "Droite"
+                icon: mdi:arrow-right-bold
+                tap_action:
+                  action: perform-action
+                  perform_action: onvif.ptz
+                  data:
+                    entity_id: camera.cam1_profile_0
+                    move_mode: ContinuousMove
+                    pan: RIGHT
+                    speed: 0.8
+                    continuous_duration: 0.5
+              - type: button
+                name: " "
+                show_icon: false
+                tap_action:
+                  action: none
+              - type: button
+                name: "Bas"
+                icon: mdi:arrow-down-bold
+                tap_action:
+                  action: perform-action
+                  perform_action: onvif.ptz
+                  data:
+                    entity_id: camera.cam1_profile_0
+                    move_mode: ContinuousMove
+                    tilt: DOWN
+                    speed: 0.8
+                    continuous_duration: 0.5
+              - type: button
+                name: " "
+                show_icon: false
+                tap_action:
+                  action: none
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: button
+                name: "Préréglage 1"
+                icon: mdi:numeric-1-box-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: onvif.ptz
+                  data:
+                    entity_id: camera.cam1_profile_0
+                    move_mode: GotoPreset
+                    preset: PresetToken_1
+              - type: button
+                name: "Préréglage 2"
+                icon: mdi:numeric-2-box-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: onvif.ptz
+                  data:
+                    entity_id: camera.cam1_profile_0
+                    move_mode: GotoPreset
+                    preset: PresetToken_2
+              - type: button
+                name: "Préréglage 3"
+                icon: mdi:numeric-3-box-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: onvif.ptz
+                  data:
+                    entity_id: camera.cam1_profile_0
+                    move_mode: GotoPreset
+                    preset: PresetToken_3
+              - type: button
+                name: "Préréglage 4"
+                icon: mdi:numeric-4-box-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: onvif.ptz
+                  data:
+                    entity_id: camera.cam1_profile_0
+                    move_mode: GotoPreset
+                    preset: PresetToken_4
+              - type: button
+                name: "Préréglage 5"
+                icon: mdi:numeric-5-box-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: onvif.ptz
+                  data:
+                    entity_id: camera.cam1_profile_0
+                    move_mode: GotoPreset
+                    preset: PresetToken_5
+              - type: button
+                name: "Préréglage 6"
+                icon: mdi:numeric-6-box-outline
+                tap_action:
+                  action: perform-action
+                  perform_action: onvif.ptz
+                  data:
+                    entity_id: camera.cam1_profile_0
+                    move_mode: GotoPreset
+                    preset: PresetToken_6
+          - type: picture-entity
+            entity: camera.cam1_profile_0
+            camera_view: auto
+            show_name: false
+            show_state: false

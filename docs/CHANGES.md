@@ -401,3 +401,6 @@ Une coupure de courant pendant une écriture abîme la FAT ; le noyau remonte al
 - **Privé en ONVIF** : relais 0 (`SetRelayOutputState`, `close` = privé, `open` = normal) passe par `scripts/privacy_relay.sh` → `/tmp/md_cmd` : `<base>/privacy` et la mémoire suivent ; sans MQTT le script appelle `privacy.sh` directement.
 - **Préréglages** : enregistrement de la position courante en ONVIF (`SetPreset`) et en MQTT (`ptz_preset_save/set`) : procédure dans `README.md` (« Enregistrer la position actuelle en préréglage »).
 - **Installeur** : `install.py` copie tout `sd_card/` ; les 5 berceuses (`audio/berceuse1..5.ulaw`, ~3 Mo) et `audio/CREDITS.txt` (licences Wikimedia Commons, attribution CC BY) sont désormais versionnées, ainsi que `persist.sh`, `privacy_relay.sh`, `md_inject.so`. `custom/state/` est créé vide à l'installation.
+- **Tableaux de bord HA** : générateur `tools/dashboards/gen_dashboards.py` (ONVIF : déplacements, 6 préréglages ; MQTT : PTZ, préréglages, mode privé, jour/nuit, berceuse, redémarrage). Exemples dans `docs/dashboards/`.
+- **Relais ONVIF** : jeton `RelayOutputToken_0` ; testé sur la .188 (`active` = `privacy on`, `inactive` = `privacy off`, état MQTT et mémoire des réglages suivent). Berceuse testée par MQTT (son entendu).
+- `logdir.sh` sans `tr` (absent de busybox).
