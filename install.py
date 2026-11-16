@@ -42,7 +42,7 @@ DEFAULTS = {
     "camera": {"hostname": "", "ptz_home_on_boot": True, "mute_factory_prompt": True, "logs_keep": 20,
               "privacy_preset": 0},
     "onvif": {"enabled": True, "user": "admin", "password": "auto", "ptz": True},
-    "services": {"telnet": "open", "ftp": False, "offline": True},
+    "services": {"telnet": "off", "ftp": False, "offline": True},
     "security": {"root_password": "auto"},
     "video": {"main_codec": 2, "main_width": 1920, "main_height": 1080,
               "sub_codec": 2, "sub_width": 640, "sub_height": 360},

@@ -119,7 +119,7 @@ La détection est validée sur une caméra réelle ; le filtre humain (`MOTION_H
 - **Mot de passe root** : `security.root_password` est écrit (hash MD5-crypt) dans le fichier `shadow` de la SD, que le
   firmware recopie à chaque démarrage. Il protège le telnet du firmware (port 23). Un `passwd` fait sur la caméra
   serait perdu au redémarrage : changez-le toujours ici. Sans cela, le mot de passe est celui, public, du dépôt.
-- **Telnet** : `services.telnet: open` donne un shell **root sans mot de passe** (port 24) à tout le LAN, pratique pour
+- **Telnet** : le défaut est `off` (port 24 fermé ; accès par le port 23 avec le mot de passe root). `services.telnet: open` donne un shell **root sans mot de passe** (port 24) à tout le LAN, pratique pour
   régler. Passez ensuite à `login` (root + mot de passe) puis à `off`. Gardez `login` tant qu'un accès de secours est utile.
 - Gardez une authentification ONVIF. Le flux RTSP `/main_ch`, lui, n'a **pas** de mot de passe : isolez la caméra
   (VLAN, ou règle du routeur qui bloque son accès à Internet).
