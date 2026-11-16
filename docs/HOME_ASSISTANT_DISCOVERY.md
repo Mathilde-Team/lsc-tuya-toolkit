@@ -26,7 +26,7 @@ Topic de découverte : `<prefix>/<composant>/<nœud>/<objet>/config`, publié **
 | DP `action` avec argument | `text` | — | `<base>/<fonction>/set` | si exposé |
 | DP `sensor` exposé | `sensor` | `<base>/<fonction>` | — | si exposé |
 
-Seuls les DP **confirmés et exposés** dans `docs/firmware/DP_VALUES.md` sont annoncés (même règle que la passerelle #53). Tant que les lots #54 à #58 n'ont rien exposé, l'appareil contient trois entités : mouvement, jour/nuit, mode privé.
+Seuls les DP **confirmés et exposés** dans `docs/firmware/DP_VALUES.md` sont annoncés (même règle que la passerelle #53). L'appareil contient aujourd'hui 32 entités (mouvement, jour/nuit, mode privé, PTZ, préréglages, berceuse, redémarrage, réglages exposés…).
 
 Les états de `night` et `privacy` ne sont publiés qu'après un premier ordre : jusque-là HA affiche « inconnu ».
 

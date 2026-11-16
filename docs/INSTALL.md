@@ -96,6 +96,10 @@ Autre firmware ou contrôle depuis le PC (le patch n'est alors appliqué que si 
    Autre possibilité : copier le dump sur le PC, renseigner `firmware.dump_dir` et relancer l'installeur complet.
 3. Redémarrez la caméra (`reboot`, ne tuez pas `anyka_ipc`).
 
+## 4 ter. Berceuses, redémarrage, mémoire des réglages
+
+L'installeur copie `sd_card/` : berceuses (`custom/audio/berceuse1..5.ulaw`, crédits dans `CREDITS.txt`), `persist.sh` et `privacy_relay.sh` sont inclus. Après installation : `<base>/lullaby/set` = `1`..`5`/`stop`, `<base>/reboot/set` = `ON`. Les réglages posés par MQTT/ONVIF sont rejoués au démarrage depuis `custom/state/settings.conf` (créé vide par l'installeur ; `persist.sh clear` pour l'effacer).
+
 ## 4 bis. Haut-parleur par le LAN (facultatif)
 
 Section `speaker:` du YAML (`enabled`, `allow`, `gain`, `port`). La caméra ouvre alors un port UDP qui reçoit du G.711 µ-law

@@ -40,7 +40,7 @@ pris en charge par onvif_simple_server ne correspond. Aucun DP n'est exposé tan
 | Fonction | MQTT | ONVIF | Ligne `/tmp/md_cmd` | Aujourd'hui |
 |---|---|---|---|---|
 | Mode nuit (`ht_night_mode_set_irled_mode` 0 auto / 1 jour / 2 nuit) | `<base>/night/set` auto/day/night | Imaging `IrCutFilter` ON/OFF/AUTO | `night day` / `night night` / `night auto` | les deux canaux passent par `/tmp/md_cmd` |
-| Mode privé (`privacy.sh`) | `<base>/privacy/set` ON/OFF | DeviceIO relais 0 close/open | `privacy on` / `privacy off` | ONVIF appelle `privacy.sh` directement : état MQTT non mis à jour (§3) |
+| Mode privé (`privacy.sh`) | `<base>/privacy/set` ON/OFF | DeviceIO relais 0 close/open | `privacy on` / `privacy off` | via `privacy_relay.sh` : état MQTT à jour (§3) |
 | Détection de mouvement | `MOTION_TOPIC`, défaut `camera/motion` (sortie) | Events `tns1:VideoSource/MotionAlarm` | — (sortie) | MQTT seul (`events=0`) |
 | Redémarrage | — | Device `SystemReboot` | — | ONVIF seul, redémarrage interne au serveur |
 | Orientation, préréglages | — | PTZ | — | ONVIF seul, via `ptz_move` |
@@ -76,7 +76,7 @@ pris en charge par onvif_simple_server ne correspond. Aucun DP n'est exposé tan
 | 152 | `pir_detect_switch` | MQTT seul | — | #58 |
 | 158 | `floodlight_lightness` | MQTT seul (entier : un relais n'a que deux états) | — | #58 |
 | 159 | `siren_onoff` | DeviceIO relais (bool) | `siren_onoff ON` | #55 |
-| 160 | `ipc_lullaby_volume` | MQTT seul | — | #58 |
+| 160 | `ipc_lullaby_volume` | non exposé (voir `lullaby/set`) | — | #58 |
 | 161 | `track_enable` | MQTT seul (lecture) | — | #57 |
 | 162 | `system_reboot` | Device `SystemReboot` existe déjà sans ce DP ; à garder tel quel | — | #54 |
 | 167 | `cry_detect_onoff` | MQTT seul (réglage) ; détection → Events `BabyCrying` si `onvif_notify_server` est déployé | — | #55 |
@@ -95,10 +95,10 @@ pris en charge par onvif_simple_server ne correspond. Aucun DP n'est exposé tan
 | 190 | `link_move` | MQTT seul | — | #57 |
 | 198 | `object_outline_onoff` | MQTT seul | — | #54 |
 | 199 | `link_pos` | MQTT seul | — | #57 |
-| 232 | `ipc_lullaby_mode` | MQTT seul | — | #58 |
-| 234 | `ipc_lullaby_control` | MQTT seul | — | #58 |
-| 235 | `ipc_lullaby_list` | MQTT seul | — | #58 |
-| 236 | `ipc_lullaby_command` | MQTT seul | — | #58 |
+| 232 | `ipc_lullaby_mode` | non exposé (voir `lullaby/set`) | — | #58 |
+| 234 | `ipc_lullaby_control` | non exposé (voir `lullaby/set`) | — | #58 |
+| 235 | `ipc_lullaby_list` | non exposé (voir `lullaby/set`) | — | #58 |
+| 236 | `ipc_lullaby_command` | non exposé (voir `lullaby/set`) | — | #58 |
 | 238 | `temp_report_c` | MQTT seul (lecture) | — | #58 |
 | 239 | `temp_report_f` | MQTT seul (lecture) | — | #58 |
 | 240 | `temp_unit_select` | MQTT seul | — | #58 |
@@ -122,11 +122,7 @@ autrement par ONVIF (116, 119, 162, 178), le reste MQTT seul.
 
 1. **Toujours écrire dans `/tmp/md_cmd`**, jamais appeler le firmware ou un script directement : c'est
    `md_inject.so` qui publie l'état retained. Exemple pour un relais : `close=echo "siren_onoff ON" > /tmp/md_cmd`.
-2. **Écart connu, relais 0** : `close=/tmp/sd/custom/scripts/privacy.sh on` appelle le script directement, donc
-   `<base>/privacy` n'est pas mis à jour quand on passe par ONVIF. Le corriger en `echo "privacy on" > /tmp/md_cmd`
-   n'est valable que si `md_inject.so` est chargé (MQTT activé) ; sinon plus rien ne lit `/tmp/md_cmd` et le relais
-   cesserait de fonctionner. Ce changement n'est donc **pas** fait ici : il doit être conditionné par
-   `onvif.sh`/`anyka_ipc.sh` (choix de la commande selon que la motion MQTT est activée) et testé par Mathilde (§4, R5).
+2. **Relais 0** : `close`/`open` appellent `scripts/privacy_relay.sh on|off`, qui écrit `privacy on|off` dans `/tmp/md_cmd` (état MQTT et mémoire des réglages à jour) ; sans MQTT le script appelle `privacy.sh` directement.
 3. Un relais = un booléen. `relay_outputs` doit lister les relais dans l'ordre ; ajouter un relais n'est utile que
    si le DP est exposé dans `DP_VALUES.md`.
 4. `GetImagingSettings` ne lit pas l'état : un client ONVIF peut afficher ON alors que la caméra est en auto. C'est une

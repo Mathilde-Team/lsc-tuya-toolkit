@@ -59,7 +59,7 @@ Légende : ✅ fonctionne ; `*` pourrait l'être (service ONVIF ou topic possibl
 | `pir_detect_switch` (152) | Détecteur PIR (0 à 3, capteur absent) | — | ✅ |
 | `floodlight_lightness` (158) | Luminosité du projecteur (1–100, matériel absent) | — | ✅ |
 | `siren_onoff` (159) | Sirène (MP3 en boucle du firmware) | *  DeviceIO relais | ✅¹ |
-| `ipc_lullaby_volume` (160) | Volume de la berceuse (0–10) | — | ✅ |
+| `ipc_lullaby_volume` (160) | Volume de la berceuse (0–10) | — | ❌ (remplacé par `lullaby/set`) |
 | `track_enable` (161) | Suivi automatique du sujet activé/désactivé | — | ✅ |
 | `system_reboot` (162) | Redémarre la caméra | (Device SystemReboot : voie interne, ne passe pas par ce DP) | ✅¹ |
 | `cry_detect_onoff` (167) | Détection de pleurs | * Events (réglage : —) | ✅ |
@@ -78,11 +78,11 @@ Légende : ✅ fonctionne ; `*` pourrait l'être (service ONVIF ou topic possibl
 | `link_move` (190) | Mouvement lié (journalise seulement) | — | ✅ |
 | `object_outline_onoff` (198) | Contour des objets détectés | — | ✅ |
 | `link_pos` (199) | Position liée (journalise seulement) | — | ✅ |
-| `ipc_lullaby_mode` (232) | Mode de la berceuse (0/1/2) | — | ✅ |
+| `ipc_lullaby_mode` (232) | Mode de la berceuse (0/1/2) | — | ❌ (remplacé par `lullaby/set`) |
 | `(sans fonction)` (233) | Gestionnaire sans `IPC_APP_*` (0x7c940) | — | — |
-| `ipc_lullaby_control` (234) | Lecture/pause de la berceuse | — | ✅ |
-| `ipc_lullaby_list` (235) | Choix du morceau de la berceuse | — | ✅ |
-| `ipc_lullaby_command` (236) | Commande de la berceuse | — | ✅ |
+| `ipc_lullaby_control` (234) | Lecture/pause de la berceuse | — | ❌ (remplacé par `lullaby/set`) |
+| `ipc_lullaby_list` (235) | Choix du morceau de la berceuse | — | ❌ (remplacé par `lullaby/set`) |
+| `ipc_lullaby_command` (236) | Commande de la berceuse | — | ❌ (remplacé par `lullaby/set`) |
 | `temp_report_c` (238) | Température en °C (0 sans capteur) | — | ✅ |
 | `temp_report_f` (239) | Température en °F (320 sans capteur) | — | ✅ |
 | `temp_unit_select` (240) | Unité de température (0/1) | — | ✅ |
