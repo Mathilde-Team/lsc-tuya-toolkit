@@ -284,8 +284,8 @@ Les journaux et la position PTZ sont écrits en RAM (`/tmp/hacklogs`, `/tmp/ptzs
 By default, custom logs are written to RAM under `/tmp/hacklogs` (see "Protection de la carte SD"); set `LOG_TO_SD=1` to write them to the SD card under `SD_DIR/logs/` (where `SD_DIR` is `/tmp/sd` on-device).
 
 # Tested with the following cameras:
-![Outdoor](https://github.com/guino/LSCOutdoor1080P/blob/main/1080outdoor.png?raw=true)
-![Rotating](https://github.com/guino/LSCOutdoor1080P/blob/main/1080ptz.jpg?raw=true)
+![Outdoor](docs/images/1080outdoor.png)
+![Rotating](docs/images/1080ptz.jpg)
 
 (Pictures from [guino/LSCOutdoor1080P](https://github.com/guino/LSCOutdoor1080P).) This fork was also tested on an `IPC-XC-C323` (AK3918EV330, firmware `3.10.78.1269`).
 
