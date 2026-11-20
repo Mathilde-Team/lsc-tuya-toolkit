@@ -114,6 +114,15 @@ Le mot de passe du broker est écrit uniquement sur la SD (`custom/configs/mqtt.
 Côté Home Assistant : `binary_sensor` MQTT avec `payload_on: "ON"` et `payload_off: "OFF"` sur le topic choisi.
 La détection est validée sur une caméra réelle ; le filtre humain (`MOTION_HUMAN`) n'est pas encore fiable. Détails : `tools/motion/README.md`.
 
+## 4 quater. Caméras d'un autre modèle (fixes, extérieures)
+
+Le fichier `_ht_hw_settings.ini` de la SD vient d'une caméra PTZ. Au démarrage, `hack.sh` lit celui d'origine de la caméra (`/etc/config`) :
+
+- avec `ptz_support = 1` : comportement inchangé (fichier de la SD) ;
+- sans `ptz_support` (caméra fixe) : les réglages d'origine (IR-cut, capteur, niveaux jour/nuit) sont gardés, seules les résolutions de la SD sont reportées, le codec reste celui d'origine. ONVIF n'annonce plus de PTZ et le recalage PTZ au démarrage est ignoré.
+
+Heure : si `ntp_server` est vide, la passerelle du réseau est essayée comme serveur NTP (sans réponse, l'horloge reste à l'heure de la caméra). Indiquer un serveur du LAN reste préférable.
+
 ## 5. Après les réglages : durcir
 
 - **Mot de passe root** : `security.root_password` est écrit (hash MD5-crypt) dans le fichier `shadow` de la SD, que le
