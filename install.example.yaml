@@ -16,7 +16,7 @@ network:
 
 time:
   tz: "CET-1CEST,M3.5.0,M10.5.0/3"   # Europe/Paris, Bruxelles, Amsterdam. Londres : "GMT0BST,M3.5.0/1,M10.5.0"
-  ntp_server: ""                     # IP d'un serveur NTP du LAN ; vide = pas de synchronisation
+  ntp_server: ""                     # IP d'un serveur NTP du LAN ; vide = la caméra essaie la passerelle (sinon l'heure reste en 2000). À renseigner de préférence
 
 syslog:
   server: ""                         # "hote:port" (UDP) ; vide = désactivé

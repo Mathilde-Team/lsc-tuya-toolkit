@@ -12,6 +12,7 @@
 > - [`docs/INSTALL.md`](docs/INSTALL.md) : **installeur** `install.py` (copie et personnalise la carte SD : Wi-Fi, IP fixe, heure, syslog, ONVIF, flux vidéo)
 > - [`docs/CHANGES.md`](docs/CHANGES.md) : toutes les modifications, le déploiement, le retour arrière et le journal des actions
 > - [`docs/CAMERA.md`](docs/CAMERA.md) : quelle caméra, et ce qui la distingue de l'amont
+> - [`docs/COMPARATIF.md`](docs/COMPARATIF.md) : comparatif des modèles (PTZ intérieure, fixe extérieure) et adaptation du toolkit
 > - [`docs/WIFI_ET_IP.md`](docs/WIFI_ET_IP.md) : le Wi-Fi est configuré à deux endroits (pourquoi l'IP peut changer)
 > - [`docs/HARDWARE.md`](docs/HARDWARE.md) et [`docs/SECURITY.md`](docs/SECURITY.md) : audits matériel et sécurité
 >

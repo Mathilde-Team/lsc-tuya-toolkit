@@ -32,7 +32,7 @@ chmod 600 install.yaml
 |---|---|
 | `target` | partition FAT (`/dev/sdb1`) ou point de montage ; vide = liste des cartes amovibles détectées |
 | `network` | `ssid`, `password`, `security` (3 = WPA/WPA2), `dhcp`, `ip`, `netmask`, `gateway` |
-| `time` | `tz` (chaîne POSIX), `ntp_server` (vide = pas de NTP) |
+| `time` | `tz` (chaîne POSIX), `ntp_server` (vide = la passerelle est essayée ; l'assistant la propose par défaut) |
 | `syslog` | `server` au format `hote:port`, UDP (vide = désactivé) |
 | `camera` | `hostname`, `ptz_home_on_boot`, `mute_factory_prompt`, `logs_keep` (rotation des journaux de démarrage, 0 = tout garder), `privacy_preset` (preset « position privée », 0 = désactivé — voir `docs/PRIVACY.md`) |
 | `onvif` | `enabled`, `user`, `password` (`auto` = généré, vide = sans authentification), `ptz` |

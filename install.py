@@ -174,8 +174,9 @@ def wizard(cfg):
         print(f"  {k}. {lbl}")
     ch = ask("Fuseau", "1")
     t["tz"] = TZ_PRESETS.get(ch, (None, None))[1] or ask("Chaîne POSIX du fuseau", t["tz"], required=True)
-    if ask_bool("Synchroniser l'heure sur un serveur NTP du LAN (sinon l'heure dérive)", bool(t["ntp_server"])):
-        t["ntp_server"] = ask("Adresse du serveur NTP", t["ntp_server"], required=True)
+    # Sans RTC fiable ni cloud, l'heure reste en 2000 : on propose par défaut la passerelle (la plupart des routeurs font NTP)
+    if ask_bool("Synchroniser l'heure sur un serveur NTP du LAN (sinon l'heure dérive)", True):
+        t["ntp_server"] = ask("Adresse du serveur NTP (par défaut : la passerelle)", t["ntp_server"] or n["gateway"], required=True)
     else:
         t["ntp_server"] = ""
     print("\n== Journaux distants ==")
