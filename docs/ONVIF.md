@@ -52,3 +52,7 @@ Les commandes appellent `ptz_move`, qui appelle `ptzctl` (voir `docs/CHANGES.md`
 Sur la SD : restaurer `custom/configs/onvif_simple_server.conf.orig` et `custom/scripts/onvif.sh.orig` (sauvegardes créées avant le déploiement), puis supprimer `custom/onvif/` et `custom/bin/mini_cgi_httpd`.
 
 Correspondance de chaque fonction de la passerelle MQTT avec un service ONVIF, et plan de tests : [ONVIF_MAPPING.md](ONVIF_MAPPING.md).
+
+## Découverte automatique (Home Assistant)
+
+Le firmware n'a pas `wsd_simple_server` : le démon `wsd` (`tools/onvif/wsd.c`, compilé par `tools/onvif/build.sh` vers `sd_card/custom/bin/wsd`) répond aux requêtes WS-Discovery (UDP 3702, multicast) avec l'adresse `http://<ip>:8080/onvif/device_service`. Il est lancé par `onvif.sh` avec la pile ONVIF ; Home Assistant trouve alors les caméras via **Ajouter une intégration → ONVIF**. Le scope PTZ n'est annoncé que sur les modèles à PTZ.

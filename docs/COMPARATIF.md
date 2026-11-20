@@ -42,3 +42,9 @@ Relevé en lecture seule sur sept caméras Tuya/Anyka AK3918EV330, dont le nom i
 ## Résolution unifiée : 720p
 
 Tous les flux `main_ch` sont réglés en 1280×720 (légèreté : débit et charge Home Assistant/Frigate). Le dépôt (`_ht_hw_settings.ini`, conf ONVIF, `install.py`) est en 720p par défaut ; sur les variantes autres que la référence, `hack.sh` reporte seulement les résolutions de la carte dans le profil d'origine. Le tableau ci-dessus indique les flux relevés avant ce changement (1080p sauf cam187/188) ; à relever à nouveau après redéploiement.
+
+## Codec et LED (mise à jour)
+
+- Toutes les caméras : **H.265 720p 15 i/s** (`VIDEO_H265=1` dans `hack.conf` ; la 181 était en H.264, la clé est `main_enc_out_type` du profil matériel).
+- Firmwares 2.10.x (181, 184) : la résolution est lue dans `/etc/config/_ht_hw_settings.ini`, désormais surchargé par le profil effectif.
+- LED d'état éteinte sur tous les modèles (`state_led.sh` gère `fill_light_led` et `state_led`).
