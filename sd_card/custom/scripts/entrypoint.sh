@@ -149,14 +149,24 @@ save_syslog_tail
 set_time() {
   # Fuseau Paris + heure via un serveur NTP du LAN (aucun acces Internet)
   [ -n "${TZ_STRING}" ] && echo "${TZ_STRING}" > /tmp/TZ
-  [ -n "${NTP_SERVER}" ] || return 0
+  # Sans NTP_SERVER, la passerelle du reseau sert de serveur NTP si elle en propose un.
+  # Le Wi-Fi peut monter apres le debut du script : la passerelle est relue a chaque essai.
+  ntp_auto=0
+  [ -n "${NTP_SERVER}" ] || ntp_auto=1
   i=0
-  while [ "$i" -lt 5 ]; do
-    ntpd -n -q -p "${NTP_SERVER}" >/dev/null 2>&1 && { touch /tmp/ntp_ok; log "NTP ok: $(date)"; return 0; }
+  tries=5
+  [ "${ntp_auto}" = "1" ] && tries=12
+  while [ "$i" -lt "${tries}" ]; do
+    [ "${ntp_auto}" = "1" ] && NTP_SERVER="$(route -n 2>/dev/null | awk '$1=="0.0.0.0"{print $2; exit}')"
+    if [ -n "${NTP_SERVER}" ]; then
+      ntpd -n -q -p "${NTP_SERVER}" >/dev/null 2>&1 && { touch /tmp/ntp_ok; log "NTP ok: $(date)"; return 0; }
+    fi
     sleep 5
     i=$((i+1))
   done
-  log "NTP failed (${NTP_SERVER})"
+  log "NTP failed (${NTP_SERVER:-aucun serveur})"
+  [ "${ntp_auto}" = "1" ] && NTP_SERVER=""
+  return 0
 }
 
 set_time
@@ -243,7 +253,7 @@ log "DATE IS: $(date)"
 # Wait until any RTSP port is open
 wait_rtsp_listening 30
 
-if [ "${PTZ_HOME_ON_BOOT:-0}" = "1" ]; then
+if [ "${PTZ_HOME_ON_BOOT:-0}" = "1" ] && [ "$(cat /tmp/hw_ptz 2>/dev/null)" != "0" ]; then
   # recalage sur les butees : rend les positions absolues ONVIF fiables
   /bin/sh "${SCRIPTS_DIR}/ptz_move" -h >/dev/null 2>&1 &
   log "PTZ recale (home)"
