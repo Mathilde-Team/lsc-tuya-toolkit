@@ -80,10 +80,7 @@ L'installeur :
 Le firmware d'origine plafonne à 15 images/s. Le gain demande de patcher `anyka_ipc` et le fichier ISP **de votre propre
 caméra** (ces fichiers du fabricant ne sont pas redistribués ici, voir [`CHANGES.md`](CHANGES.md) §6 et §7).
 
-**Firmware 3.10.78 (celui testé) : rien à faire.** Au démarrage, `custom/scripts/patch_fw.sh` contrôle le MD5 des fichiers
-de la caméra, fabrique `anyka_ipc_fps20b` et `isp_sc2336_fps20.conf` sur la carte et les monte aussitôt (désactivable avec
-`AUTO_PATCH_FW=0` dans `hack.conf`). Si un MD5 diffère, rien n'est patché et la caméra reste d'origine ; voir `custom/state`
-et les journaux `logs/run.*.log` (lignes `[patch_fw]`).
+**Cadence : 15 i/s d'origine sur toutes les caméras** (`VIDEO_FPS20=0`, défaut). Le mode 20 i/s est optionnel : avec `VIDEO_FPS20=1` (firmware 3.10.78 et capteur SC2336 seulement), `custom/scripts/patch_fw.sh` contrôle le MD5 des fichiers de la caméra, fabrique `anyka_ipc_fps20b` et `isp_sc2336_fps20.conf` sur la carte et les monte (désactivable avec `AUTO_PATCH_FW=0`). Si un MD5 diffère, rien n'est patché ; voir les journaux `logs/run.*.log` (lignes `[patch_fw]`).
 
 Autre firmware ou contrôle depuis le PC (le patch n'est alors appliqué que si les octets attendus sont présents) :
 
