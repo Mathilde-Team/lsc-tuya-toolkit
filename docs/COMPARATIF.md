@@ -4,13 +4,13 @@ Relevé en lecture seule sur sept caméras Tuya/Anyka AK3918EV330, dont le nom i
 
 | | cam181 | cam184 | cam185 | cam186 | cam187, cam188 | cam189 |
 |---|---|---|---|---|---|---|
-| Type | fixe extérieure | `?` | PTZ | PTZ intérieure | PTZ intérieure (référence du toolkit) | PTZ |
-| **Firmware** (`/usr/share/VERSION`) | **2.10.33.993** | `?` (accès telnet impossible) | **3.167.94.14** | **3.10.72.1254** | **3.10.78.1269** | **3.286.81.13** |
-| `anyka_ipc` (MD5) | `972a3c93…` | `?` | `fd726ad2…` | `09ba8e90…` | `27ee718f…` (binaire patché 20 i/s) | `1adee3a4…` |
-| Capteur (`isp_*.conf`) | MIS2006 | `?` | MIS2006 | MIS2006 | SC2336 | SC2336 |
-| `ptz_support` | non (clé absente) | `?` | oui | oui | oui | oui |
-| Réglages matériels actifs (`sensor_type_def` / `ircut_type`) | 4 / 2 (d'origine) | `?` | 17 / 1 (*) | 17 / 1 (*) | 17 / 1 | 17 / 1 (non vérifié : le hack n'a pas tourné) |
-| Flux `main_ch` | H.264 1080p, 15 i/s | H.265 1080p, ≈14 i/s | H.265 1080p, ≈14 i/s | H.265 1080p, ≈14 i/s | H.265 720p, 20 i/s | H.265 1080p (cadence annoncée 40 i/s, à vérifier) |
+| Type | fixe extérieure | PTZ intérieure | PTZ | PTZ intérieure | PTZ intérieure (référence du toolkit) | PTZ |
+| **Firmware** (`/usr/share/VERSION`) | **2.10.33.993** | **2.10.34.981** (lu sur sa carte SD) | **3.167.94.14** | **3.10.72.1254** | **3.10.78.1269** | **3.286.81.13** |
+| `anyka_ipc` (MD5) | `972a3c93…` | `?` (non relevé) | `fd726ad2…` | `09ba8e90…` | `27ee718f…` (binaire patché 20 i/s) | `1adee3a4…` |
+| Capteur (`isp_*.conf`) | MIS2006 | MIS2006 | MIS2006 | MIS2006 | SC2336 | SC2336 |
+| `ptz_support` | non (clé absente) | oui d'après `pan/tilt_total_steps` et `ak_motor.ko` (clé `ptz_support` absente) | oui | oui | oui | oui |
+| Réglages matériels actifs (`sensor_type_def` / `ircut_type`) | 4 / 2 (d'origine) | 4 / 2 (d'origine, carte) | 17 / 1 (*) | 17 / 1 (*) | 17 / 1 | 17 / 1 (non vérifié : le hack n'a pas tourné) |
+| Flux `main_ch` | H.264 1080p, 15 i/s | H.265 1080p, ≈14 i/s (à confirmer : caméra injoignable avant réinstallation) | H.265 1080p, ≈14 i/s | H.265 1080p, ≈14 i/s | H.265 720p, 20 i/s | H.265 1080p (cadence annoncée 40 i/s, à vérifier) |
 | Audio | AAC-LC 8 kHz mono | idem | idem | idem | idem | idem |
 | Sous-flux (`sub_ch`) | absent | absent | absent | absent | absent | absent |
 | `/usr/local/etc` (conf ONVIF) | absent | `?` | absent | absent | absent | absent |
@@ -20,6 +20,8 @@ Relevé en lecture seule sur sept caméras Tuya/Anyka AK3918EV330, dont le nom i
 (*) Ces caméras ont un capteur MIS2006 mais le fichier actif annonce `sensor_type_def = 17` et `ircut_type = 1` : c'est le `_ht_hw_settings.ini` PTZ de référence, copié par une ancienne version de `hack.sh`. Les valeurs d'origine de la cam186 étaient `sensor_type_def = 4`, `ircut_type = 2`, H.264. La version actuelle de `hack.sh` garde les réglages d'origine sur ces variantes.
 
 Écarts à noter :
+- La cam184 a deux identités dans nos relevés : un firmware 2.10.34.981 (MIS2006, `ircut_type = 2`, `sensor_type_def = 4`) lu sur sa carte, et un flux H.265 relevé en RTSP à son adresse avant la correction du DHCP, qui était probablement celui d'une autre caméra. Le flux et l'heure de la cam184 sont à relever après son démarrage avec la nouvelle carte.
+- Le critère « PTZ » ne doit pas reposer sur `ptz_support` seul : `hack.sh` regarde aussi `pan_total_steps` / `tilt_total_steps`.
 - La cam185 (3.167.94.14) et la cam189 (3.286.81.13) sont deux firmwares encore non traités par le toolkit ; leurs réglages d'origine restent à relever.
 - La cam189 n'a ni `/tmp/hacklogs` ni `/tmp/hw_ptz` : `hack.sh` ne s'y est pas exécuté complètement, d'où l'heure de l'an 2000.
 - Le MD5 `3d8cad80…` précédemment cité est celui du binaire de référence non patché ; les cam187 et cam188 exécutent la version patchée.
