@@ -365,6 +365,86 @@ static void publish_sd_health(void)
     state("sd_health", (!found || ro) ? "ON" : "OFF");
 }
 
+/* Division entière sans libgcc (md_inject.so ne doit importer aucune routine de division). */
+static unsigned long udiv(unsigned long n, unsigned long d)
+{
+    unsigned long q = 0, r = 0;
+    int i;
+
+    if (!d)
+        return 0;
+    for (i = 31; i >= 0; i--) {
+        r = (r << 1) | ((n >> i) & 1);
+        if (r >= d) {
+            r -= d;
+            q |= 1UL << i;
+        }
+    }
+    return q;
+}
+
+/* Valeur (en Kio) de la clé "name:" de /proc/meminfo ; 0 si absente. */
+static unsigned long meminfo_kb(const char *b, const char *name)
+{
+    int i, q, nl = strlen(name);
+    unsigned long v = 0;
+
+    for (i = 0; b[i]; i++) {
+        if (i && b[i - 1] != '\n')
+            continue;
+        for (q = 0; q < nl && b[i + q] == name[q]; q++)
+            ;
+        if (q < nl || b[i + q] != ':')
+            continue;
+        for (i += q + 1; b[i] == ' '; i++)
+            ;
+        for (; b[i] >= '0' && b[i] <= '9'; i++)
+            v = v * 10 + (unsigned long)(b[i] - '0');
+        return v;
+    }
+    return 0;
+}
+
+/* mem_used_pct : (total - libre - tampons - cache) / total, en % ; load_avg : charge moyenne sur 1 min. */
+static void publish_sysinfo(void)
+{
+    char b[1024], o[16];
+    unsigned long tot, used, pct, tens;
+    int fd, n, i;
+
+    fd = open("/proc/meminfo", 0);
+    n = fd >= 0 ? read(fd, b, sizeof b - 1) : 0;
+    if (fd >= 0)
+        close(fd);
+    b[n > 0 ? n : 0] = 0;
+    tot = meminfo_kb(b, "MemTotal");
+    used = meminfo_kb(b, "MemFree") + meminfo_kb(b, "Buffers") + meminfo_kb(b, "Cached");
+    if (tot && used <= tot) {
+        pct = udiv((tot - used) * 100UL + udiv(tot, 2), tot);
+        if (pct > 100)
+            pct = 100;
+        tens = udiv(pct, 10);
+        i = 0;
+        if (pct == 100)
+            o[i++] = '1';
+        if (pct >= 10)
+            o[i++] = (char)('0' + (pct == 100 ? 0 : tens));
+        o[i++] = (char)('0' + (pct - tens * 10));
+        o[i] = 0;
+        state("mem_used_pct", o);
+    }
+    fd = open("/proc/loadavg", 0);
+    n = fd >= 0 ? read(fd, b, sizeof b - 1) : 0;
+    if (fd >= 0)
+        close(fd);
+    b[n > 0 ? n : 0] = 0;
+    for (i = 0; i < 15 && b[i] && b[i] != ' '; i++)
+        o[i] = b[i];
+    o[i] = 0;
+    if (only(o, "0123456789.", 15))
+        state("load_avg", o);
+}
+
 static void publish_position(void)
 {
     char o[GW_MAX];
@@ -851,6 +931,7 @@ void gw_publish_all(void)
     publish_position();
     publish_presets();
     publish_sd_health();
+    publish_sysinfo();
     state("speaker_siren", "OFF");
     state("lullaby", "stop");
     for (i = 0; i < DP_TABLE_LEN; i++)
@@ -863,6 +944,7 @@ void gw_publish_sensors(void)
 
     publish_position();
     publish_sd_health();
+    publish_sysinfo();
     for (i = 0; i < DP_TABLE_LEN; i++)
         if (dp_table[i].kind == DP_SENSOR)
             publish_entry(&dp_table[i]);

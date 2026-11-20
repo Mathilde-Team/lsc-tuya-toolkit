@@ -59,6 +59,12 @@ ensure_onvif() {
     if [ -x "${MINI_HTTPD}" ] && [ -x "${ONVIF_WWW}/onvif_simple_server" ]; then
         "${MINI_HTTPD}" 8080 "${ONVIF_WWW}" >/dev/null 2>&1 &
         log "ONVIF started (mini_cgi_httpd on :8080)"
+        # Découverte automatique (WS-Discovery) pour Home Assistant
+        if [ -x "${CUSTOM_DIR}/bin/wsd" ] && ! ps | grep -v grep | grep -q "bin/wsd"; then
+            ptz_flag=1
+            [ "$(cat /tmp/hw_ptz 2>/dev/null)" = "0" ] && ptz_flag=0
+            "${CUSTOM_DIR}/bin/wsd" wlan0 8080 "$(hostname)" "${ONVIF_MODEL:-IPC}" "${ptz_flag}" >/dev/null 2>&1 &
+        fi
         return 0
     fi
 

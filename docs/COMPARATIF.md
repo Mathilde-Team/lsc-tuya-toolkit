@@ -10,7 +10,7 @@ Relevé en lecture seule sur sept caméras Tuya/Anyka AK3918EV330, dont le nom i
 | Capteur (`isp_*.conf`) | MIS2006 | MIS2006 | MIS2006 | MIS2006 | SC2336 | SC2336 |
 | `ptz_support` | non (clé absente) | oui d'après `pan/tilt_total_steps` et `ak_motor.ko` (clé `ptz_support` absente) | oui | oui | oui | oui |
 | Réglages matériels actifs (`sensor_type_def` / `ircut_type`) | 4 / 2 (d'origine) | 4 / 2 (d'origine, carte) | 17 / 1 (d'origine) | 17 / 1 (d'origine) | 17 / 1 | 17 / 1 (d'origine) |
-| Flux `main_ch` | H.264 1080p, 15 i/s | H.265 1080p, ≈14 i/s (à confirmer : caméra injoignable avant réinstallation) | H.265 1080p, ≈14 i/s | H.265 1080p, ≈14 i/s | H.265 720p, 20 i/s | H.265 1080p (cadence annoncée 40 i/s, à vérifier) |
+| Flux `main_ch` | H.264 720p cible, 15 i/s | H.265 1080p, ≈14 i/s (à confirmer : caméra injoignable avant réinstallation) | H.265 1080p, ≈14 i/s | H.265 1080p, ≈14 i/s | H.265 720p, 20 i/s | H.265 1080p (cadence annoncée 40 i/s, à vérifier) |
 | Audio | AAC-LC 8 kHz mono | idem | idem | idem | idem | idem |
 | Sous-flux (`sub_ch`) | absent | absent | absent | absent | absent | absent |
 | `/usr/local/etc` (conf ONVIF) | absent | `?` | absent | absent | absent | absent |
@@ -38,3 +38,13 @@ Relevé en lecture seule sur sept caméras Tuya/Anyka AK3918EV330, dont le nom i
 - `VIDEO_FPS20=0` par défaut : plus de binaire patché ; cam187/cam188 repassées au `anyka_ipc` d'origine. Sur les autres variantes, le fichier de réglages d'origine est gardé avec `main_fps = 15`.
 - Déployé et redémarré : cam181, 185, 186, 187, 188, 189 (PTZ détecté sur toutes sauf la 181, heure juste, `md_inject` chargé, ONVIF 8080 ouvert). La cam184 reçoit cette version avec sa nouvelle carte.
 - Cadence mesurée sur 12 s : 10 à 14 i/s selon la caméra et la luminosité (l'exposition automatique du capteur peut la réduire) ; à surveiller de jour.
+
+## Résolution unifiée : 720p
+
+Tous les flux `main_ch` sont réglés en 1280×720 (légèreté : débit et charge Home Assistant/Frigate). Le dépôt (`_ht_hw_settings.ini`, conf ONVIF, `install.py`) est en 720p par défaut ; sur les variantes autres que la référence, `hack.sh` reporte seulement les résolutions de la carte dans le profil d'origine. Le tableau ci-dessus indique les flux relevés avant ce changement (1080p sauf cam187/188) ; à relever à nouveau après redéploiement.
+
+## Codec et LED (mise à jour)
+
+- Toutes les caméras : **H.265 720p 15 i/s** (`VIDEO_H265=1` dans `hack.conf` ; la 181 était en H.264, la clé est `main_enc_out_type` du profil matériel).
+- Firmwares 2.10.x (181, 184) : la résolution est lue dans `/etc/config/_ht_hw_settings.ini`, désormais surchargé par le profil effectif.
+- LED d'état éteinte sur tous les modèles (`state_led.sh` gère `fill_light_led` et `state_led`).

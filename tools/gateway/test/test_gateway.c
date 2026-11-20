@@ -129,7 +129,7 @@ int main(void)
     CHECK(gw_topic("camera/sd_status/set", "1") < 0);
     npub = 0;
     gw_publish_sensors();
-    CHECK(npub == 5 && PUB("camera/patrol_state", "2")); /* position, santé SD, sd_storage, sd_status, patrol_state */
+    CHECK(npub == 7 && PUB("camera/patrol_state", "2")); /* position, santé SD, mémoire, charge, sd_storage, sd_status, patrol_state */
 
     /* json : texte libre transmis tel quel ; sensor « out » ; action à valeurs limitées */
     CHECK(gw_topic("camera/alarm_zone_draw/set", "{\"num\":1}") == 0 && !strcmp(zone, "{\"num\":1}") && PUB("camera/alarm_zone_draw", "{\"num\":1}"));
@@ -194,7 +194,7 @@ int main(void)
     /* état initial : tous les exposés lisibles */
     npub = 0;
     gw_publish_all();
-    CHECK(npub == 14); /* position, préréglages, santé SD, sirène + 9 DP lisibles */
+    CHECK(npub == 16); /* position, préréglages, santé SD, mémoire, charge, sirène + 9 DP lisibles */
 
     /* santé SD : lecture seule (ou absente) = ON, lecture-écriture = OFF ; les montages « bind » ne comptent pas */
     {

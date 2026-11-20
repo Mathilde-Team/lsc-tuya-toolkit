@@ -44,7 +44,7 @@ DEFAULTS = {
     "onvif": {"enabled": True, "user": "admin", "password": "auto", "ptz": True},
     "services": {"telnet": "off", "ftp": False, "offline": True},
     "security": {"root_password": "auto"},
-    "video": {"main_codec": 2, "main_width": 1920, "main_height": 1080,
+    "video": {"main_codec": 2, "main_width": 1280, "main_height": 720,
               "sub_codec": 2, "sub_width": 640, "sub_height": 360},
     "speaker": {"enabled": False, "allow": "", "gain": 50, "port": 5004},
     "motion": {"enabled": False, "topic": "camera/motion", "hold": 30, "sensitivity": 0, "human": False, "ha_discovery": True,

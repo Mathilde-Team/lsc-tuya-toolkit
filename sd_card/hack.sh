@@ -76,6 +76,8 @@ hw_settings_file() {
     [ -n "${v}" ] && sed -i "s/^${k}[[:space:]]*=.*/${k} = ${v}/" "${eff}"
   done
   sed -i "s/^main_fps[[:space:]]*=.*/main_fps = 15/;s/^sub_fps[[:space:]]*=.*/sub_fps = 15/" "${eff}"
+  # Codec : H.265 (2) comme les autres caméras, sauf VIDEO_H265=0
+  [ "${VIDEO_H265:-1}" = "1" ] && sed -i "s/^main_enc_out_type[[:space:]]*=.*/main_enc_out_type = 2/;s/^sub_enc_out_type[[:space:]]*=.*/sub_enc_out_type = 2/" "${eff}"
   log "autre modele (firmware ${ver:-?}, capteur ${s_orig:-?}) : reglages materiels d'origine conserves, resolutions reportees" >&2
   echo "${eff}"
 }
@@ -95,11 +97,12 @@ apply_overrides() {
   hw_file="$(hw_settings_file)"
   if [ "${OVERRIDE_HW_SETTINGS}" = "1" ]; then
     mount --bind "${hw_file}" /usr/local/_ht_hw_settings.ini || true
+    # Firmwares 2.10.x : le fichier lu est celui de /etc/config
+    [ -f /etc/config/_ht_hw_settings.ini ] && mount --bind "${hw_file}" /etc/config/_ht_hw_settings.ini || true
   fi
   if [ "${OVERRIDE_SW_SETTINGS}" = "1" ]; then
     mount --bind "${CONFIG_DIR}/_ht_sw_settings.ini" /etc/config/_ht_sw_settings.ini || true
   fi
-  # mount --bind "${CONFIG_DIR}/factory_cfg.ini" /usr/local/factory_cfg.ini || true
   onvif_conf="${CONFIG_DIR}/onvif_simple_server.conf"
   if [ "$(cat /tmp/hw_ptz 2>/dev/null)" = "0" ]; then
     # camera fixe : ONVIF n'annonce pas de PTZ

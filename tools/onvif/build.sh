@@ -46,6 +46,8 @@ HAVE_MBEDTLS=1 make -f Makefile.static -j4 CC="$CC -static $CFLAGS" STRIP="$STRI
 
 $CC -static $CFLAGS -Wall -Wextra -o mini_cgi_httpd "$HERE/mini_cgi_httpd.c"
 $STRIP mini_cgi_httpd
+$CC -static $CFLAGS -Wall -Wextra -o wsd "$HERE/wsd.c"
+$STRIP wsd
 
 # Installation dans l'arborescence de la SD
 SD="$HERE/../../sd_card/custom"
@@ -55,5 +57,5 @@ for d in device_service_files events_service_files generic_files media_service_f
          media2_service_files ptz_service_files deviceio_service_files imaging_service_files; do
     cp -R "$d" "$SD/onvif/www/onvif/"
 done
-cp mini_cgi_httpd "$SD/bin/"
+cp mini_cgi_httpd wsd "$SD/bin/"
 echo "OK"
