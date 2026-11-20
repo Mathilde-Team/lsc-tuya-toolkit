@@ -114,14 +114,15 @@ Le mot de passe du broker est écrit uniquement sur la SD (`custom/configs/mqtt.
 Côté Home Assistant : `binary_sensor` MQTT avec `payload_on: "ON"` et `payload_off: "OFF"` sur le topic choisi.
 La détection est validée sur une caméra réelle ; le filtre humain (`MOTION_HUMAN`) n'est pas encore fiable. Détails : `tools/motion/README.md`.
 
-## 4 quater. Caméras d'un autre modèle (fixes, extérieures)
+## 4 quater. Caméras d'un autre modèle (autre firmware, capteur ou sans PTZ)
 
-Le fichier `_ht_hw_settings.ini` de la SD vient d'une caméra PTZ. Au démarrage, `hack.sh` lit celui d'origine de la caméra (`/etc/config`) :
+Le fichier `_ht_hw_settings.ini` de la SD vient d'une caméra PTZ testée (firmware 3.10.78.1269, `sensor_type_def` identique). Au démarrage, `hack.sh` le compare au fichier d'origine de la caméra (`/etc/config`) :
 
-- avec `ptz_support = 1` : comportement inchangé (fichier de la SD) ;
-- sans `ptz_support` (caméra fixe) : les réglages d'origine (IR-cut, capteur, niveaux jour/nuit) sont gardés, seules les résolutions de la SD sont reportées, le codec reste celui d'origine. ONVIF n'annonce plus de PTZ et le recalage PTZ au démarrage est ignoré.
+- même firmware et même capteur : fichier de la SD, comportement inchangé ;
+- sinon : les réglages d'origine (IR-cut, capteur, niveaux jour/nuit, moteurs) sont gardés, seules les résolutions de la SD sont reportées, le codec reste celui d'origine ;
+- sans `ptz_support = 1` (caméra fixe) : ONVIF n'annonce pas de PTZ et le recalage PTZ au démarrage est ignoré.
 
-Heure : si `ntp_server` est vide, la passerelle du réseau est essayée comme serveur NTP (sans réponse, l'horloge reste à l'heure de la caméra). Indiquer un serveur du LAN reste préférable.
+Voir [`COMPARATIF.md`](COMPARATIF.md). Heure : si `ntp_server` est vide, la passerelle du réseau est essayée comme serveur NTP (attente du Wi-Fi jusqu'à 60 s). Indiquer un serveur du LAN reste préférable.
 
 ## 5. Après les réglages : durcir
 
