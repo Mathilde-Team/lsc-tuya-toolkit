@@ -32,7 +32,7 @@ chmod 600 install.yaml
 |---|---|
 | `target` | partition FAT (`/dev/sdb1`) ou point de montage ; vide = liste des cartes amovibles détectées |
 | `network` | `ssid`, `password`, `security` (3 = WPA/WPA2), `dhcp`, `ip`, `netmask`, `gateway` |
-| `time` | `tz` (chaîne POSIX), `ntp_server` (vide = pas de NTP) |
+| `time` | `tz` (chaîne POSIX), `ntp_server` (vide = la passerelle est essayée ; l'assistant la propose par défaut) |
 | `syslog` | `server` au format `hote:port`, UDP (vide = désactivé) |
 | `camera` | `hostname`, `ptz_home_on_boot`, `mute_factory_prompt`, `logs_keep` (rotation des journaux de démarrage, 0 = tout garder), `privacy_preset` (preset « position privée », 0 = désactivé — voir `docs/PRIVACY.md`) |
 | `onvif` | `enabled`, `user`, `password` (`auto` = généré, vide = sans authentification), `ptz` |
@@ -113,6 +113,15 @@ La caméra publie `ON` au premier mouvement et `OFF` après `hold` secondes sans
 Le mot de passe du broker est écrit uniquement sur la SD (`custom/configs/mqtt.cred`, mode 600). `CLOCKFIX=1` (par défaut) empêche le saut de +8 h et fait afficher l'heure locale (`TZ_STRING`, heure d'été comprise) dans l'OSD.
 Côté Home Assistant : `binary_sensor` MQTT avec `payload_on: "ON"` et `payload_off: "OFF"` sur le topic choisi.
 La détection est validée sur une caméra réelle ; le filtre humain (`MOTION_HUMAN`) n'est pas encore fiable. Détails : `tools/motion/README.md`.
+
+## 4 quater. Caméras d'un autre modèle (fixes, extérieures)
+
+Le fichier `_ht_hw_settings.ini` de la SD vient d'une caméra PTZ. Au démarrage, `hack.sh` lit celui d'origine de la caméra (`/etc/config`) :
+
+- avec `ptz_support = 1` : comportement inchangé (fichier de la SD) ;
+- sans `ptz_support` (caméra fixe) : les réglages d'origine (IR-cut, capteur, niveaux jour/nuit) sont gardés, seules les résolutions de la SD sont reportées, le codec reste celui d'origine. ONVIF n'annonce plus de PTZ et le recalage PTZ au démarrage est ignoré.
+
+Heure : si `ntp_server` est vide, la passerelle du réseau est essayée comme serveur NTP (sans réponse, l'horloge reste à l'heure de la caméra). Indiquer un serveur du LAN reste préférable.
 
 ## 5. Après les réglages : durcir
 

@@ -47,6 +47,28 @@ ensure_shadow() {
   log "Shadow copied."
 }
 
+# Profil materiel : le fichier de la SD vient d'une camera PTZ. Sur une camera fixe (pas de
+# ptz_support dans le fichier d'origine), on garde le fichier d'origine (IR-cut, capteur, niveaux)
+# et on n'y reporte que les resolutions de celui de la SD (le codec reste celui d'origine).
+hw_settings_file() {
+  sdf="${CONFIG_DIR}/_ht_hw_settings.ini"
+  orig="/etc/config/_ht_hw_settings.ini"
+  if [ ! -f "${orig}" ] || grep -q -E '^ptz_support[[:space:]]*=[[:space:]]*1' "${orig}"; then
+    echo 1 > /tmp/hw_ptz
+    echo "${sdf}"
+    return 0
+  fi
+  echo 0 > /tmp/hw_ptz
+  eff=/tmp/hw_effective.ini
+  cp "${orig}" "${eff}"
+  for k in main_width main_height sub_width sub_height; do
+    v="$(grep -E "^${k}[[:space:]]*=" "${sdf}" | head -n 1 | sed 's/^[^=]*=[[:space:]]*//;s/[[:space:]]*$//')"
+    [ -n "${v}" ] && sed -i "s/^${k}[[:space:]]*=.*/${k} = ${v}/" "${eff}"
+  done
+  log "camera fixe (sans PTZ) : reglages materiels d'origine conserves, resolutions reportees" >&2
+  echo "${eff}"
+}
+
 apply_overrides() {
   mount --bind "${SCRIPTS_DIR}/recover_cfg.sh" /usr/sbin/recover_cfg.sh || true
   mount --bind "${SCRIPTS_DIR}/anyka_ipc.sh" /usr/sbin/anyka_ipc.sh || true
@@ -58,14 +80,20 @@ apply_overrides() {
   [ -f "${CONFIG_DIR}/isp_sc2336_fps20.conf" ] && mount --bind "${CONFIG_DIR}/isp_sc2336_fps20.conf" /etc/config/isp_sc2336_mipi_2lane_h3b.conf || true
   # Vidéo: anyka_ipc patché (frame_rate du canal VI : 15 -> 20)
   [ -f "${CUSTOM_DIR}/bin/anyka_ipc_fps20b" ] && mount --bind "${CUSTOM_DIR}/bin/anyka_ipc_fps20b" /usr/bin/anyka_ipc || true
+  hw_file="$(hw_settings_file)"
   if [ "${OVERRIDE_HW_SETTINGS}" = "1" ]; then
-    mount --bind "${CONFIG_DIR}/_ht_hw_settings.ini" /usr/local/_ht_hw_settings.ini || true
+    mount --bind "${hw_file}" /usr/local/_ht_hw_settings.ini || true
   fi
   if [ "${OVERRIDE_SW_SETTINGS}" = "1" ]; then
     mount --bind "${CONFIG_DIR}/_ht_sw_settings.ini" /etc/config/_ht_sw_settings.ini || true
   fi
   # mount --bind "${CONFIG_DIR}/factory_cfg.ini" /usr/local/factory_cfg.ini || true
-  mount --bind "${CONFIG_DIR}/onvif_simple_server.conf" /usr/local/etc/onvif_simple_server.conf || true
+  onvif_conf="${CONFIG_DIR}/onvif_simple_server.conf"
+  if [ "$(cat /tmp/hw_ptz 2>/dev/null)" = "0" ]; then
+    # camera fixe : ONVIF n'annonce pas de PTZ
+    sed 's/^ptz=1/ptz=0/' "${onvif_conf}" > /tmp/onvif_effective.conf && onvif_conf=/tmp/onvif_effective.conf
+  fi
+  mount --bind "${onvif_conf}" /usr/local/etc/onvif_simple_server.conf || true
   touch "${SD_DIR}/logs/anyka_debug.${DATETIME}.log"
   touch /etc/config/log_debug
   mount --bind "${SD_DIR}/logs/anyka_debug.${DATETIME}.log" /etc/config/log_debug || true
