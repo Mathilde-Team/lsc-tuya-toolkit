@@ -14,7 +14,7 @@ Relevé en lecture seule sur trois variantes de caméras Tuya/Anyka AK3918EV330 
 | IR-cut d'origine | `ircut_type = 1` | `ircut_type = 2` | `ircut_type = 2` (niveaux jour/nuit inversés par rapport au type 1) |
 | Vidéo d'origine | H.265, 15 i/s | H.264, 15 i/s | H.264, 15 i/s, 768 kb/s |
 | Vidéo avec le toolkit | H.265 20 i/s (firmware patché) | réglages d'origine | réglages d'origine |
-| Script Wi-Fi du firmware | `wifi_driver.sh` | `wifi_driver_new.sh` | `wifi_driver.sh` |
+| Script Wi-Fi du firmware | `?` | `wifi_driver_new.sh` | `wifi_driver.sh` |
 | `/usr/local/etc` (conf ONVIF) | présent | absent (montage de la conf ONVIF en échec) | absent |
 | RTSP | `/main_ch` seul | `?` | `/main_ch` seul |
 
