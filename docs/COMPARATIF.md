@@ -29,7 +29,7 @@ Relevé en lecture seule sur sept caméras Tuya/Anyka AK3918EV330, dont le nom i
 ## Conséquences pour le toolkit
 
 - Le fichier `_ht_hw_settings.ini` du dépôt est celui d'une caméra PTZ de référence : le copier tel quel sur une autre variante écrase l'IR-cut, le capteur et les paramètres moteur. `hack.sh` compare au démarrage le firmware et le capteur au profil testé (voir `docs/INSTALL.md`, §4 quater) : sur une autre variante, les réglages d'origine sont gardés ; sans `ptz_support`, ONVIF n'annonce pas de PTZ et le recalage PTZ est ignoré. Les caméras marquées (*) doivent recevoir cette version de `hack.sh` (redémarrage nécessaire).
-- Le patch 20 i/s (`patch_fw.sh`) cible le firmware 3.10.78.1269 : il ne s'applique pas à un autre binaire.
+- Cadence unifiée à 15 i/s d'origine (`VIDEO_FPS20=0`) sur toutes les caméras. Le patch 20 i/s (`patch_fw.sh`, optionnel) cible le firmware 3.10.78.1269 : il ne s'applique pas à un autre binaire.
 - Sur les variantes à `/usr/local/etc` absent, la conf ONVIF de la SD n'est pas montée : à traiter (état à vérifier caméra par caméra).
 - Identifier un modèle : lire `/usr/share/VERSION`, `ptz_support` dans `/etc/config/_ht_hw_settings.ini` et le fichier `isp_*.conf` de `/etc/config`.
 - Les fonctions liées au PTZ (presets, positions absolues, mode privé par position) n'existent pas sur une caméra fixe.

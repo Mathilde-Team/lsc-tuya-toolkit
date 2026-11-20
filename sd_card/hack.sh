@@ -19,6 +19,7 @@ load_cfg() {
     OVERRIDE_HW_SETTINGS=1
     OVERRIDE_SW_SETTINGS=1
     AUTO_PATCH_FW=1
+    VIDEO_FPS20=0
 
     if [ -f "${CFG_FILE}" ]; then
         # shellcheck disable=SC1090
@@ -83,12 +84,13 @@ apply_overrides() {
   mount --bind "${SCRIPTS_DIR}/anyka_ipc.sh" /usr/sbin/anyka_ipc.sh || true
   # LED: script qui garde la LED éteinte
   [ -f "${SCRIPTS_DIR}/state_led.sh" ] && mount --bind "${SCRIPTS_DIR}/state_led.sh" /usr/sbin/state_led.sh && /bin/sh /usr/sbin/state_led.sh off
-  # Vidéo 20 i/s : fabriqué sur la caméra à partir de SES fichiers si le firmware est celui testé (3.10.78), sinon rien
-  [ "${AUTO_PATCH_FW}" = "1" ] && /bin/sh "${SCRIPTS_DIR}/patch_fw.sh" || true
-  # Vidéo: ISP à 20 fps (le capteur est limité à 14 fps par le fichier d'origine)
-  [ -f "${CONFIG_DIR}/isp_sc2336_fps20.conf" ] && mount --bind "${CONFIG_DIR}/isp_sc2336_fps20.conf" /etc/config/isp_sc2336_mipi_2lane_h3b.conf || true
-  # Vidéo: anyka_ipc patché (frame_rate du canal VI : 15 -> 20)
-  [ -f "${CUSTOM_DIR}/bin/anyka_ipc_fps20b" ] && mount --bind "${CUSTOM_DIR}/bin/anyka_ipc_fps20b" /usr/bin/anyka_ipc || true
+  # Vidéo 20 i/s (optionnel, VIDEO_FPS20=1) : fichiers fabriqués sur la caméra si le firmware est le 3.10.78 (MD5 contrôlés), sinon rien.
+  # Par défaut (VIDEO_FPS20=0) : cadence d'origine (≈15 i/s), identique sur tous les modèles.
+  if [ "${VIDEO_FPS20}" = "1" ]; then
+    [ "${AUTO_PATCH_FW}" = "1" ] && /bin/sh "${SCRIPTS_DIR}/patch_fw.sh" || true
+    [ -f "${CONFIG_DIR}/isp_sc2336_fps20.conf" ] && mount --bind "${CONFIG_DIR}/isp_sc2336_fps20.conf" /etc/config/isp_sc2336_mipi_2lane_h3b.conf || true
+    [ -f "${CUSTOM_DIR}/bin/anyka_ipc_fps20b" ] && mount --bind "${CUSTOM_DIR}/bin/anyka_ipc_fps20b" /usr/bin/anyka_ipc || true
+  fi
   hw_file="$(hw_settings_file)"
   if [ "${OVERRIDE_HW_SETTINGS}" = "1" ]; then
     mount --bind "${hw_file}" /usr/local/_ht_hw_settings.ini || true
