@@ -47,25 +47,34 @@ ensure_shadow() {
   log "Shadow copied."
 }
 
-# Profil materiel : le fichier de la SD vient d'une camera PTZ. Sur une camera fixe (pas de
-# ptz_support dans le fichier d'origine), on garde le fichier d'origine (IR-cut, capteur, niveaux)
-# et on n'y reporte que les resolutions de celui de la SD (le codec reste celui d'origine).
+# Profil materiel : le fichier de la SD vient d'une camera PTZ testee (firmware 3.10.78.1269,
+# capteur 17). Sur un autre modele (autre firmware ou capteur : IR-cut, capteur, niveaux
+# jour/nuit differents), on garde le fichier d'origine de la camera et on n'y reporte que
+# les resolutions de celui de la SD (le codec reste celui d'origine).
+# /tmp/hw_ptz : 1 si la camera a un PTZ (ptz_support = 1 dans le fichier d'origine), sinon 0.
 hw_settings_file() {
   sdf="${CONFIG_DIR}/_ht_hw_settings.ini"
   orig="/etc/config/_ht_hw_settings.ini"
-  if [ ! -f "${orig}" ] || grep -q -E '^ptz_support[[:space:]]*=[[:space:]]*1' "${orig}"; then
+  if [ ! -f "${orig}" ]; then
     echo 1 > /tmp/hw_ptz
     echo "${sdf}"
     return 0
   fi
-  echo 0 > /tmp/hw_ptz
+  if grep -q -E '^ptz_support[[:space:]]*=[[:space:]]*1' "${orig}"; then echo 1 > /tmp/hw_ptz; else echo 0 > /tmp/hw_ptz; fi
+  ver="$(cat /usr/share/VERSION 2>/dev/null)"
+  s_orig="$(grep -E '^sensor_type_def[[:space:]]*=' "${orig}" | head -n 1 | sed 's/^[^=]*=[[:space:]]*//;s/[[:space:]]*$//')"
+  s_sd="$(grep -E '^sensor_type_def[[:space:]]*=' "${sdf}" | head -n 1 | sed 's/^[^=]*=[[:space:]]*//;s/[[:space:]]*$//')"
+  if [ "${ver}" = "3.10.78.1269" ] && [ "${s_orig}" = "${s_sd}" ]; then
+    echo "${sdf}"
+    return 0
+  fi
   eff=/tmp/hw_effective.ini
   cp "${orig}" "${eff}"
   for k in main_width main_height sub_width sub_height; do
     v="$(grep -E "^${k}[[:space:]]*=" "${sdf}" | head -n 1 | sed 's/^[^=]*=[[:space:]]*//;s/[[:space:]]*$//')"
     [ -n "${v}" ] && sed -i "s/^${k}[[:space:]]*=.*/${k} = ${v}/" "${eff}"
   done
-  log "camera fixe (sans PTZ) : reglages materiels d'origine conserves, resolutions reportees" >&2
+  log "autre modele (firmware ${ver:-?}, capteur ${s_orig:-?}) : reglages materiels d'origine conserves, resolutions reportees" >&2
   echo "${eff}"
 }
 
