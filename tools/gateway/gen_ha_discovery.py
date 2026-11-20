@@ -90,6 +90,11 @@ def entities(hdr):
                                      "state_topic": "%B/speaker_siren", "command_topic": "%B/speaker_siren/set",
                                      "payload_on": "ON", "payload_off": "OFF", "state_on": "ON", "state_off": "OFF",
                                      "icon": "mdi:bullhorn"}),
+        ("sensor", "mem_used_pct", {"name": "Mémoire utilisée", "unique_id": "%N_mem_used_pct", "state_topic": "%B/mem_used_pct",
+                                    "unit_of_measurement": "%", "state_class": "measurement", "entity_category": "diagnostic",
+                                    "icon": "mdi:memory"}),
+        ("sensor", "load_avg", {"name": "Charge moyenne (1 min)", "unique_id": "%N_load_avg", "state_topic": "%B/load_avg",
+                                "state_class": "measurement", "entity_category": "diagnostic", "icon": "mdi:speedometer"}),
         ("binary_sensor", "sd_health", {"name": "Problème carte SD (lecture seule)", "unique_id": "%N_sd_health",
                                        "state_topic": "%B/sd_health", "payload_on": "ON", "payload_off": "OFF",
                                        "device_class": "problem", "entity_category": "diagnostic"}),
@@ -140,7 +145,7 @@ def entities(hdr):
         e["device"] = DEVICE
         txt = json.dumps(e, ensure_ascii=False, separators=(",", ":"))
         assert len(txt.encode()) <= 700, "%s : charge trop longue (%d)" % (obj, len(txt))
-        assert "%" not in txt.replace("%B", "").replace("%N", "").replace("%M", ""), obj
+        assert "%" not in txt.replace('"unit_of_measurement":"%"', "").replace("%B", "").replace("%N", "").replace("%M", ""), obj
         yield comp, obj, txt
 
 
