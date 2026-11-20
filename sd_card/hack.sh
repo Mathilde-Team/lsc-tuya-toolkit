@@ -51,7 +51,7 @@ ensure_shadow() {
 # capteur 17). Sur un autre modele (autre firmware ou capteur : IR-cut, capteur, niveaux
 # jour/nuit differents), on garde le fichier d'origine de la camera et on n'y reporte que
 # les resolutions de celui de la SD (le codec reste celui d'origine).
-# /tmp/hw_ptz : 1 si la camera a un PTZ (ptz_support = 1 dans le fichier d'origine), sinon 0.
+# /tmp/hw_ptz : 1 si la camera a un PTZ (ptz_support = 1 ou pan/tilt_total_steps dans le fichier d'origine), sinon 0.
 hw_settings_file() {
   sdf="${CONFIG_DIR}/_ht_hw_settings.ini"
   orig="/etc/config/_ht_hw_settings.ini"
@@ -60,7 +60,7 @@ hw_settings_file() {
     echo "${sdf}"
     return 0
   fi
-  if grep -q -E '^ptz_support[[:space:]]*=[[:space:]]*1' "${orig}"; then echo 1 > /tmp/hw_ptz; else echo 0 > /tmp/hw_ptz; fi
+  if grep -q -E '^ptz_support[[:space:]]*=[[:space:]]*1|^(pan|tilt)_total_steps[[:space:]]*=[[:space:]]*[1-9]' "${orig}"; then echo 1 > /tmp/hw_ptz; else echo 0 > /tmp/hw_ptz; fi
   ver="$(cat /usr/share/VERSION 2>/dev/null)"
   s_orig="$(grep -E '^sensor_type_def[[:space:]]*=' "${orig}" | head -n 1 | sed 's/^[^=]*=[[:space:]]*//;s/[[:space:]]*$//')"
   s_sd="$(grep -E '^sensor_type_def[[:space:]]*=' "${sdf}" | head -n 1 | sed 's/^[^=]*=[[:space:]]*//;s/[[:space:]]*$//')"
