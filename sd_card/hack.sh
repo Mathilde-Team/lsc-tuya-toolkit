@@ -75,6 +75,7 @@ hw_settings_file() {
     v="$(grep -E "^${k}[[:space:]]*=" "${sdf}" | head -n 1 | sed 's/^[^=]*=[[:space:]]*//;s/[[:space:]]*$//')"
     [ -n "${v}" ] && sed -i "s/^${k}[[:space:]]*=.*/${k} = ${v}/" "${eff}"
   done
+  sed -i "s/^main_fps[[:space:]]*=.*/main_fps = 15/;s/^sub_fps[[:space:]]*=.*/sub_fps = 15/" "${eff}"
   log "autre modele (firmware ${ver:-?}, capteur ${s_orig:-?}) : reglages materiels d'origine conserves, resolutions reportees" >&2
   echo "${eff}"
 }
