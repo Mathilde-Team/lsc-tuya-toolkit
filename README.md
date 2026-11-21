@@ -1,11 +1,16 @@
 # LSC Camera  Root Toolkit
 
+> ## 📊 Vous voulez reprendre la main sur votre caméra ? Commencez par le [comparatif des modèles](docs/COMPARATIF.md)
+>
+> Sept caméras Tuya/Anyka testées (fixe et PTZ, plusieurs firmwares) : ce qui varie (capteur, LED, PTZ, où le firmware lit la résolution et le codec), ce que le toolkit adapte tout seul, et **ce qu'il faut encore patcher : rien** (tout passe par la carte SD, la flash n'est jamais écrite).
+> Flux unifié H.265 720p 15 i/s, ONVIF avec découverte automatique, MQTT et Home Assistant.
+
 > ## Notes sur ce fork
 >
 > Fork de [`tasarren/lsc-tuya-toolkit`](https://github.com/tasarren/lsc-tuya-toolkit) adapté à une **autre caméra** que celle du dépôt
 > d'origine : `IPC-XC-C323`, firmware **3.10.78.1269** (l'amont cible `6.2863.123`). Voir [`docs/CAMERA.md`](docs/CAMERA.md).
 >
-> Changements : config vidéo corrigée pour cette caméra (fin de la boucle de redémarrage), vidéo **1920×1080 à 20 fps** fluide,
+> Changements : config vidéo corrigée pour cette caméra (fin de la boucle de redémarrage), vidéo **H.265 720p à 15 i/s** (20 i/s en option),
 > LED d'état éteinte. Les correctifs du firmware sont fournis sous forme de **scripts** (`tools/`) qui patchent votre propre copie ;
 > aucun fichier du fabricant n'est publié.
 >
@@ -23,7 +28,7 @@
 Goal: run the camera **100% on the LAN, cloud disabled**. On top of the original toolkit, this fork provides:
 
 - **Installer** (`install.py`, see [`docs/INSTALL.md`](docs/INSTALL.md)): copies and customizes the SD card (Wi-Fi, static IP, time, syslog, ONVIF, video stream).
-- **Boot-loop fix** and smooth **1920x1080 @ 20 fps** video, status LED off, timezone/OSD clock fix (`TZ_STRING`).
+- **Boot-loop fix** and **H.265 720p @ 15 fps** video (20 fps optional), status LED off, timezone/OSD clock fix (`TZ_STRING`).
 - **Local MQTT gateway** (`md_inject.so`, preloaded into `anyka_ipc`) with automatic **Home Assistant discovery**: PTZ (relative, absolute, presets, save current position), day/night, privacy mode, lullabies (`lullaby/set` 1-5/stop), reboot button, SD health/usage. Topics: [`docs/TOPICS.md`](docs/TOPICS.md).
 - **ONVIF** (PTZ, presets incl. `SetPreset`, privacy mode through relay output `RelayOutputToken_0`), see [`docs/ONVIF_MAPPING.md`](docs/ONVIF_MAPPING.md).
 - **Persistence**: settings sent by MQTT/ONVIF are saved to `custom/state/settings.conf` and replayed after a reboot.
