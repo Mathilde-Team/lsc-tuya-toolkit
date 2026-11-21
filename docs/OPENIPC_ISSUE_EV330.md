@@ -9,7 +9,7 @@ Aucun identifiant, clé, MAC, IP ni réglage Wi-Fi n'est inclus. Les dumps ne so
 | Champ du modèle | Obligatoire | État |
 |---|---|---|
 | Photos de la carte (recto, verso, gros plan de chaque puce : SoC, capteur, flash, Wi-Fi) | **oui** | à faire : boîtier à ouvrir |
-| Modèle commercial et marque (« Retail model ») | **oui** | à renseigner (le nom interne est `IPC-XC-C323`) |
+| Modèle commercial et marque (« Retail model ») | **oui** | fait : LSC Smart Connect, Rotatable Camera 1080p, réf. 3007325 (nom interne `IPC-XC-C323`) |
 | Lien d'achat | non, mais décisif | à renseigner |
 | Marquage et JEDEC de la puce flash | non | à lire sur le composant (le DTB liste 65 JEDEC possibles) |
 | Log de boot série complet depuis la mise sous tension | non | à faire avec un adaptateur UART 3,3 V (le `dmesg` en marche est saturé par les traces Wi-Fi) |
@@ -30,7 +30,7 @@ Choix proposé pour « The vendor firmware dump » : **Available on request, I w
 ## Hardware profile
 
 ### Device
-- **Retail:** *(to fill)*
+- **Retail:** LSC Smart Connect Rotatable Camera 1080p, ref. 3007325 (internal name `IPC-XC-C323`)
 - **Board id:** `ak3918ev330 dev board` (DTB model string); product string in `anyka_ipc`: `HT_IPC286KS2M_TUYA_AK3918EV330`
 - **Vendor firmware:** Tuya SDK; `/usr/share/VERSION` values seen on the 7 units: 2.10.33.993, 2.10.34.981, 3.10.72.1254, 3.10.78.1269, 3.167.94.14, 3.286.81.13. Reference unit: 3.10.78.1269.
 
