@@ -56,3 +56,5 @@ Correspondance de chaque fonction de la passerelle MQTT avec un service ONVIF, e
 ## Découverte automatique (Home Assistant)
 
 Le firmware n'a pas `wsd_simple_server` : le démon `wsd` (`tools/onvif/wsd.c`, compilé par `tools/onvif/build.sh` vers `sd_card/custom/bin/wsd`) répond aux requêtes WS-Discovery (UDP 3702, multicast) avec l'adresse `http://<ip>:8080/onvif/device_service`. Il est lancé par `onvif.sh` avec la pile ONVIF ; Home Assistant trouve alors les caméras via **Ajouter une intégration → ONVIF**. Le scope PTZ n'est annoncé que sur les modèles à PTZ.
+
+Le numéro de série ONVIF est l'adresse MAC de la caméra (écrit par `onvif.sh` dans `onvif_simple_server.conf`) : Home Assistant l'utilise comme identifiant unique, un numéro identique ferait refuser la 2e caméra.
