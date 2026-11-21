@@ -1,29 +1,38 @@
 # Comparatif des modèles de caméra
 
-Relevé en lecture seule sur sept caméras Tuya/Anyka AK3918EV330, dont le nom interne `IPC-XC-C323` est confirmé sur les cam181 et cam187. Seules les valeurs vérifiées sont indiquées ; `?` = non relevé. Le flux est lu avec `ffprobe` sur `rtsp://<ip>:554/main_ch`.
+Relevé sur sept caméras Tuya/Anyka AK3918EV330 (nom interne `IPC-XC-C323` confirmé sur cam181 et cam187), toutes pilotées par le même toolkit. Utile si vous cherchez à **reprendre la main sur votre caméra** : ce tableau dit ce qui varie d'un modèle à l'autre et ce que le toolkit adapte tout seul. `?` = non relevé. Le flux est lu avec `ffprobe` sur `rtsp://<ip>:554/main_ch`.
 
 | | cam181 | cam184 | cam185 | cam186 | cam187, cam188 | cam189 |
 |---|---|---|---|---|---|---|
 | Type | fixe extérieure | PTZ intérieure | PTZ | PTZ intérieure | PTZ intérieure (référence du toolkit) | PTZ |
-| **Firmware** (`/usr/share/VERSION`) | **2.10.33.993** | **2.10.34.981** (lu sur sa carte SD) | **3.167.94.14** | **3.10.72.1254** | **3.10.78.1269** | **3.286.81.13** |
-| `anyka_ipc` (MD5) | `972a3c93…` | `?` (non relevé) | `fd726ad2…` | `09ba8e90…` | `27ee718f…` (binaire patché 20 i/s) | `1adee3a4…` |
+| **Firmware** (`/usr/share/VERSION`) | 2.10.33.993 | 2.10.34.981 | 3.167.94.14 | 3.10.72.1254 | 3.10.78.1269 | 3.286.81.13 |
 | Capteur (`isp_*.conf`) | MIS2006 | MIS2006 | MIS2006 | MIS2006 | SC2336 | SC2336 |
-| `ptz_support` | non (clé absente) | oui d'après `pan/tilt_total_steps` et `ak_motor.ko` (clé `ptz_support` absente) | oui | oui | oui | oui |
-| Réglages matériels actifs (`sensor_type_def` / `ircut_type`) | 4 / 2 (d'origine) | 4 / 2 (d'origine, carte) | 17 / 1 (d'origine) | 17 / 1 (d'origine) | 17 / 1 | 17 / 1 (d'origine) |
-| Flux `main_ch` | H.264 720p cible, 15 i/s | H.265 1080p, ≈14 i/s (à confirmer : caméra injoignable avant réinstallation) | H.265 1080p, ≈14 i/s | H.265 1080p, ≈14 i/s | H.265 720p, 20 i/s | H.265 1080p (cadence annoncée 40 i/s, à vérifier) |
+| PTZ | non | oui (`pan/tilt_total_steps`, `ak_motor.ko`) | oui | oui | oui | oui |
+| `sensor_type_def` / `ircut_type` | 4 / 2 | 4 / 2 | 17 / 1 | 17 / 1 | 17 / 1 | 17 / 1 |
+| **Flux `main_ch` (actuel)** | H.265 720p, 15 i/s | H.265 720p, 15 i/s | H.265 720p, 15 i/s | H.265 720p, 15 i/s | H.265 720p, 15 i/s | H.265 720p, 15 i/s |
+| Où est lue la résolution / le codec | `/etc/config/_ht_hw_settings.ini` (2.10.x) | idem | `/usr/local/_ht_hw_settings.ini` | idem | idem | idem |
 | Audio | AAC-LC 8 kHz mono | idem | idem | idem | idem | idem |
 | Sous-flux (`sub_ch`) | absent | absent | absent | absent | absent | absent |
-| `/usr/local/etc` (conf ONVIF) | absent | `?` | absent | absent | absent | absent |
+| LED (`/sys/class/leds`) | `state_led` + `fill_light_led` | `state_led` seule | `state_led` seule | les deux | les deux | les deux |
+| ONVIF (8080) et découverte WS-Discovery | oui | oui | oui | oui | oui | oui |
+| Heure (NTP via la passerelle) | juste | juste | juste | juste | juste | juste |
 | Port 24 (telnet du toolkit) | fermé | fermé | fermé | fermé | cam187 ouvert, cam188 fermé | fermé |
-| Heure | juste | `?` | juste | juste | décalée (+7 à +8 h constatés : version sans la correction NTP/TZ) | **fausse (an 2000)** |
 
+Notes :
+- Le critère « PTZ » ne repose pas sur `ptz_support` seul : `hack.sh` regarde aussi `pan_total_steps` / `tilt_total_steps`.
+- Les firmwares 3.167.94.14 (cam185) et 3.286.81.13 (cam189) sont gérés en gardant leurs réglages d'origine.
+- Cadence réelle mesurée le soir : 10 à 14 i/s (l'exposition automatique du capteur peut la réduire) ; à surveiller de jour.
+- Les caméras joignent encore Internet : pour un flux 100 % LAN, bloquer leur accès au routeur.
 
-Écarts à noter :
-- La cam184 a deux identités dans nos relevés : un firmware 2.10.34.981 (MIS2006, `ircut_type = 2`, `sensor_type_def = 4`) lu sur sa carte, et un flux H.265 relevé en RTSP à son adresse avant la correction du DHCP, qui était probablement celui d'une autre caméra. Le flux et l'heure de la cam184 sont à relever après son démarrage avec la nouvelle carte.
-- Le critère « PTZ » ne doit pas reposer sur `ptz_support` seul : `hack.sh` regarde aussi `pan_total_steps` / `tilt_total_steps`.
-- La cam185 (3.167.94.14) et la cam189 (3.286.81.13) sont deux firmwares encore non traités par le toolkit ; leurs réglages d'origine restent à relever.
-- La cam189 avait un `hack.sh` incomplet (heure de l'an 2000) ; corrigé par le déploiement de la version actuelle.
-- Le MD5 `3d8cad80…` précédemment cité est celui du binaire de référence non patché ; les cam187 et cam188 exécutent la version patchée.
+## Ce qu'il faut encore « patcher »
+
+**Aucun fichier du firmware n'est modifié** : la mémoire flash n'est jamais écrite. Tout passe par la carte SD au démarrage :
+
+- des montages `mount --bind` en RAM (réglages matériels, `anyka_ipc.sh`, `state_led.sh`, conf ONVIF) ;
+- des bibliothèques injectées par `LD_PRELOAD` dans `anyka_ipc` (`md_inject.so` : MQTT, horloge, haut-parleur) ;
+- un serveur ONVIF et un démon de découverte (`wsd`) lancés depuis la SD.
+
+Le seul vrai patch binaire est le **20 i/s** (`anyka_ipc` + fichier ISP, `VIDEO_FPS20=1`) : optionnel, désactivé par défaut, limité au firmware 3.10.78.1269 (contrôle MD5). Avec 15 i/s sur toutes les caméras, plus aucun patch n'est nécessaire.
 
 ## Conséquences pour le toolkit
 
