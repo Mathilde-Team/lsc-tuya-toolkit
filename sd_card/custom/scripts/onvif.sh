@@ -48,6 +48,13 @@ mount_onvif_ptz_helpers() {
 ensure_onvif() {
     mount_onvif_ptz_helpers
 
+    # Numéro de série ONVIF unique (adresse MAC) : Home Assistant s'en sert comme identifiant, sinon il refuse la 2e caméra
+    cfg="${CUSTOM_DIR}/configs/onvif_simple_server.conf"
+    sn="$(sed 's/://g' /sys/class/net/wlan0/address 2>/dev/null)"
+    if [ -n "${sn}" ] && [ -f "${cfg}" ] && ! grep -q "^serial_num=${sn}\$" "${cfg}"; then
+        sed -i "s/^serial_num=.*/serial_num=${sn}/" "${cfg}"
+    fi
+
     MINI_HTTPD="${CUSTOM_DIR}/bin/mini_cgi_httpd"
     ONVIF_WWW="${CUSTOM_DIR}/onvif/www/onvif"
 
