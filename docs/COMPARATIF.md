@@ -24,6 +24,36 @@ Notes :
 - Cadence réelle mesurée le soir : 10 à 14 i/s (l'exposition automatique du capteur peut la réduire) ; à surveiller de jour.
 - Les caméras joignent encore Internet : pour un flux 100 % LAN, bloquer leur accès au routeur.
 
+## Bilan matériel complet
+
+Relevé en lecture seule (`uname`, `/proc/cpuinfo`, `/proc/meminfo`, `/proc/mtd`, `lsmod`, `/sys/class/leds`) sur les sept caméras. Le détail d'une caméra de référence (GPIO, DTB, moteurs, UART) est dans [`HARDWARE.md`](HARDWARE.md).
+
+**Identique sur les 7 caméras**
+
+| Élément | Valeur |
+|---|---|
+| SoC / CPU | Anyka AK3918EV330, ARM926EJ-S rev 5 (ARMv5TEJL), mono-cœur, soft-float |
+| Noyau | Linux 4.4.192 (`armv5tejl`) |
+| RAM | 64 Mo déclarés, 35 720 ko visibles dans `/proc/meminfo` (le reste est réservé à la vidéo) |
+| Flash | SPI NOR 8 Mo : UBOOT 200 Ko, ENV 4 Ko, ENVBK 4 Ko, DTB 48 Ko, KERNEL 1,5 Mo, ROOTFS 1 Mo, CONFIG 256 Ko (jffs2, `/etc/config`), APP 5 Mo |
+| Wi-Fi | Realtek RTL8188FTV, USB (`rtl8188ftv`, `ak_hcd`) ; le fichier `ssv6x5x-wifi.cfg` est présent mais inutilisé |
+| Stockage | microSD FAT32 sur `mmc0` (cartes de 7 à 15 Go utilisées) |
+| Audio | codec intégré (`ak_pcm`), AAC-LC 8 kHz mono |
+| Pilotes communs | `ak_isp`, `ak_i2c`, `ak_gpio_keys`, `ak_leds`, `ak_saradc` (capteur de lumière), `ak_rtc`, `ak_ion`, `ak_uio` |
+
+**Ce qui change d'un modèle à l'autre**
+
+| | cam181 | cam184 | cam185 | cam186 | cam187, cam188 | cam189 |
+|---|---|---|---|---|---|---|
+| Capteur d'image | MIS2006 (`sensor_mis2006`) | MIS2006 | MIS2006 | MIS2006 | SC2336 (`sensor_sc2336`) | SC2336 |
+| Fichier ISP | `isp_mis2006_mipi_2lane_h3b.conf` | idem | idem | idem | `isp_sc2336_mipi_2lane_h3b.conf` | idem |
+| Moteurs PTZ (`ak_motor`) | **absent** | présent | présent | présent | présent | présent |
+| LED disponibles | `state_led`, `fill_light_led`, `ir_led` | `state_led`, `ir_led` | `state_led`, `ir_led` | les trois | les trois | les trois |
+| Script Wi-Fi | `wifi_driver.sh` | ? | ? | ? | `wifi_driver_new.sh` | ? |
+| Firmware | 2.10.33.993 | 2.10.34.981 | 3.167.94.14 | 3.10.72.1254 | 3.10.78.1269 | 3.286.81.13 |
+
+À retenir : le matériel de base est le même partout ; seuls changent le **capteur** (MIS2006 ou SC2336), la présence du **PTZ** et les **LED** câblées. Les firmwares 2.10.x lisent leurs réglages dans `/etc/config`, les 3.x dans `/usr/local`.
+
 ## Ce qu'il faut encore « patcher »
 
 **Aucun fichier du firmware n'est modifié** : la mémoire flash n'est jamais écrite. Tout passe par la carte SD au démarrage :
