@@ -120,4 +120,4 @@ Ces 6 entités **ne sont plus produites par le générateur actuel** (sa sortie 
 
 Pour les retirer de Home Assistant, effacer ces six messages retained (charge vide), par exemple :
 `for t in number/camera188/ipc_lullaby_volume select/camera188/ipc_lullaby_command select/camera188/ipc_lullaby_control select/camera188/ipc_lullaby_list select/camera188/ipc_lullaby_mode text/camera188/system_reboot; do mosquitto_pub -r -t "homeassistant/$t/config" -n; done`
-(avec l'hôte et les identifiants du broker). Non exécuté à ce jour.
+(avec l'hôte et les identifiants du broker). Fait le 22/11 : camera188 annonce maintenant 66 entités, comme les autres caméras ; le redémarrage reste couvert par le bouton `reboot` et la berceuse par le `select` `lullaby`.
